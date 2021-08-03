@@ -1,0 +1,13 @@
+{
+    "manifest_version": 3,
+    "name": "Facebook Code Verify",
+    "version": "0.1",
+
+    "description": "An extension to verify the code running in your browser matches what was published.",
+    "content_scripts": [
+        {
+            "matches": ["*://*.facebook.com/*"],
+            "js": ["scanForScripts.js"]
+        }
+    ]
+}
