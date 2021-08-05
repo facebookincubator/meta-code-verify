@@ -1,0 +1,13 @@
+{
+  "name": "fb-code-verify",
+  "version": "0.1.0",
+  "description": "Browser extensions to verify FB code running in the browser against a published manifest",
+  "main": "none",
+  "repository": "git@github.com:facebookincubator/fb-code-verify.git",
+  "author": "Richard Hansen <rrh@fb.com>",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build-local-dev": ""
+  }
+}
