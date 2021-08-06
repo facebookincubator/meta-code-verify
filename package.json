@@ -8,6 +8,6 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "build-local-dev": ""
+    "build-local-dev": "rm -rf dist/chrome/* && cp config/* dist/chrome && cp -r src/js/* dist/chrome"
   }
 }
