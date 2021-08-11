@@ -1,1 +1,4 @@
-console.log('it is working really well!');
+
+function scanForScripts() {
+    console.log('scanForScripts is working really well!');
+}
