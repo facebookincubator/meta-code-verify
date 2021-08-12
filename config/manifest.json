@@ -5,16 +5,17 @@
 
     "description": "An extension to verify the code running in your browser matches what was published.",
     "background": {
-        "scripts": ["background.js"]
+        "persistent": true,
+        "scripts": ["config.js", "background.js"]
     },
     "content_scripts": [
         {
             "matches": ["*://*.facebook.com/*"],
-            "js": ["scanForScripts.js", "detectFBMeta.js"]
+            "js": ["config.js", "scanForScripts.js", "detectFBMeta.js"]
         },
         {
             "matches": ["*://*.whatsapp.com/*"],
-            "js": ["scanForScripts.js", "detectWAMeta.js"]
+            "js": ["config.js", "scanForScripts.js", "detectWAMeta.js"]
         }
     ]
 }

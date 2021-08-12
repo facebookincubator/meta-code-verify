@@ -2,7 +2,7 @@ chrome.runtime.onMessage.addListener(function(message, _sender, sendResponse) {
     // get message type
     console.log('I gots the message from detect', message);
 
-    if (message.type == "LOAD_MANIFEST") {
+    if (message.type == MESSAGE_TYPE.LOAD_MANIFEST) {
         console.log('ha ha ha it works!');
         sendResponse({stuff:'version is '+message.version});
         // check manifest cache

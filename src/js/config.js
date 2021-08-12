@@ -1,0 +1,3 @@
+const MESSAGE_TYPE = {
+    LOAD_MANIFEST: "LOAD_MANIFEST"
+};
