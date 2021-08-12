@@ -1,10 +1,10 @@
 (
 () => {
     // extract JS version from the page
-    // setup listener to listen for Service Worker to tell us it has the manifest
+    const metaElements = document.getElementsByName('binary-transparency-manifest-key');
     // send message to Service Worker to download the correct manifest
-    console.log('sending message to worker');
-    chrome.runtime.sendMessage({type: "LOAD_MANIFEST", origin:"WHATSAPP", version: 1}, (response) => {
+    console.log('sending message to worker', metaElements[0].content);
+    chrome.runtime.sendMessage({type: "LOAD_MANIFEST", origin:"WHATSAPP", version: metaElements[0].content}, (response) => {
         console.log('response is ', response);
         scanForScripts();
     });
