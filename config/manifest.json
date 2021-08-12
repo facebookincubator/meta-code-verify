@@ -11,6 +11,10 @@
         {
             "matches": ["*://*.facebook.com/*"],
             "js": ["scanForScripts.js", "detectFBMeta.js"]
+        },
+        {
+            "matches": ["*://*.whatsapp.com/*"],
+            "js": ["scanForScripts.js", "detectWAMeta.js"]
         }
     ]
 }
