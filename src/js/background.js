@@ -23,9 +23,55 @@ chrome.runtime.onMessage.addListener(function(message, _sender, sendResponse) {
 
         // on cache miss load missing manifest
         const endpoint = ORIGIN_ENDPOINT[message.origin] + '/' + message.version;
-        fetch(endpoint, {METHOD: 'GET'}).then(response => response.json()).then( json => {
-            origin.set(message.version, json[message.version]);
-            sendResponse({valid: true});
+        // TODO: Add error handling here
+        fetch(endpoint, {METHOD: 'GET'})
+            .then(response => response.json())
+            .then(json => {
+                origin.set(message.version, json[message.version]);
+                sendResponse({valid: true});
+        });
+        return true;
+    }
+
+    if (message.type == MESSAGE_TYPE.JS_WITH_SRC) {
+        console.log('js with source message is ', message);
+        const origin = manifestCache.get(message.origin);
+        if (!origin) {
+            sendResponse({valid: false, reason: 'no matching origin'});
+            return;
+        }
+        const manifest = origin.get(message.version);
+        if (!manifest) {
+            sendResponse({valid: false, reason: 'no matching manifest'});
+            return;
+        }
+        const jsPath = new URL(message.src).pathname;
+        const hashToMatch = manifest[jsPath];
+        console.log('values to check are ', jsPath, hashToMatch);
+        if (!hashToMatch) {
+            sendResponse({valid: false, reason: 'no matching hash'});
+            return;
+        }
+
+        // fetch the src
+        fetch(message.src, {METHOD: 'GET'})
+            .then(response => response.text())
+            .then(jsText => {
+                console.log('JS text is ', jsText);
+                // hash the src
+                const encoder = new TextEncoder();
+                const encodedJS = encoder.encode(jsText);
+                return crypto.subtle.digest('SHA-256', encodedJS);
+            }).then(jsHashBuffer => {
+                const jsHashArray = Array.from(new Uint8Array(jsHashBuffer));
+                const jsHash = jsHashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                console.log('js hash is :' + jsHash + ':*****:' + hashToMatch + ':');
+                // compare hashes
+                if (jsHash === hashToMatch) {
+                    sendResponse({valid: true});
+                } else {
+                    sendResponse({valid: false})
+                }
         });
         return true;
     }

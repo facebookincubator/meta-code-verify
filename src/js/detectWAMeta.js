@@ -1,13 +1,15 @@
 (
 () => {
     // extract JS version from the page
-    const metaElements = document.getElementsByName('binary-transparency-manifest-key');
+    const version = document.getElementsByName('binary-transparency-manifest-key')[0].content;
     // send message to Service Worker to download the correct manifest
-    chrome.runtime.sendMessage({type: MESSAGE_TYPE.LOAD_MANIFEST, origin:ORIGIN_TYPE.WHATSAPP, version: metaElements[0].content}, (response) => {
-        console.log('response is ', response);
-        scanForScripts();
+    chrome.runtime.sendMessage({type: MESSAGE_TYPE.LOAD_MANIFEST, origin:ORIGIN_TYPE.WHATSAPP, version: version}, (response) => {
+        console.log('manifest load response is ', response);
+        if (response.valid) {
+            // call scanForScripts to scan the page for JS, then pipe it to backgroud to hash and compare?
+            console.log('calling scan for scripts');
+            scanForScripts(ORIGIN_TYPE.WHATSAPP, version);
+        }
     });
-    console.log('after message');
-    // call scanForScripts to scan the page for JS, then pipe it to Service Worker to hash and compare?
 }
 )();
