@@ -57,7 +57,6 @@ chrome.runtime.onMessage.addListener(function(message, _sender, sendResponse) {
         fetch(message.src, {METHOD: 'GET'})
             .then(response => response.text())
             .then(jsText => {
-                console.log('JS text is ', jsText);
                 // hash the src
                 const encoder = new TextEncoder();
                 const encodedJS = encoder.encode(jsText);
@@ -72,6 +71,43 @@ chrome.runtime.onMessage.addListener(function(message, _sender, sendResponse) {
                 } else {
                     sendResponse({valid: false})
                 }
+        });
+        return true;
+    }
+
+    if (message.type == MESSAGE_TYPE.RAW_JS) {
+        console.log('raw js message is ', message);
+        const origin = manifestCache.get(message.origin);
+        if (!origin) {
+            sendResponse({valid: false, reason: 'no matching origin'});
+            return;
+        }
+        const manifest = origin.get(message.version);
+        if (!manifest) {
+            sendResponse({valid: false, reason: 'no matching manifest'});
+            return;
+        }
+
+
+        // fetch the src
+        const encoder = new TextEncoder();
+        const encodedJS = encoder.encode(message.rawjs);
+        // hash the src
+        crypto.subtle.digest('SHA-256', encodedJS).then(jsHashBuffer => {
+            const jsHashArray = Array.from(new Uint8Array(jsHashBuffer));
+            const jsHash = jsHashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+            // compare hashes
+            const hashToMatch = manifest['inline-js-'+jsHash];
+            console.log('values to check are ', jsHash, hashToMatch);
+            if (!hashToMatch) {
+                sendResponse({valid: false, reason: 'no matching hash'});
+            }
+            if (jsHash === hashToMatch) {
+                sendResponse({valid: true});
+            } else {
+                sendResponse({valid: false, reason: 'no matching hash'});
+            }
         });
         return true;
     }

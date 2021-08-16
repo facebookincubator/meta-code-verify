@@ -230,18 +230,20 @@ function scanForScripts(origin, version) {
       hasInvalidAttributes(allElement);
       // next check for existing script elements and if they're violating
       if (allElement.nodeName === 'SCRIPT') {
-        console.log('all script elements are ', allElement);
+        console.log('processes all script elements are ', allElement);
         // need to get the src of the JS
         if (allElement.src != null && allElement.src !== '') {
           chrome.runtime.sendMessage({type: MESSAGE_TYPE.JS_WITH_SRC, src: allElement.src, origin: origin, version: version}, (response) => {
             console.log('processed the JS with SRC, response is ', response);
           });
         } else {
-          // no src access innerHTML for the code
-          console.log('no src for ', allElement.innerHTML);
+          // no src, access innerHTML for the code
+          // const hashLookupKey = allElement.attributes['data-binary-transparency-hash-key'];
+
+          chrome.runtime.sendMessage({type: MESSAGE_TYPE.RAW_JS, rawjs: allElement.innerHTML, origin: origin, version: version}, (response) => {
+            console.log('processed the RAW_JS, response is ', response);
+          });
         }
-
-
       }
     });
 }
