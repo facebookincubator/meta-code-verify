@@ -1,15 +1,29 @@
-(
-() => {
+const ORIGIN = ORIGIN_TYPE.WHATSAPP;
+let version = '';
+
+const extractMetaAndLoad = () => {
     // extract JS version from the page
-    const version = document.getElementsByName('binary-transparency-manifest-key')[0].content;
+    console.log('proc document.head', document.head);
+    const versionMetaTag = document.getElementsByName('binary-transparency-manifest-key');
+    console.log('processing version metatag ', versionMetaTag);
+    if (versionMetaTag.length < 1) {
+        console.log('processed version meta tag, missing tag warning');
+    }
+    const version = versionMetaTag[0].content;
     // send message to Service Worker to download the correct manifest
     chrome.runtime.sendMessage({type: MESSAGE_TYPE.LOAD_MANIFEST, origin:ORIGIN_TYPE.WHATSAPP, version: version}, (response) => {
-        console.log('manifest load response is ', response);
+        console.log('proc manifest load response is ', response);
         if (response.valid) {
-            // call scanForScripts to scan the page for JS, then pipe it to backgroud to hash and compare?
-            console.log('calling scan for scripts');
-            scanForScripts(ORIGIN_TYPE.WHATSAPP, version);
+            // work through the list of scripts we've found
+            window.setTimeout( () => processFoundJS(ORIGIN_TYPE.WHATSAPP, version), 0);
         }
     });
+};
+
+if (document.readystate = 'loading') {
+    document.addEventListener('DOMContentLoaded', extractMetaAndLoad);
+} else {
+    extractMetaAndLoad();
 }
-)();
+
+scanForScripts();

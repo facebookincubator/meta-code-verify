@@ -11,11 +11,13 @@
     "content_scripts": [
         {
             "matches": ["*://*.facebook.com/*"],
-            "js": ["config.js", "scanForScripts.js", "detectFBMeta.js"]
+            "js": ["config.js", "scanForScripts.js", "detectFBMeta.js"],
+            "run_at": "document_start"
         },
         {
             "matches": ["*://*.whatsapp.com/*"],
-            "js": ["config.js", "scanForScripts.js", "detectWAMeta.js"]
+            "js": ["contentWA.js"],
+            "run_at": "document_start"
         }
     ]
 }

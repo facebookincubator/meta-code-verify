@@ -207,6 +207,19 @@ const DOM_EVENTS = [
   'onwheel',
 ];
 
+const foundScripts = [];
+
+function storeFoundJS(scriptNodeMaybe) {
+  // need to get the src of the JS
+  if (scriptNodeMaybe.src != null && scriptNodeMaybe.src !== '') {
+    foundScripts.push({type: MESSAGE_TYPE.JS_WITH_SRC, src: scriptNodeMaybe.src});
+  } else {
+    // no src, access innerHTML for the code
+    // const hashLookupKey = scriptNodeMaybe.attributes['data-binary-transparency-hash-key'];
+    foundScripts.push({type: MESSAGE_TYPE.RAW_JS, rawjs: scriptNodeMaybe.innerHTML});
+  }
+}
+
 function hasInvalidAttributes(htmlElement) {
   if (typeof htmlElement.hasAttributes === 'function' && htmlElement.hasAttributes()) {
     Array.from(htmlElement.attributes).forEach(elementAttribute => {
@@ -214,36 +227,93 @@ function hasInvalidAttributes(htmlElement) {
       if (DOM_EVENTS.indexOf(elementAttribute.localName) >= 0) {
         // TODO: convert this to a failure case and show a BZZZZZZT to the user
         console.log(
-          `violating attribute ${elementAttribute.localName} from element ${htmlElement.outerHTML}`,
+          `processing violating attribute ${elementAttribute.localName} from element ${htmlElement.outerHTML}`,
         );
       }
     });
   }
 }
 
-function scanForScripts(origin, version) {
-    console.log('scanForScripts is working really well!');
+function hasInvalidScripts(scriptNodeMaybe) {
+  // if not an HTMLElement ignore it!
+  if (scriptNodeMaybe.nodeType !== 1) {
+    return false;
+  }
 
-    const allElements = document.getElementsByTagName('*');
+  hasInvalidAttributes(scriptNodeMaybe);
 
-    Array.from(allElements).forEach(allElement => {
-      hasInvalidAttributes(allElement);
-      // next check for existing script elements and if they're violating
-      if (allElement.nodeName === 'SCRIPT') {
-        console.log('processes all script elements are ', allElement);
-        // need to get the src of the JS
-        if (allElement.src != null && allElement.src !== '') {
-          chrome.runtime.sendMessage({type: MESSAGE_TYPE.JS_WITH_SRC, src: allElement.src, origin: origin, version: version}, (response) => {
-            console.log('processed the JS with SRC, response is ', response);
-          });
-        } else {
-          // no src, access innerHTML for the code
-          // const hashLookupKey = allElement.attributes['data-binary-transparency-hash-key'];
+  if (scriptNodeMaybe.nodeName === 'SCRIPT') {
+    return storeFoundJS(scriptNodeMaybe);
+  } else if (scriptNodeMaybe.childNodes.length > 0) {
+    let invalidCount = 0;
+    scriptNodeMaybe.childNodes.forEach(childNode => {
+      // if not an HTMLElement ignore it!
+      if (childNode.nodeType !== 1) {
+        return;
+      }
 
-          chrome.runtime.sendMessage({type: MESSAGE_TYPE.RAW_JS, rawjs: allElement.innerHTML, origin: origin, version: version}, (response) => {
-            console.log('processed the RAW_JS, response is ', response);
-          });
-        }
+      hasInvalidAttributes(childNode);
+
+      if (childNode.nodeName === 'SCRIPT') {
+        storeFoundJS(childNode);
+        return;
+      }
+
+      const invalidChildScripts = Array.from(childNode.getElementsByTagName('script')).forEach(childScript => {
+        storeFoundJS(childScript);
+      });
+    });
+  }
+
+  return;
+}
+
+const scanForScripts = () => {
+  console.log('proc scanForScripts is working really well!');
+
+  const allElements = document.getElementsByTagName('*');
+
+  Array.from(allElements).forEach(allElement => {
+    hasInvalidAttributes(allElement);
+    // next check for existing script elements and if they're violating
+    if (allElement.nodeName === 'SCRIPT') {
+      console.log('processed all script elements are ', allElement);
+      storeFoundJS(allElement);
+    }
+  });
+
+  // track any new scripts that get loaded in
+  const scriptMutationObserver = new MutationObserver((mutationsList, _observer) => {
+    mutationsList.forEach(mutation => {
+      if (mutation.type === 'childList') {
+        Array.from(mutation.addedNodes).forEach(checkScript => {hasInvalidScripts(checkScript)});
+      } else if (mutation.type === 'attributes') {
+        console.log('processed mutation and invalid attribute added or changed ', mutation.target);
       }
     });
+  });
+
+  scriptMutationObserver.observe(document.getElementsByTagName('html')[0], {
+    attributeFilter: DOM_EVENTS,
+    childList: true,
+    subtree: true,
+  });
+}
+
+const processFoundJS = (origin, version) => {
+  // foundScripts
+  const scripts = foundScripts.splice(0);
+  console.log('proc scripts that were found', scripts.length);
+  scripts.forEach(script => {
+    if (script.src) {
+      chrome.runtime.sendMessage({type: script.type, src: script.src, origin: origin, version: version}, (response) => {
+        console.log('processed the JS with SRC, response is ', response);
+      });
+    } else {
+      chrome.runtime.sendMessage({type: script.type, rawjs: script.rawjs, origin: origin, version: version}, (response) => {
+        console.log('processed the RAW_JS, response is ', response);
+      });
+    }
+  });
+  window.setTimeout(() => processFoundJS(origin, version), 3000);
 }

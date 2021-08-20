@@ -8,6 +8,9 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "build-local-dev": "rm -rf dist/chrome/* && cp config/* dist/chrome && cp -r src/js/* dist/chrome"
+    "build-js": "cat src/js/config.js src/js/contentUtils.js src/js/detectWAMeta.js > dist/chrome/contentWA.js",
+    "build-local-dev-chrome": "yarn clean && cp config/* dist/chrome && yarn build-js && cp -r src/js/* dist/chrome",
+    "build-local-dev": "yarn build-local-dev-chrome",
+    "clean": "rm -rf dist/chrome/*"
   }
 }
