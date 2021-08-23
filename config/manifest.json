@@ -4,6 +4,9 @@
     "version": "0.1",
 
     "description": "An extension to verify the code running in your browser matches what was published.",
+    "browser_action": {
+        "default_title": "Facebook Code Verify"
+    },
     "background": {
         "persistent": true,
         "scripts": ["config.js", "background.js"]

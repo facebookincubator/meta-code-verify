@@ -1,29 +1,41 @@
 const ORIGIN = ORIGIN_TYPE.WHATSAPP;
-let version = '';
+let version = "";
 
 const extractMetaAndLoad = () => {
-    // extract JS version from the page
-    console.log('proc document.head', document.head);
-    const versionMetaTag = document.getElementsByName('binary-transparency-manifest-key');
-    console.log('processing version metatag ', versionMetaTag);
-    if (versionMetaTag.length < 1) {
-        console.log('processed version meta tag, missing tag warning');
+  // extract JS version from the page
+  console.log("proc document.head", document.head);
+  const versionMetaTag = document.getElementsByName(
+    "binary-transparency-manifest-key"
+  );
+  console.log("processing version metatag ", versionMetaTag);
+  if (versionMetaTag.length < 1) {
+    console.log("processed version meta tag, missing tag warning");
+  }
+  const version = versionMetaTag[0].content;
+  // send message to Service Worker to download the correct manifest
+  chrome.runtime.sendMessage(
+    {
+      type: MESSAGE_TYPE.LOAD_MANIFEST,
+      origin: ORIGIN_TYPE.WHATSAPP,
+      version: version,
+    },
+    response => {
+      console.log("proc manifest load response is ", response);
+      if (response.valid) {
+        // work through the list of scripts we've found
+        window.setTimeout(
+          () => processFoundJS(ORIGIN_TYPE.WHATSAPP, version),
+          0
+        );
+      }
     }
-    const version = versionMetaTag[0].content;
-    // send message to Service Worker to download the correct manifest
-    chrome.runtime.sendMessage({type: MESSAGE_TYPE.LOAD_MANIFEST, origin:ORIGIN_TYPE.WHATSAPP, version: version}, (response) => {
-        console.log('proc manifest load response is ', response);
-        if (response.valid) {
-            // work through the list of scripts we've found
-            window.setTimeout( () => processFoundJS(ORIGIN_TYPE.WHATSAPP, version), 0);
-        }
-    });
+  );
 };
 
-if (document.readystate = 'loading') {
-    document.addEventListener('DOMContentLoaded', extractMetaAndLoad);
+if ((document.readystate = "loading")) {
+  document.addEventListener("DOMContentLoaded", extractMetaAndLoad);
 } else {
-    extractMetaAndLoad();
+  extractMetaAndLoad();
 }
 
 scanForScripts();
