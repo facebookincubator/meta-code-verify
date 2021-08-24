@@ -10,7 +10,12 @@
   "scripts": {
     "build-js": "cat src/js/config.js src/js/contentUtils.js src/js/detectWAMeta.js > dist/chrome/contentWA.js",
     "build-local-dev-chrome": "cp config/* dist/chrome && yarn build-js && cp -r src/js/* dist/chrome",
-    "build-local-dev": "yarn clean && prettier --write \"src/**/*.js\" && yarn build-local-dev-chrome",
-    "clean": "rm -rf dist/chrome/*"
+    "build-local-dev": "yarn clean && yarn run prettier --write \"src/**/*.js\" && yarn build-local-dev-chrome",
+    "clean": "rm -rf dist/chrome/*",
+    "lint": "yarn run eslint src/**"
+  },
+  "devDependencies": {
+    "eslint": "^7.32.0",
+    "prettier": "^2.3.2"
   }
 }
