@@ -8,14 +8,15 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "build-js": "cat src/js/config.js src/js/contentUtils.js src/js/detectWAMeta.js > dist/chrome/contentWA.js",
-    "build-local-dev-chrome": "cp config/* dist/chrome && yarn build-js && cp -r src/js/* dist/chrome",
-    "build-local-dev": "yarn clean && yarn run prettier --write \"src/**/*.js\" && yarn build-local-dev-chrome",
+    "build-local-dev": "yarn clean && yarn lint && cp config/* dist/chrome && yarn makeBundle",
     "clean": "rm -rf dist/chrome/*",
-    "lint": "yarn run eslint src/**"
+    "lint": "yarn makePrettier && yarn run eslint src/**",
+    "makeBundle": "yarn run rollup -c",
+    "makePrettier": "yarn run prettier --write \"src/**/*.js\""
   },
   "devDependencies": {
     "eslint": "^7.32.0",
-    "prettier": "^2.3.2"
+    "prettier": "^2.3.2",
+    "rollup": "^2.56.3"
   }
 }

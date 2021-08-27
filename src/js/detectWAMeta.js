@@ -1,3 +1,6 @@
+import { MESSAGE_TYPE, ORIGIN_TYPE } from "./config.js";
+import { processFoundJS, scanForScripts } from "./contentUtils.js";
+
 const ORIGIN = ORIGIN_TYPE.WHATSAPP;
 let version = "";
 

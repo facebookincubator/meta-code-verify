@@ -1,3 +1,5 @@
+import { MESSAGE_TYPE } from "./config.js";
+
 const DOM_EVENTS = [
   "onabort",
   "onactivate",
@@ -278,7 +280,7 @@ function hasInvalidScripts(scriptNodeMaybe) {
   return;
 }
 
-const scanForScripts = () => {
+export const scanForScripts = () => {
   console.log("proc scanForScripts is working really well!");
 
   const allElements = document.getElementsByTagName("*");
@@ -317,7 +319,7 @@ const scanForScripts = () => {
   });
 };
 
-const processFoundJS = (origin, version) => {
+export const processFoundJS = (origin, version) => {
   // foundScripts
   const scripts = foundScripts.splice(0);
   console.log("proc scripts that were found", scripts.length);

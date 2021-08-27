@@ -9,12 +9,12 @@
     },
     "background": {
         "persistent": true,
-        "scripts": ["config.js", "background.js"]
+        "scripts": ["background.js"]
     },
     "content_scripts": [
         {
             "matches": ["*://*.facebook.com/*"],
-            "js": ["config.js", "scanForScripts.js", "detectFBMeta.js"],
+            "js": ["contentFB.js"],
             "run_at": "document_start"
         },
         {
