@@ -48,7 +48,7 @@ chrome.runtime.onMessage.addListener(function (message, _sender, sendResponse) {
     }
     const jsPath = new URL(message.src).pathname;
     const hashToMatch = manifest[jsPath];
-    console.log("values to check are ", jsPath, hashToMatch);
+    console.log("JS_WITH_SRC values to check are ", jsPath, hashToMatch);
     if (!hashToMatch) {
       sendResponse({ valid: false, reason: "no matching hash" });
       return;
@@ -107,7 +107,7 @@ chrome.runtime.onMessage.addListener(function (message, _sender, sendResponse) {
 
       // compare hashes
       const hashToMatch = manifest["inline-js-" + jsHash];
-      console.log("values to check are ", jsHash, hashToMatch);
+      console.log("RAW_JS values to check are ", jsHash, hashToMatch);
       if (!hashToMatch) {
         sendResponse({ valid: false, reason: "no matching hash" });
       }
