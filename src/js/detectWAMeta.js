@@ -3,7 +3,6 @@ import { processFoundJS, scanForScripts } from "./contentUtils.js";
 
 const extractMetaAndLoad = () => {
   // extract JS version from the page
-  console.log("proc document.head", document.head);
   const versionMetaTag = document.getElementsByName(
     "binary-transparency-manifest-key"
   );
@@ -32,7 +31,7 @@ const extractMetaAndLoad = () => {
   );
 };
 
-if (document.readystate === "loading") {
+if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", extractMetaAndLoad);
 } else {
   extractMetaAndLoad();
