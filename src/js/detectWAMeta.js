@@ -1,9 +1,6 @@
 import { MESSAGE_TYPE, ORIGIN_TYPE } from "./config.js";
 import { processFoundJS, scanForScripts } from "./contentUtils.js";
 
-const ORIGIN = ORIGIN_TYPE.WHATSAPP;
-let version = "";
-
 const extractMetaAndLoad = () => {
   // extract JS version from the page
   console.log("proc document.head", document.head);
