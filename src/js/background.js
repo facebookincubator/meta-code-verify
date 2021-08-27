@@ -1,3 +1,4 @@
+import { MESSAGE_TYPE, ORIGIN_ENDPOINT } from "./config.js";
 const manifestCache = new Map();
 
 chrome.runtime.onMessage.addListener(function (message, _sender, sendResponse) {
