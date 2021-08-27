@@ -255,7 +255,6 @@ function hasInvalidScripts(scriptNodeMaybe) {
   if (scriptNodeMaybe.nodeName === "SCRIPT") {
     return storeFoundJS(scriptNodeMaybe);
   } else if (scriptNodeMaybe.childNodes.length > 0) {
-    let invalidCount = 0;
     scriptNodeMaybe.childNodes.forEach(childNode => {
       // if not an HTMLElement ignore it!
       if (childNode.nodeType !== 1) {
@@ -269,11 +268,11 @@ function hasInvalidScripts(scriptNodeMaybe) {
         return;
       }
 
-      const invalidChildScripts = Array.from(
-        childNode.getElementsByTagName("script")
-      ).forEach(childScript => {
-        storeFoundJS(childScript);
-      });
+      Array.from(childNode.getElementsByTagName("script")).forEach(
+        childScript => {
+          storeFoundJS(childScript);
+        }
+      );
     });
   }
 
@@ -295,22 +294,20 @@ export const scanForScripts = () => {
   });
 
   // track any new scripts that get loaded in
-  const scriptMutationObserver = new MutationObserver(
-    (mutationsList, _observer) => {
-      mutationsList.forEach(mutation => {
-        if (mutation.type === "childList") {
-          Array.from(mutation.addedNodes).forEach(checkScript => {
-            hasInvalidScripts(checkScript);
-          });
-        } else if (mutation.type === "attributes") {
-          console.log(
-            "processed mutation and invalid attribute added or changed ",
-            mutation.target
-          );
-        }
-      });
-    }
-  );
+  const scriptMutationObserver = new MutationObserver(mutationsList => {
+    mutationsList.forEach(mutation => {
+      if (mutation.type === "childList") {
+        Array.from(mutation.addedNodes).forEach(checkScript => {
+          hasInvalidScripts(checkScript);
+        });
+      } else if (mutation.type === "attributes") {
+        console.log(
+          "processed mutation and invalid attribute added or changed ",
+          mutation.target
+        );
+      }
+    });
+  });
 
   scriptMutationObserver.observe(document.getElementsByTagName("html")[0], {
     attributeFilter: DOM_EVENTS,
