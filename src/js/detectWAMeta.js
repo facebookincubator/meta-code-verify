@@ -32,7 +32,7 @@ const extractMetaAndLoad = () => {
   );
 };
 
-if (document.readystate == "loading") {
+if (document.readystate === "loading") {
   document.addEventListener("DOMContentLoaded", extractMetaAndLoad);
 } else {
   extractMetaAndLoad();
