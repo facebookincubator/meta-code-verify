@@ -61,7 +61,7 @@ chrome.runtime.onMessage.addListener(function (message, _sender, sendResponse) {
         // hash the src
         const encoder = new TextEncoder();
         const encodedJS = encoder.encode(jsText);
-        return crypto.subtle.digest("SHA-256", encodedJS);
+        return crypto.subtle.digest("SHA-384", encodedJS);
       })
       .then(jsHashBuffer => {
         const jsHashArray = Array.from(new Uint8Array(jsHashBuffer));
@@ -99,7 +99,7 @@ chrome.runtime.onMessage.addListener(function (message, _sender, sendResponse) {
     const encoder = new TextEncoder();
     const encodedJS = encoder.encode(message.rawjs);
     // hash the src
-    crypto.subtle.digest("SHA-256", encodedJS).then(jsHashBuffer => {
+    crypto.subtle.digest("SHA-384", encodedJS).then(jsHashBuffer => {
       const jsHashArray = Array.from(new Uint8Array(jsHashBuffer));
       const jsHash = jsHashArray
         .map(b => b.toString(16).padStart(2, "0"))
