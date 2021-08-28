@@ -106,7 +106,23 @@ chrome.runtime.onMessage.addListener(function (message, _sender, sendResponse) {
         .join("");
 
       // compare hashes
-      const hashToMatch = manifest["inline-js-" + jsHash];
+
+      // lookup by inline key, if available
+      console.log(
+        "message lookup key is ",
+        message.lookupKey,
+        manifest[message.lookupKey]
+      );
+      let hashToMatch = manifest[message.lookupKey];
+      if (hashToMatch == null) {
+        console.log(
+          "manifest lookup key was null/undef and now using rawjs hash ",
+          jsHash,
+          manifest["inline-js-" + jsHash]
+        );
+        hashToMatch = manifest["inline-js-" + jsHash];
+      }
+
       console.log("RAW_JS values to check are ", jsHash, hashToMatch);
       if (!hashToMatch) {
         sendResponse({ valid: false, reason: "no matching hash" });
