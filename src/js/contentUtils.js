@@ -219,10 +219,13 @@ function storeFoundJS(scriptNodeMaybe) {
     });
   } else {
     // no src, access innerHTML for the code
-    // const hashLookupKey = scriptNodeMaybe.attributes['data-binary-transparency-hash-key'];
+    const hashLookupKey =
+      scriptNodeMaybe.attributes["data-binary-transparency-hash-key"];
+    console.log("proc hashLookupKey is ", hashLookupKey.value);
     foundScripts.push({
       type: MESSAGE_TYPE.RAW_JS,
       rawjs: scriptNodeMaybe.innerHTML,
+      lookupKey: hashLookupKey.value,
     });
   }
 }
@@ -338,6 +341,7 @@ export const processFoundJS = (origin, version) => {
         {
           type: script.type,
           rawjs: script.rawjs,
+          lookupKey: script.lookupKey,
           origin: origin,
           version: version,
         },
