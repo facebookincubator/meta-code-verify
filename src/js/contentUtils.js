@@ -209,6 +209,7 @@ const DOM_EVENTS = [
 ];
 
 const foundScripts = [];
+let currentState = ICON_TYPE.VALID;
 
 function storeFoundJS(scriptNodeMaybe) {
   // need to get the src of the JS
@@ -226,6 +227,12 @@ function storeFoundJS(scriptNodeMaybe) {
       type: MESSAGE_TYPE.RAW_JS,
       rawjs: scriptNodeMaybe.innerHTML,
       lookupKey: hashLookupKey.value,
+    });
+  }
+  if (currentState == ICON_TYPE.VALID) {
+    chrome.runtime.sendMessage({
+      type: MESSAGE_TYPE.UPDATE_ICON,
+      icon: ICON_TYPE.PROCESSING,
     });
   }
 }
@@ -322,6 +329,7 @@ export const scanForScripts = () => {
 export const processFoundJS = (origin, version) => {
   // foundScripts
   const scripts = foundScripts.splice(0);
+  let pendingScriptCount = scripts.length;
   console.log("proc scripts that were found", scripts.length);
   scripts.forEach(script => {
     if (script.src) {
@@ -333,6 +341,21 @@ export const processFoundJS = (origin, version) => {
           version: version,
         },
         response => {
+          pendingScriptCount--;
+          if (response.valid) {
+            if (pendingScriptCount == 0 && currentState == ICON_TYPE.VALID) {
+              chrome.runtime.sendMessage({
+                type: MESSAGE_TYPE.UPDATE_ICON,
+                icon: ICON_TYPE.VALID,
+              });
+            }
+          } else {
+            currentState = ICON_TYPE.INVALID_SOFT;
+            chrome.runtime.sendMessage({
+              type: MESSAGE_TYPE.UPDATE_ICON,
+              icon: ICON_TYPE.INVALID_SOFT,
+            });
+          }
           console.log("processed the JS with SRC, response is ", response);
         }
       );
@@ -346,6 +369,21 @@ export const processFoundJS = (origin, version) => {
           version: version,
         },
         response => {
+          pendingScriptCount--;
+          if (response.valid) {
+            if (pendingScriptCount == 0 && currentState == ICON_TYPE.VALID) {
+              chrome.runtime.sendMessage({
+                type: MESSAGE_TYPE.UPDATE_ICON,
+                icon: ICON_TYPE.VALID,
+              });
+            }
+          } else {
+            currentState = ICON_TYPE.INVALID_SOFT;
+            chrome.runtime.sendMessage({
+              type: MESSAGE_TYPE.UPDATE_ICON,
+              icon: ICON_TYPE.INVALID_SOFT,
+            });
+          }
           console.log("processed the RAW_JS, response is ", response);
         }
       );
