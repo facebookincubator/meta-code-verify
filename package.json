@@ -8,9 +8,10 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "build-local-dev": "yarn clean && yarn lint && cp config/* dist/chrome && yarn makeBundle",
+    "build-local-dev": "yarn clean && yarn lint && yarn copyImagesAndConfig && yarn makeBundle",
     "clean": "rm -rf dist/chrome/*",
     "lint": "yarn makePrettier && yarn run eslint src/**",
+    "copyImagesAndConfig": "cp config/* dist/chrome && cp images/icons/* dist/chrome",
     "makeBundle": "yarn run rollup -c",
     "makePrettier": "yarn run prettier --write \"src/**/*.js\""
   },
