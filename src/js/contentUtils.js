@@ -1,4 +1,4 @@
-import { MESSAGE_TYPE } from "./config.js";
+import { ICON_TYPE, MESSAGE_TYPE } from "./config.js";
 
 const DOM_EVENTS = [
   "onabort",
@@ -353,3 +353,8 @@ export const processFoundJS = (origin, version) => {
   });
   window.setTimeout(() => processFoundJS(origin, version), 3000);
 };
+
+chrome.runtime.sendMessage({
+  type: MESSAGE_TYPE.UPDATE_ICON,
+  icon: ICON_TYPE.PROCESSING,
+});

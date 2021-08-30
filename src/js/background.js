@@ -1,9 +1,17 @@
 import { MESSAGE_TYPE, ORIGIN_ENDPOINT } from "./config.js";
 const manifestCache = new Map();
 
+const updateIcon = message => {
+  chrome.browserAction.setIcon({ path: message.icon });
+};
+
 chrome.runtime.onMessage.addListener(function (message, _sender, sendResponse) {
   // get message type
   console.log("I got the message from detect", message);
+
+  if (message.type == MESSAGE_TYPE.UPDATE_ICON) {
+    updateIcon(message);
+  }
 
   if (message.type == MESSAGE_TYPE.LOAD_MANIFEST) {
     // check manifest cache
