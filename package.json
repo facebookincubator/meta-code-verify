@@ -6,6 +6,7 @@
   "repository": "git@github.com:facebookincubator/fb-code-verify.git",
   "author": "Richard Hansen <rrh@fb.com>",
   "license": "MIT",
+  "type": "module",
   "private": true,
   "scripts": {
     "build-local-dev": "yarn clean && yarn lint && yarn copyImagesAndConfig && yarn makeBundle",
@@ -14,7 +15,7 @@
     "copyImagesAndConfig": "cp config/* dist/chrome && cp images/icons/* dist/chrome",
     "makeBundle": "yarn run rollup -c",
     "makePrettier": "yarn run prettier --write \"src/**/*.js\"",
-    "test": "jest"
+    "test": "node --experimental-vm-modules --no-warnings node_modules/jest/bin/jest.js"
   },
   "devDependencies": {
     "eslint": "^7.32.0",

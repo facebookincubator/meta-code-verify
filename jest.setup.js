@@ -1,0 +1,5 @@
+window.chrome = {
+    runtime: {
+        sendMessage: () => {}
+    }
+};
