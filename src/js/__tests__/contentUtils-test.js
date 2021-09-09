@@ -16,9 +16,25 @@ describe("contentUtils", () => {
       };
       storeFoundJS(fakeScriptNode, scriptList);
       expect(scriptList.length).toEqual(1);
+      expect(scriptList[0].src).toEqual(fakeUrl);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
-    test.skip("storeFoundJS handles inline scripts correclty", () => {});
+    test("storeFoundJS handles inline scripts correctly", () => {
+      const scriptList = [];
+      const fakeInnerHtml = "console.log";
+      const fakeLookupKey = "somelonghashkey";
+      const fakeScriptNode = {
+        attributes: {
+          "data-binary-transparency-hash-key": { value: fakeLookupKey },
+        },
+        innerHTML: fakeInnerHtml,
+      };
+      storeFoundJS(fakeScriptNode, scriptList);
+      expect(scriptList.length).toEqual(1);
+      expect(scriptList[0].rawjs).toEqual(fakeInnerHtml);
+      expect(scriptList[0].lookupKey).toEqual(fakeLookupKey);
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
+    });
     test.skip("storeFoundJS sends update icon message if valid", () => {});
     test.skip("storeFoundJS keeps existing icon if not valid", () => {});
   });
