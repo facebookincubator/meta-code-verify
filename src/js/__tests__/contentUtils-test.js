@@ -1,6 +1,7 @@
 "use strict";
 
 import { jest } from "@jest/globals";
+import { ICON_TYPE, MESSAGE_TYPE } from "../config.js";
 import { storeFoundJS } from "../contentUtils.js";
 
 describe("contentUtils", () => {
@@ -35,8 +36,21 @@ describe("contentUtils", () => {
       expect(scriptList[0].lookupKey).toEqual(fakeLookupKey);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
-    test.skip("storeFoundJS sends update icon message if valid", () => {});
-    test.skip("storeFoundJS keeps existing icon if not valid", () => {});
+    test("storeFoundJS sends update icon message if valid", () => {
+      const scriptList = [];
+      const fakeUrl = "https://fancytestingyouhere.com/";
+      const fakeScriptNode = {
+        src: fakeUrl,
+      };
+      storeFoundJS(fakeScriptNode, scriptList);
+      const sentMessage = window.chrome.runtime.sendMessage.mock.calls[0][0];
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
+      expect(sentMessage.type).toEqual(MESSAGE_TYPE.UPDATE_ICON);
+      expect(sentMessage.icon).toEqual(ICON_TYPE.PROCESSING);
+    });
+    test.skip("storeFoundJS keeps existing icon if not valid", () => {
+        // TODO: come back to this after testing processFoundJS
+    });
   });
 
   test.todo("test for hasInvalidAttributes");
