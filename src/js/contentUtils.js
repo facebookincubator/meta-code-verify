@@ -211,10 +211,10 @@ const DOM_EVENTS = [
 const foundScripts = [];
 let currentState = ICON_TYPE.VALID;
 
-function storeFoundJS(scriptNodeMaybe) {
+export function storeFoundJS(scriptNodeMaybe, scriptList) {
   // need to get the src of the JS
   if (scriptNodeMaybe.src != null && scriptNodeMaybe.src !== "") {
-    foundScripts.push({
+    scriptList.push({
       type: MESSAGE_TYPE.JS_WITH_SRC,
       src: scriptNodeMaybe.src,
     });
@@ -223,7 +223,7 @@ function storeFoundJS(scriptNodeMaybe) {
     const hashLookupKey =
       scriptNodeMaybe.attributes["data-binary-transparency-hash-key"];
     console.log("proc hashLookupKey is ", hashLookupKey.value);
-    foundScripts.push({
+    scriptList.push({
       type: MESSAGE_TYPE.RAW_JS,
       rawjs: scriptNodeMaybe.innerHTML,
       lookupKey: hashLookupKey.value,
@@ -263,7 +263,7 @@ function hasInvalidScripts(scriptNodeMaybe) {
   hasInvalidAttributes(scriptNodeMaybe);
 
   if (scriptNodeMaybe.nodeName === "SCRIPT") {
-    return storeFoundJS(scriptNodeMaybe);
+    return storeFoundJS(scriptNodeMaybe, foundScripts);
   } else if (scriptNodeMaybe.childNodes.length > 0) {
     scriptNodeMaybe.childNodes.forEach(childNode => {
       // if not an HTMLElement ignore it!
@@ -274,13 +274,13 @@ function hasInvalidScripts(scriptNodeMaybe) {
       hasInvalidAttributes(childNode);
 
       if (childNode.nodeName === "SCRIPT") {
-        storeFoundJS(childNode);
+        storeFoundJS(childNode, foundScripts);
         return;
       }
 
       Array.from(childNode.getElementsByTagName("script")).forEach(
         childScript => {
-          storeFoundJS(childScript);
+          storeFoundJS(childScript, foundScripts);
         }
       );
     });
@@ -299,7 +299,7 @@ export const scanForScripts = () => {
     // next check for existing script elements and if they're violating
     if (allElement.nodeName === "SCRIPT") {
       console.log("processed all script elements are ", allElement);
-      storeFoundJS(allElement);
+      storeFoundJS(allElement, foundScripts);
     }
   });
 
