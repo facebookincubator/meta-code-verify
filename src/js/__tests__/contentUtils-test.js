@@ -1,9 +1,13 @@
 "use strict";
 
+import { jest } from "@jest/globals";
 import { storeFoundJS } from "../contentUtils.js";
 
 describe("contentUtils", () => {
   describe("storeFoundJS", () => {
+    beforeEach(() => {
+      window.chrome.runtime.sendMessage = jest.fn(() => {});
+    });
     test("storeFoundJS handles scripts with src correctly", () => {
       const scriptList = [];
       const fakeUrl = "https://fancytestingyouhere.com/";
@@ -12,6 +16,7 @@ describe("contentUtils", () => {
       };
       storeFoundJS(fakeScriptNode, scriptList);
       expect(scriptList.length).toEqual(1);
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
     test.skip("storeFoundJS handles inline scripts correclty", () => {});
     test.skip("storeFoundJS sends update icon message if valid", () => {});
