@@ -59,21 +59,47 @@ describe("contentUtils", () => {
     });
     it("should not execute if element has no attributes", () => {
       // no hasAttributes function
-      const fakeElement = {};
+      let fakeElement = {};
       hasInvalidAttributes(fakeElement);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
 
       // hasAttributes is a function, but has no attributes
-      const fakeElement = {
-        hasAttributes: () => { return false; }
+      fakeElement = {
+        hasAttributes: () => {
+          return false;
+        },
       };
       hasInvalidAttributes(fakeElement);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
     });
     it("should not update the icon if no violating attributes are found", () => {
-
+      const fakeElement = {
+        attributes: [
+          { localName: "background" },
+          { localName: "height" },
+          { localName: "width" },
+        ],
+        hasAttributes: () => {
+          return true;
+        },
+      };
+      hasInvalidAttributes(fakeElement);
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
     });
-    it.skip("should update the icon if violating attributes are found", () => {});
+    it("should update the icon if violating attributes are found", () => {
+      const fakeElement = {
+        attributes: [
+          { localName: "onclick" },
+          { localName: "height" },
+          { localName: "width" },
+        ],
+        hasAttributes: () => {
+          return true;
+        },
+      };
+      hasInvalidAttributes(fakeElement);
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
+    });
   });
 
   it.todo("test for hasInvalidScripts");
