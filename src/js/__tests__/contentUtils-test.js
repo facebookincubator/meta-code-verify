@@ -2,14 +2,14 @@
 
 import { jest } from "@jest/globals";
 import { ICON_TYPE, MESSAGE_TYPE } from "../config.js";
-import { storeFoundJS } from "../contentUtils.js";
+import { hasInvalidAttributes, storeFoundJS } from "../contentUtils.js";
 
 describe("contentUtils", () => {
   describe("storeFoundJS", () => {
     beforeEach(() => {
       window.chrome.runtime.sendMessage = jest.fn(() => {});
     });
-    test("storeFoundJS handles scripts with src correctly", () => {
+    it("should handle scripts with src correctly", () => {
       const scriptList = [];
       const fakeUrl = "https://fancytestingyouhere.com/";
       const fakeScriptNode = {
@@ -20,7 +20,7 @@ describe("contentUtils", () => {
       expect(scriptList[0].src).toEqual(fakeUrl);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
-    test("storeFoundJS handles inline scripts correctly", () => {
+    it("should handle inline scripts correctly", () => {
       const scriptList = [];
       const fakeInnerHtml = "console.log";
       const fakeLookupKey = "somelonghashkey";
@@ -36,7 +36,7 @@ describe("contentUtils", () => {
       expect(scriptList[0].lookupKey).toEqual(fakeLookupKey);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
-    test("storeFoundJS sends update icon message if valid", () => {
+    it("should send update icon message if valid", () => {
       const scriptList = [];
       const fakeUrl = "https://fancytestingyouhere.com/";
       const fakeScriptNode = {
@@ -48,14 +48,36 @@ describe("contentUtils", () => {
       expect(sentMessage.type).toEqual(MESSAGE_TYPE.UPDATE_ICON);
       expect(sentMessage.icon).toEqual(ICON_TYPE.PROCESSING);
     });
-    test.skip("storeFoundJS keeps existing icon if not valid", () => {
-        // TODO: come back to this after testing processFoundJS
+    it.skip("storeFoundJS keeps existing icon if not valid", () => {
+      // TODO: come back to this after testing processFoundJS
     });
   });
 
-  test.todo("test for hasInvalidAttributes");
-  test.todo("test for hasInvalidScripts");
-  test.todo("test for scanForScripts");
-  test.todo("test for processFoundJS");
-  test.todo("ensure processing icon message is sent");
+  describe("hasInvalidAttributes", () => {
+    beforeEach(() => {
+      window.chrome.runtime.sendMessage = jest.fn(() => {});
+    });
+    it("should not execute if element has no attributes", () => {
+      // no hasAttributes function
+      const fakeElement = {};
+      hasInvalidAttributes(fakeElement);
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
+
+      // hasAttributes is a function, but has no attributes
+      const fakeElement = {
+        hasAttributes: () => { return false; }
+      };
+      hasInvalidAttributes(fakeElement);
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
+    });
+    it("should not update the icon if no violating attributes are found", () => {
+
+    });
+    it.skip("should update the icon if violating attributes are found", () => {});
+  });
+
+  it.todo("test for hasInvalidScripts");
+  it.todo("test for scanForScripts");
+  it.todo("test for processFoundJS");
+  it.todo("ensure processing icon message is sent");
 });

@@ -1,5 +1,5 @@
 "use strict";
 
 describe("background", () => {
-  test.todo("test message listener(s)");
+  it.todo("test message listener(s)");
 });
