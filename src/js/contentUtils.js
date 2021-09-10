@@ -237,7 +237,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
   }
 }
 
-function hasInvalidAttributes(htmlElement) {
+export function hasInvalidAttributes(htmlElement) {
   if (
     typeof htmlElement.hasAttributes === "function" &&
     htmlElement.hasAttributes()
@@ -249,6 +249,10 @@ function hasInvalidAttributes(htmlElement) {
         console.log(
           `processing violating attribute ${elementAttribute.localName} from element ${htmlElement.outerHTML}`
         );
+        chrome.runtime.sendMessage({
+          type: MESSAGE_TYPE.UPDATE_ICON,
+          icon: ICON_TYPE.INVALID_SOFT,
+        });
       }
     });
   }
