@@ -220,13 +220,14 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     });
   } else {
     // no src, access innerHTML for the code
-    const hashLookupKey =
+    const hashLookupAttribute =
       scriptNodeMaybe.attributes['data-binary-transparency-hash-key'];
-    console.log('proc hashLookupKey is ', hashLookupKey.value);
+    const hashLookupKey = hashLookupAttribute && hashLookupAttribute.value;
+    console.log('proc hashLookupKey is ', hashLookupKey);
     scriptList.push({
       type: MESSAGE_TYPE.RAW_JS,
       rawjs: scriptNodeMaybe.innerHTML,
-      lookupKey: hashLookupKey.value,
+      lookupKey: hashLookupKey,
     });
   }
   if (currentState == ICON_TYPE.VALID) {
