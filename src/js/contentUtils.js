@@ -1,211 +1,211 @@
-import { ICON_TYPE, MESSAGE_TYPE } from "./config.js";
+import { ICON_TYPE, MESSAGE_TYPE } from './config.js';
 
 const DOM_EVENTS = [
-  "onabort",
-  "onactivate",
-  "onattribute",
-  "onafterprint",
-  "onafterscriptexecute",
-  "onafterupdate",
-  "onanimationend",
-  "onanimationiteration",
-  "onanimationstart",
-  "onariarequest",
-  "onautocomplete",
-  "onautocompleteerror",
-  "onbeforeactivate",
-  "onbeforecopy",
-  "onbeforecut",
-  "onbeforedeactivate",
-  "onbeforeeditfocus",
-  "onbeforepaste",
-  "onbeforeprint",
-  "onbeforescriptexecute",
-  "onbeforeunload",
-  "onbeforeupdate",
-  "onbegin",
-  "onblur",
-  "onbounce",
-  "oncancel",
-  "oncanplay",
-  "oncanplaythrough",
-  "oncellchange",
-  "onchange",
-  "onclick",
-  "onclose",
-  "oncommand",
-  "oncompassneedscalibration",
-  "oncontextmenu",
-  "oncontrolselect",
-  "oncopy",
-  "oncuechange",
-  "oncut",
-  "ondataavailable",
-  "ondatasetchanged",
-  "ondatasetcomplete",
-  "ondblclick",
-  "ondeactivate",
-  "ondevicelight",
-  "ondevicemotion",
-  "ondeviceorientation",
-  "ondeviceproximity",
-  "ondrag",
-  "ondragdrop",
-  "ondragend",
-  "ondragenter",
-  "ondragleave",
-  "ondragover",
-  "ondragstart",
-  "ondrop",
-  "ondurationchange",
-  "onemptied",
-  "onend",
-  "onended",
-  "onerror",
-  "onerrorupdate",
-  "onexit",
-  "onfilterchange",
-  "onfinish",
-  "onfocus",
-  "onfocusin",
-  "onfocusout",
-  "onformchange",
-  "onforminput",
-  "onfullscreenchange",
-  "onfullscreenerror",
-  "ongotpointercapture",
-  "onhashchange",
-  "onhelp",
-  "oninput",
-  "oninvalid",
-  "onkeydown",
-  "onkeypress",
-  "onkeyup",
-  "onlanguagechange",
-  "onlayoutcomplete",
-  "onload",
-  "onloadeddata",
-  "onloadedmetadata",
-  "onloadstart",
-  "onlosecapture",
-  "onlostpointercapture",
-  "onmediacomplete",
-  "onmediaerror",
-  "onmessage",
-  "onmousedown",
-  "onmouseenter",
-  "onmouseleave",
-  "onmousemove",
-  "onmouseout",
-  "onmouseover",
-  "onmouseup",
-  "onmousewheel",
-  "onmove",
-  "onmoveend",
-  "onmovestart",
-  "onmozfullscreenchange",
-  "onmozfullscreenerror",
-  "onmozpointerlockchange",
-  "onmozpointerlockerror",
-  "onmscontentzoom",
-  "onmsfullscreenchange",
-  "onmsfullscreenerror",
-  "onmsgesturechange",
-  "onmsgesturedoubletap",
-  "onmsgestureend",
-  "onmsgesturehold",
-  "onmsgesturestart",
-  "onmsgesturetap",
-  "onmsgotpointercapture",
-  "onmsinertiastart",
-  "onmslostpointercapture",
-  "onmsmanipulationstatechanged",
-  "onmspointercancel",
-  "onmspointerdown",
-  "onmspointerenter",
-  "onmspointerleave",
-  "onmspointermove",
-  "onmspointerout",
-  "onmspointerover",
-  "onmspointerup",
-  "onmssitemodejumplistitemremoved",
-  "onmsthumbnailclick",
-  "onoffline",
-  "ononline",
-  "onoutofsync",
-  "onpage",
-  "onpagehide",
-  "onpageshow",
-  "onpaste",
-  "onpause",
-  "onplay",
-  "onplaying",
-  "onpointercancel",
-  "onpointerdown",
-  "onpointerenter",
-  "onpointerleave",
-  "onpointerlockchange",
-  "onpointerlockerror",
-  "onpointermove",
-  "onpointerout",
-  "onpointerover",
-  "onpointerup",
-  "onpopstate",
-  "onprogress",
-  "onpropertychange",
-  "onratechange",
-  "onreadystatechange",
-  "onreceived",
-  "onrepeat",
-  "onreset",
-  "onresize",
-  "onresizeend",
-  "onresizestart",
-  "onresume",
-  "onreverse",
-  "onrowdelete",
-  "onrowenter",
-  "onrowexit",
-  "onrowinserted",
-  "onrowsdelete",
-  "onrowsenter",
-  "onrowsexit",
-  "onrowsinserted",
-  "onscroll",
-  "onsearch",
-  "onseek",
-  "onseeked",
-  "onseeking",
-  "onselect",
-  "onselectionchange",
-  "onselectstart",
-  "onstalled",
-  "onstorage",
-  "onstoragecommit",
-  "onstart",
-  "onstop",
-  "onshow",
-  "onsyncrestored",
-  "onsubmit",
-  "onsuspend",
-  "onsynchrestored",
-  "ontimeerror",
-  "ontimeupdate",
-  "ontrackchange",
-  "ontransitionend",
-  "ontoggle",
-  "onunload",
-  "onurlflip",
-  "onuserproximity",
-  "onvolumechange",
-  "onwaiting",
-  "onwebkitanimationend",
-  "onwebkitanimationiteration",
-  "onwebkitanimationstart",
-  "onwebkitfullscreenchange",
-  "onwebkitfullscreenerror",
-  "onwebkittransitionend",
-  "onwheel",
+  'onabort',
+  'onactivate',
+  'onattribute',
+  'onafterprint',
+  'onafterscriptexecute',
+  'onafterupdate',
+  'onanimationend',
+  'onanimationiteration',
+  'onanimationstart',
+  'onariarequest',
+  'onautocomplete',
+  'onautocompleteerror',
+  'onbeforeactivate',
+  'onbeforecopy',
+  'onbeforecut',
+  'onbeforedeactivate',
+  'onbeforeeditfocus',
+  'onbeforepaste',
+  'onbeforeprint',
+  'onbeforescriptexecute',
+  'onbeforeunload',
+  'onbeforeupdate',
+  'onbegin',
+  'onblur',
+  'onbounce',
+  'oncancel',
+  'oncanplay',
+  'oncanplaythrough',
+  'oncellchange',
+  'onchange',
+  'onclick',
+  'onclose',
+  'oncommand',
+  'oncompassneedscalibration',
+  'oncontextmenu',
+  'oncontrolselect',
+  'oncopy',
+  'oncuechange',
+  'oncut',
+  'ondataavailable',
+  'ondatasetchanged',
+  'ondatasetcomplete',
+  'ondblclick',
+  'ondeactivate',
+  'ondevicelight',
+  'ondevicemotion',
+  'ondeviceorientation',
+  'ondeviceproximity',
+  'ondrag',
+  'ondragdrop',
+  'ondragend',
+  'ondragenter',
+  'ondragleave',
+  'ondragover',
+  'ondragstart',
+  'ondrop',
+  'ondurationchange',
+  'onemptied',
+  'onend',
+  'onended',
+  'onerror',
+  'onerrorupdate',
+  'onexit',
+  'onfilterchange',
+  'onfinish',
+  'onfocus',
+  'onfocusin',
+  'onfocusout',
+  'onformchange',
+  'onforminput',
+  'onfullscreenchange',
+  'onfullscreenerror',
+  'ongotpointercapture',
+  'onhashchange',
+  'onhelp',
+  'oninput',
+  'oninvalid',
+  'onkeydown',
+  'onkeypress',
+  'onkeyup',
+  'onlanguagechange',
+  'onlayoutcomplete',
+  'onload',
+  'onloadeddata',
+  'onloadedmetadata',
+  'onloadstart',
+  'onlosecapture',
+  'onlostpointercapture',
+  'onmediacomplete',
+  'onmediaerror',
+  'onmessage',
+  'onmousedown',
+  'onmouseenter',
+  'onmouseleave',
+  'onmousemove',
+  'onmouseout',
+  'onmouseover',
+  'onmouseup',
+  'onmousewheel',
+  'onmove',
+  'onmoveend',
+  'onmovestart',
+  'onmozfullscreenchange',
+  'onmozfullscreenerror',
+  'onmozpointerlockchange',
+  'onmozpointerlockerror',
+  'onmscontentzoom',
+  'onmsfullscreenchange',
+  'onmsfullscreenerror',
+  'onmsgesturechange',
+  'onmsgesturedoubletap',
+  'onmsgestureend',
+  'onmsgesturehold',
+  'onmsgesturestart',
+  'onmsgesturetap',
+  'onmsgotpointercapture',
+  'onmsinertiastart',
+  'onmslostpointercapture',
+  'onmsmanipulationstatechanged',
+  'onmspointercancel',
+  'onmspointerdown',
+  'onmspointerenter',
+  'onmspointerleave',
+  'onmspointermove',
+  'onmspointerout',
+  'onmspointerover',
+  'onmspointerup',
+  'onmssitemodejumplistitemremoved',
+  'onmsthumbnailclick',
+  'onoffline',
+  'ononline',
+  'onoutofsync',
+  'onpage',
+  'onpagehide',
+  'onpageshow',
+  'onpaste',
+  'onpause',
+  'onplay',
+  'onplaying',
+  'onpointercancel',
+  'onpointerdown',
+  'onpointerenter',
+  'onpointerleave',
+  'onpointerlockchange',
+  'onpointerlockerror',
+  'onpointermove',
+  'onpointerout',
+  'onpointerover',
+  'onpointerup',
+  'onpopstate',
+  'onprogress',
+  'onpropertychange',
+  'onratechange',
+  'onreadystatechange',
+  'onreceived',
+  'onrepeat',
+  'onreset',
+  'onresize',
+  'onresizeend',
+  'onresizestart',
+  'onresume',
+  'onreverse',
+  'onrowdelete',
+  'onrowenter',
+  'onrowexit',
+  'onrowinserted',
+  'onrowsdelete',
+  'onrowsenter',
+  'onrowsexit',
+  'onrowsinserted',
+  'onscroll',
+  'onsearch',
+  'onseek',
+  'onseeked',
+  'onseeking',
+  'onselect',
+  'onselectionchange',
+  'onselectstart',
+  'onstalled',
+  'onstorage',
+  'onstoragecommit',
+  'onstart',
+  'onstop',
+  'onshow',
+  'onsyncrestored',
+  'onsubmit',
+  'onsuspend',
+  'onsynchrestored',
+  'ontimeerror',
+  'ontimeupdate',
+  'ontrackchange',
+  'ontransitionend',
+  'ontoggle',
+  'onunload',
+  'onurlflip',
+  'onuserproximity',
+  'onvolumechange',
+  'onwaiting',
+  'onwebkitanimationend',
+  'onwebkitanimationiteration',
+  'onwebkitanimationstart',
+  'onwebkitfullscreenchange',
+  'onwebkitfullscreenerror',
+  'onwebkittransitionend',
+  'onwheel',
 ];
 
 const foundScripts = [];
@@ -213,7 +213,7 @@ let currentState = ICON_TYPE.VALID;
 
 export function storeFoundJS(scriptNodeMaybe, scriptList) {
   // need to get the src of the JS
-  if (scriptNodeMaybe.src != null && scriptNodeMaybe.src !== "") {
+  if (scriptNodeMaybe.src != null && scriptNodeMaybe.src !== '') {
     scriptList.push({
       type: MESSAGE_TYPE.JS_WITH_SRC,
       src: scriptNodeMaybe.src,
@@ -221,8 +221,8 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
   } else {
     // no src, access innerHTML for the code
     const hashLookupKey =
-      scriptNodeMaybe.attributes["data-binary-transparency-hash-key"];
-    console.log("proc hashLookupKey is ", hashLookupKey.value);
+      scriptNodeMaybe.attributes['data-binary-transparency-hash-key'];
+    console.log('proc hashLookupKey is ', hashLookupKey.value);
     scriptList.push({
       type: MESSAGE_TYPE.RAW_JS,
       rawjs: scriptNodeMaybe.innerHTML,
@@ -239,7 +239,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
 
 export function hasInvalidAttributes(htmlElement) {
   if (
-    typeof htmlElement.hasAttributes === "function" &&
+    typeof htmlElement.hasAttributes === 'function' &&
     htmlElement.hasAttributes()
   ) {
     Array.from(htmlElement.attributes).forEach(elementAttribute => {
@@ -258,7 +258,7 @@ export function hasInvalidAttributes(htmlElement) {
   }
 }
 
-function hasInvalidScripts(scriptNodeMaybe) {
+export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
   // if not an HTMLElement ignore it!
   if (scriptNodeMaybe.nodeType !== 1) {
     return false;
@@ -266,8 +266,8 @@ function hasInvalidScripts(scriptNodeMaybe) {
 
   hasInvalidAttributes(scriptNodeMaybe);
 
-  if (scriptNodeMaybe.nodeName === "SCRIPT") {
-    return storeFoundJS(scriptNodeMaybe, foundScripts);
+  if (scriptNodeMaybe.nodeName === 'SCRIPT') {
+    return storeFoundJS(scriptNodeMaybe, scriptList);
   } else if (scriptNodeMaybe.childNodes.length > 0) {
     scriptNodeMaybe.childNodes.forEach(childNode => {
       // if not an HTMLElement ignore it!
@@ -277,14 +277,14 @@ function hasInvalidScripts(scriptNodeMaybe) {
 
       hasInvalidAttributes(childNode);
 
-      if (childNode.nodeName === "SCRIPT") {
-        storeFoundJS(childNode, foundScripts);
+      if (childNode.nodeName === 'SCRIPT') {
+        storeFoundJS(childNode, scriptList);
         return;
       }
 
-      Array.from(childNode.getElementsByTagName("script")).forEach(
+      Array.from(childNode.getElementsByTagName('script')).forEach(
         childScript => {
-          storeFoundJS(childScript, foundScripts);
+          storeFoundJS(childScript, scriptList);
         }
       );
     });
@@ -294,15 +294,15 @@ function hasInvalidScripts(scriptNodeMaybe) {
 }
 
 export const scanForScripts = () => {
-  console.log("proc scanForScripts is working really well!");
+  console.log('proc scanForScripts is working really well!');
 
-  const allElements = document.getElementsByTagName("*");
+  const allElements = document.getElementsByTagName('*');
 
   Array.from(allElements).forEach(allElement => {
     hasInvalidAttributes(allElement);
     // next check for existing script elements and if they're violating
-    if (allElement.nodeName === "SCRIPT") {
-      console.log("processed all script elements are ", allElement);
+    if (allElement.nodeName === 'SCRIPT') {
+      console.log('processed all script elements are ', allElement);
       storeFoundJS(allElement, foundScripts);
     }
   });
@@ -310,20 +310,20 @@ export const scanForScripts = () => {
   // track any new scripts that get loaded in
   const scriptMutationObserver = new MutationObserver(mutationsList => {
     mutationsList.forEach(mutation => {
-      if (mutation.type === "childList") {
+      if (mutation.type === 'childList') {
         Array.from(mutation.addedNodes).forEach(checkScript => {
-          hasInvalidScripts(checkScript);
+          hasInvalidScripts(checkScript, foundScripts);
         });
-      } else if (mutation.type === "attributes") {
+      } else if (mutation.type === 'attributes') {
         console.log(
-          "processed mutation and invalid attribute added or changed ",
+          'processed mutation and invalid attribute added or changed ',
           mutation.target
         );
       }
     });
   });
 
-  scriptMutationObserver.observe(document.getElementsByTagName("html")[0], {
+  scriptMutationObserver.observe(document.getElementsByTagName('html')[0], {
     attributeFilter: DOM_EVENTS,
     childList: true,
     subtree: true,
@@ -334,7 +334,7 @@ export const processFoundJS = (origin, version) => {
   // foundScripts
   const scripts = foundScripts.splice(0);
   let pendingScriptCount = scripts.length;
-  console.log("proc scripts that were found", scripts.length);
+  console.log('proc scripts that were found', scripts.length);
   scripts.forEach(script => {
     if (script.src) {
       chrome.runtime.sendMessage(
@@ -360,7 +360,7 @@ export const processFoundJS = (origin, version) => {
               icon: ICON_TYPE.INVALID_SOFT,
             });
           }
-          console.log("processed the JS with SRC, response is ", response);
+          console.log('processed the JS with SRC, response is ', response);
         }
       );
     } else {
@@ -388,7 +388,7 @@ export const processFoundJS = (origin, version) => {
               icon: ICON_TYPE.INVALID_SOFT,
             });
           }
-          console.log("processed the RAW_JS, response is ", response);
+          console.log('processed the RAW_JS, response is ', response);
         }
       );
     }
