@@ -1,17 +1,21 @@
-"use strict";
+'use strict';
 
-import { jest } from "@jest/globals";
-import { ICON_TYPE, MESSAGE_TYPE } from "../config.js";
-import { hasInvalidAttributes, storeFoundJS } from "../contentUtils.js";
+import { jest } from '@jest/globals';
+import { ICON_TYPE, MESSAGE_TYPE } from '../config.js';
+import {
+  hasInvalidAttributes,
+  hasInvalidScripts,
+  storeFoundJS,
+} from '../contentUtils.js';
 
-describe("contentUtils", () => {
-  describe("storeFoundJS", () => {
-    beforeEach(() => {
-      window.chrome.runtime.sendMessage = jest.fn(() => {});
-    });
-    it("should handle scripts with src correctly", () => {
+describe('contentUtils', () => {
+  beforeEach(() => {
+    window.chrome.runtime.sendMessage = jest.fn(() => {});
+  });
+  describe('storeFoundJS', () => {
+    it('should handle scripts with src correctly', () => {
       const scriptList = [];
-      const fakeUrl = "https://fancytestingyouhere.com/";
+      const fakeUrl = 'https://fancytestingyouhere.com/';
       const fakeScriptNode = {
         src: fakeUrl,
       };
@@ -20,13 +24,13 @@ describe("contentUtils", () => {
       expect(scriptList[0].src).toEqual(fakeUrl);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
-    it("should handle inline scripts correctly", () => {
+    it('should handle inline scripts correctly', () => {
       const scriptList = [];
-      const fakeInnerHtml = "console.log";
-      const fakeLookupKey = "somelonghashkey";
+      const fakeInnerHtml = 'console.log';
+      const fakeLookupKey = 'somelonghashkey';
       const fakeScriptNode = {
         attributes: {
-          "data-binary-transparency-hash-key": { value: fakeLookupKey },
+          'data-binary-transparency-hash-key': { value: fakeLookupKey },
         },
         innerHTML: fakeInnerHtml,
       };
@@ -36,9 +40,9 @@ describe("contentUtils", () => {
       expect(scriptList[0].lookupKey).toEqual(fakeLookupKey);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
-    it("should send update icon message if valid", () => {
+    it('should send update icon message if valid', () => {
       const scriptList = [];
-      const fakeUrl = "https://fancytestingyouhere.com/";
+      const fakeUrl = 'https://fancytestingyouhere.com/';
       const fakeScriptNode = {
         src: fakeUrl,
       };
@@ -48,36 +52,219 @@ describe("contentUtils", () => {
       expect(sentMessage.type).toEqual(MESSAGE_TYPE.UPDATE_ICON);
       expect(sentMessage.icon).toEqual(ICON_TYPE.PROCESSING);
     });
-    it.skip("storeFoundJS keeps existing icon if not valid", () => {
+    it.skip('storeFoundJS keeps existing icon if not valid', () => {
       // TODO: come back to this after testing processFoundJS
     });
   });
 
-  describe("hasInvalidAttributes", () => {
-    beforeEach(() => {
-      window.chrome.runtime.sendMessage = jest.fn(() => {});
-    });
-    it("should not execute if element has no attributes", () => {
+  describe('hasInvalidAttributes', () => {
+    it('should not execute if element has no attributes', () => {
       // no hasAttributes function
-      const fakeElement = {};
+      let fakeElement = {};
       hasInvalidAttributes(fakeElement);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
 
       // hasAttributes is a function, but has no attributes
-      const fakeElement = {
-        hasAttributes: () => { return false; }
+      fakeElement = {
+        hasAttributes: () => {
+          return false;
+        },
       };
       hasInvalidAttributes(fakeElement);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
     });
-    it("should not update the icon if no violating attributes are found", () => {
-
+    it('should not update the icon if no violating attributes are found', () => {
+      const fakeElement = {
+        attributes: [
+          { localName: 'background' },
+          { localName: 'height' },
+          { localName: 'width' },
+        ],
+        hasAttributes: () => {
+          return true;
+        },
+      };
+      hasInvalidAttributes(fakeElement);
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
     });
-    it.skip("should update the icon if violating attributes are found", () => {});
+    it('should update the icon if violating attributes are found', () => {
+      const fakeElement = {
+        attributes: [
+          { localName: 'onclick' },
+          { localName: 'height' },
+          { localName: 'width' },
+        ],
+        hasAttributes: () => {
+          return true;
+        },
+      };
+      hasInvalidAttributes(fakeElement);
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
+    });
   });
 
-  it.todo("test for hasInvalidScripts");
-  it.todo("test for scanForScripts");
-  it.todo("test for processFoundJS");
-  it.todo("ensure processing icon message is sent");
+  describe('hasInvalidScripts', () => {
+    it('should not check for non-HTMLElements', () => {
+      const fakeElement = {
+        attributes: [
+          { localName: 'onclick' },
+          { localName: 'height' },
+          { localName: 'width' },
+        ],
+        hasAttributes: () => {
+          return true;
+        },
+        nodeType: 2,
+      };
+      hasInvalidScripts(fakeElement, []);
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
+    });
+    it('should store any script elements we find', () => {
+      const fakeElement = {
+        attributes: { 'data-binary-transparency-hash-key': { value: 'green' } },
+        hasAttributes: () => {
+          return false;
+        },
+        nodeName: 'SCRIPT',
+        nodeType: 1,
+      };
+      const foundScripts = [];
+      hasInvalidScripts(fakeElement, foundScripts);
+      expect(foundScripts.length).toBe(1);
+      expect(foundScripts[0].type).toBe(MESSAGE_TYPE.RAW_JS);
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
+      expect(window.chrome.runtime.sendMessage.mock.calls[0][0].type).toBe(
+        MESSAGE_TYPE.UPDATE_ICON
+      );
+    });
+    it('should check all child nodes for non script elements', () => {
+      const fakeElement = {
+        childNodes: [
+          {
+            attributes: [
+              { localName: 'onclick' },
+              { localName: 'height' },
+              { localName: 'width' },
+            ],
+            hasAttributes: () => {
+              return true;
+            },
+            nodeType: 2,
+          },
+          {
+            attributes: [
+              { localName: 'onclick' },
+              { localName: 'height' },
+              { localName: 'width' },
+            ],
+            hasAttributes: () => {
+              return true;
+            },
+            nodeType: 3,
+          },
+        ],
+        hasAttributes: () => {
+          return false;
+        },
+        nodeType: 1,
+      };
+      const foundScripts = [];
+      hasInvalidScripts(fakeElement, foundScripts);
+      expect(foundScripts.length).toBe(0);
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
+    });
+    it('should store any script element direct children', () => {
+      const fakeElement = {
+        childNodes: [
+          {
+            attributes: [
+              { localName: 'onclick' },
+              { localName: 'height' },
+              { localName: 'width' },
+            ],
+            hasAttributes: () => {
+              return true;
+            },
+            nodeType: 2,
+          },
+          {
+            attributes: {
+              'data-binary-transparency-hash-key': { value: 'green' },
+            },
+            hasAttributes: () => {
+              return false;
+            },
+            nodeName: 'SCRIPT',
+            nodeType: 1,
+          },
+        ],
+        hasAttributes: () => {
+          return false;
+        },
+        nodeType: 1,
+      };
+      const foundScripts = [];
+      hasInvalidScripts(fakeElement, foundScripts);
+      expect(foundScripts.length).toBe(1);
+      expect(foundScripts[0].type).toBe(MESSAGE_TYPE.RAW_JS);
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
+      expect(window.chrome.runtime.sendMessage.mock.calls[0][0].type).toBe(
+        MESSAGE_TYPE.UPDATE_ICON
+      );
+    });
+    it('should check for any grandchildren script elements', () => {
+      const fakeElement = {
+        childNodes: [
+          {
+            attributes: [
+              { localName: 'onclick' },
+              { localName: 'height' },
+              { localName: 'width' },
+            ],
+            hasAttributes: () => {
+              return true;
+            },
+            nodeType: 2,
+          },
+          {
+            attributes: {
+              'data-binary-transparency-hash-key': { value: 'green' },
+            },
+            getElementsByTagName: () => {
+              return [
+                {
+                  attributes: {
+                    'data-binary-transparency-hash-key': { value: 'green1' },
+                  },
+                },
+                {
+                  attributes: {
+                    'data-binary-transparency-hash-key': { value: 'green2' },
+                  },
+                },
+              ];
+            },
+            hasAttributes: () => {
+              return false;
+            },
+            nodeType: 1,
+          },
+        ],
+        hasAttributes: () => {
+          return false;
+        },
+        nodeType: 1,
+      };
+      const foundScripts = [];
+      hasInvalidScripts(fakeElement, foundScripts);
+      expect(foundScripts.length).toBe(2);
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(2);
+    });
+  });
+  describe('scanForScripts', () => {
+    it.todo('should do some thing.');
+  });
+
+  it.todo('test for processFoundJS');
+  it.todo('ensure processing icon message is sent');
 });
