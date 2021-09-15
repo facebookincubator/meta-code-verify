@@ -5,12 +5,13 @@ const updateIcon = message => {
   chrome.browserAction.setIcon({ path: message.icon });
 };
 
-chrome.runtime.onMessage.addListener(function (message, _sender, sendResponse) {
+export function handleMessages(message, _sender, sendResponse) {
   // get message type
   console.log('I got the message from detect', message);
 
   if (message.type == MESSAGE_TYPE.UPDATE_ICON) {
     updateIcon(message);
+    return;
   }
 
   if (message.type == MESSAGE_TYPE.LOAD_MANIFEST) {
@@ -36,7 +37,14 @@ chrome.runtime.onMessage.addListener(function (message, _sender, sendResponse) {
     fetch(endpoint, { METHOD: 'GET' })
       .then(response => response.json())
       .then(json => {
+        console.log(
+          'getting json here?',
+          json,
+          json[message.version],
+          sendResponse
+        );
         origin.set(message.version, json[message.version]);
+        console.log('after setting origin');
         sendResponse({ valid: true });
       });
     return true;
@@ -144,4 +152,6 @@ chrome.runtime.onMessage.addListener(function (message, _sender, sendResponse) {
     return true;
   }
   sendResponse({ stuff: 'BZZZZZT! WRONG ANSWER!!!!' });
-});
+}
+
+chrome.runtime.onMessage.addListener(handleMessages);
