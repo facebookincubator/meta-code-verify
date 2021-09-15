@@ -1,7 +1,13 @@
 import { jest } from '@jest/globals';
 
 window.chrome = {
-    runtime: {
-        sendMessage: jest.fn(),
-    }
+  browserAction: {
+    setIcon: jest.fn(),
+  },
+  runtime: {
+    onMessage: {
+      addListener: jest.fn(),
+    },
+    sendMessage: jest.fn(),
+  }
 };
