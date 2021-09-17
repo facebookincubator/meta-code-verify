@@ -1,10 +1,11 @@
 'use strict';
 
 import { jest } from '@jest/globals';
-import { ICON_TYPE, MESSAGE_TYPE } from '../config.js';
+import { ICON_TYPE, MESSAGE_TYPE, ORIGIN_TYPE } from '../config.js';
 import {
   hasInvalidAttributes,
   hasInvalidScripts,
+  processFoundJS,
   scanForScripts,
   storeFoundJS,
 } from '../contentUtils.js';
@@ -276,67 +277,64 @@ describe('contentUtils', () => {
   });
   describe('processFoundJS', () => {
     // these are flaky because jest.resestModules doesn't work for esm
-    // beforeEach(() => {
-    //   jest.resetModules();
-    // });
-    // it('should send valid icon update when no src based scripts are invalid', () => {
-    //   document.body.innerHTML =
-    //     '<div>' +
-    //     '  <script>console.log("a unit test");</script>' +
-    //     '  <script src="https://facebook.com/"></script>' +
-    //     '</div>';
-    //   scanForScripts();
-    //   window.chrome.runtime.sendMessage.mockImplementation(
-    //     (message, response) => {
-    //       response && response({ valid: true });
-    //     }
-    //   );
-    //   processFoundJS(ORIGIN_TYPE.WHATSAPP, '100');
-    //   expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(7);
-    //   expect(window.chrome.runtime.sendMessage.mock.calls[6][0].icon).toEqual(
-    //     ICON_TYPE.VALID
-    //   );
-    // });
-    // it('should send valid icon update when no inline based scripts are invalid', () => {
-    //   document.body.innerHTML =
-    //     '<div>' +
-    //     '  <script src="https://facebook.com/"></script>' +
-    //     '  <script>console.log("a unit test");</script>' +
-    //     '</div>';
-    //   scanForScripts();
-    //   window.chrome.runtime.sendMessage.mockImplementation(
-    //     (message, response) => {
-    //       response && response({ valid: true });
-    //     }
-    //   );
-    //   processFoundJS(ORIGIN_TYPE.WHATSAPP, '102');
-    //   expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(7);
-    //   console.log(
-    //     'this is here:' +
-    //       JSON.stringify(window.chrome.runtime.sendMessage.mock.calls[5][0])
-    //   );
-    //   expect(window.chrome.runtime.sendMessage.mock.calls[5][0].icon).toEqual(
-    //     ICON_TYPE.VALID
-    //   );
-    // });
-    // it.skip('should send invalid icon update when invalid response received with src', () => {
-    //   document.body.innerHTML =
-    //     '<div>' +
-    //     '  <script>console.log("a unit test");</script>' +
-    //     '  <script src="https://facebook.com/"></script>' +
-    //     '</div>';
-    //   scanForScripts();
-    //   window.chrome.runtime.sendMessage.mockImplementation(
-    //     (message, response) => {
-    //       response && response({ valid: false });
-    //     }
-    //   );
-    //   processFoundJS(ORIGIN_TYPE.WHATSAPP, '101');
-    //   expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(10);
-    //   expect(window.chrome.runtime.sendMessage.mock.calls[9][0].icon).toEqual(
-    //     ICON_TYPE.INVALID_SOFT
-    //   );
-    // });
+    // while the above may be true, redo these as async and flush promises and they should work.
+    it('should send valid icon update when no src based scripts are invalid', async () => {
+      document.body.innerHTML =
+        '<div>' +
+        '  <script>console.log("a unit test");</script>' +
+        '  <script src="https://facebook.com/"></script>' +
+        '</div>';
+      scanForScripts();
+      window.chrome.runtime.sendMessage.mockImplementation(
+        (message, response) => {
+          response && response({ valid: true });
+        }
+      );
+      processFoundJS(ORIGIN_TYPE.WHATSAPP, '100');
+      await (() => new Promise(res => setTimeout(res, 10)))();
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(9);
+      expect(window.chrome.runtime.sendMessage.mock.calls[6][0].icon).toEqual(
+        ICON_TYPE.VALID
+      );
+    });
+    it('should send valid icon update when no inline based scripts are invalid', async () => {
+      document.body.innerHTML =
+        '<div>' +
+        '  <script src="https://facebook.com/"></script>' +
+        '  <script>console.log("a unit test");</script>' +
+        '</div>';
+      scanForScripts();
+      window.chrome.runtime.sendMessage.mockImplementation(
+        (message, response) => {
+          response && response({ valid: true });
+        }
+      );
+      processFoundJS(ORIGIN_TYPE.WHATSAPP, '102');
+      await (() => new Promise(res => setTimeout(res, 10)))();
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(11);
+      expect(window.chrome.runtime.sendMessage.mock.calls[6][0].icon).toEqual(
+        ICON_TYPE.VALID
+      );
+    });
+    it('should send invalid icon update when invalid response received with src', async () => {
+      document.body.innerHTML =
+        '<div>' +
+        '  <script>console.log("a unit test");</script>' +
+        '  <script src="https://facebook.com/"></script>' +
+        '</div>';
+      scanForScripts();
+      window.chrome.runtime.sendMessage.mockImplementation(
+        (message, response) => {
+          response && response({ valid: false });
+        }
+      );
+      processFoundJS(ORIGIN_TYPE.WHATSAPP, '101');
+      await (() => new Promise(res => setTimeout(res, 10)))();
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(14);
+      expect(window.chrome.runtime.sendMessage.mock.calls[7][0].icon).toEqual(
+        ICON_TYPE.INVALID_SOFT
+      );
+    });
     // it.todo(
     //   'should send invalid icon update when invalid inline response received'
     // );
