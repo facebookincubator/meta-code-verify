@@ -213,10 +213,122 @@ describe('background', () => {
   });
 
   describe('RAW_JS', () => {
-    it.todo('should return false when no matching origin');
-    it.todo('should return false when no matching manifest');
-    it.todo('should return false when no matching hash');
-    it.todo('should return false if the hashes do not match');
-    it.todo('should return true iff the hashes match');
+    it('should return false when no matching origin', () => {
+      const mockSendResponse = jest.fn();
+      handleMessages(
+        {
+          origin: 'NOT_AN_ORIGIN',
+          type: MESSAGE_TYPE.RAW_JS,
+          version: '1',
+        },
+        null,
+        mockSendResponse
+      );
+      expect(mockSendResponse.mock.calls.length).toBe(1);
+      expect(mockSendResponse.mock.calls[0][0].valid).toBe(false);
+      expect(mockSendResponse.mock.calls[0][0].reason).toBe(
+        'no matching origin'
+      );
+    });
+    it('should return false when no matching manifest', () => {
+      const mockSendResponse = jest.fn();
+      handleMessages(
+        {
+          origin: ORIGIN_TYPE.WHATSAPP,
+          type: MESSAGE_TYPE.RAW_JS,
+          version: 'NOT_A_VALID_VERSION',
+        },
+        null,
+        mockSendResponse
+      );
+      expect(mockSendResponse.mock.calls.length).toBe(1);
+      expect(mockSendResponse.mock.calls[0][0].valid).toBe(false);
+      expect(mockSendResponse.mock.calls[0][0].reason).toBe(
+        'no matching manifest'
+      );
+    });
+    it('should return false when no matching hash', async () => {
+      const mockSendResponse = jest.fn();
+      const encodeMock = jest.fn();
+      window.TextEncoder = function () {
+        return {
+          encode: encodeMock,
+        };
+      };
+      encodeMock.mockReturnValueOnce('abc');
+      window.crypto.subtle.digest = jest
+        .fn()
+        .mockReturnValueOnce(Promise.resolve('def'));
+      window.Uint8Array = jest.fn().mockReturnValueOnce(['somefakehash']);
+      handleMessages(
+        {
+          origin: ORIGIN_TYPE.WHATSAPP,
+          type: MESSAGE_TYPE.RAW_JS,
+          src: 'https://www.notavalidurl.com/nottherightpath',
+          version: '1',
+        },
+        null,
+        mockSendResponse
+      );
+      await (() => new Promise(res => setTimeout(res, 10)))();
+      expect(mockSendResponse.mock.calls.length).toBe(1);
+      expect(mockSendResponse.mock.calls[0][0].valid).toBe(false);
+      expect(mockSendResponse.mock.calls[0][0].reason).toBe('no matching hash');
+    });
+    it('should return false if the hashes do not match', async () => {
+      const encodeMock = jest.fn();
+      window.TextEncoder = function () {
+        return {
+          encode: encodeMock,
+        };
+      };
+      encodeMock.mockReturnValueOnce('abc');
+      window.crypto.subtle.digest = jest
+        .fn()
+        .mockReturnValueOnce(Promise.resolve('def'));
+      window.Uint8Array = jest.fn().mockReturnValueOnce(['somefakehash']);
+      const mockSendResponse = jest.fn();
+      handleMessages(
+        {
+          origin: ORIGIN_TYPE.WHATSAPP,
+          type: MESSAGE_TYPE.RAW_JS,
+          rawjs: 'console.log("all the JavaScript goes here");',
+          version: '2',
+        },
+        null,
+        mockSendResponse
+      );
+      await (() => new Promise(res => setTimeout(res, 10)))();
+      expect(mockSendResponse.mock.calls.length).toBe(1);
+      expect(mockSendResponse.mock.calls[0][0].valid).toBe(false);
+    });
+    it('should return true iff the hashes match', async () => {
+      const encodeMock = jest.fn();
+      window.TextEncoder = function () {
+        return {
+          encode: encodeMock,
+        };
+      };
+      encodeMock.mockReturnValueOnce('abc');
+      window.crypto.subtle.digest = jest
+        .fn()
+        .mockReturnValueOnce(Promise.resolve('def'));
+      window.Uint8Array = jest.fn().mockReturnValueOnce(['someotherhash']);
+      const mockSendResponse = jest.fn();
+      handleMessages(
+        {
+          origin: ORIGIN_TYPE.WHATSAPP,
+          lookupKey: '/someotherpath',
+          type: MESSAGE_TYPE.RAW_JS,
+          rawjs: 'console.log("all the JavaScript goes here");',
+          version: '2',
+        },
+        null,
+        mockSendResponse
+      );
+      await (() => new Promise(res => setTimeout(res, 10)))();
+      expect(mockSendResponse.mock.calls.length).toBe(1);
+      expect(mockSendResponse.mock.calls[0][0].valid).toBe(true);
+    });
   });
 });

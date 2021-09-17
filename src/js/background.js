@@ -139,6 +139,7 @@ export function handleMessages(message, _sender, sendResponse) {
       console.log('RAW_JS values to check are ', jsHash, hashToMatch);
       if (!hashToMatch) {
         sendResponse({ valid: false, reason: 'no matching hash' });
+        return;
       }
       if (jsHash === hashToMatch) {
         sendResponse({ valid: true });
