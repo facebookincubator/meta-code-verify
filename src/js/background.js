@@ -44,7 +44,6 @@ export function handleMessages(message, _sender, sendResponse) {
           sendResponse
         );
         origin.set(message.version, json[message.version]);
-        console.log('after setting origin');
         sendResponse({ valid: true });
       });
     return true;
@@ -75,25 +74,23 @@ export function handleMessages(message, _sender, sendResponse) {
       .then(response => response.text())
       .then(jsText => {
         // hash the src
+        console.log('got jsText', jsText);
         const encoder = new TextEncoder();
+        console.log('new text encoder', encoder);
         const encodedJS = encoder.encode(jsText);
+        console.log('encoded js text about to digest om nom nom');
         return crypto.subtle.digest('SHA-384', encodedJS);
       })
       .then(jsHashBuffer => {
+        console.log('text buffer');
         const jsHashArray = Array.from(new Uint8Array(jsHashBuffer));
+        console.log('jshasharray', jsHashArray);
         const jsHash = jsHashArray
           .map(b => b.toString(16).padStart(2, '0'))
           .join('');
         console.log('js hash is :' + jsHash + ':*****:' + hashToMatch + ':');
         // compare hashes
-        if (jsHash === hashToMatch) {
-          sendResponse({ valid: true });
-        } else {
-          sendResponse({ valid: false });
-          if (jsHash != '2424') {
-            console.log('blah');
-          }
-        }
+        sendResponse({ valid: jsHash === hashToMatch });
       });
     return true;
   }

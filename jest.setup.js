@@ -11,3 +11,14 @@ window.chrome = {
     sendMessage: jest.fn(),
   }
 };
+
+window.crypto = {
+    subtle: {
+        digest: jest.fn(),
+    }
+};
+
+window.TextEncoder = function () {};
+window.TextEncoder.encode = jest.fn();
+
+window.Uint8Array = function () {};
