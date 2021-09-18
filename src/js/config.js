@@ -1,10 +1,10 @@
 export const ICON_TYPE = {
-  DEFAULT: 'temporary-extension-icon.svg',
-  INVALID_HARD: 'question-circle.svg',
-  INVALID_SOFT: 'question-circle.svg',
-  PROCESSING: 'temporary-extension-icon.svg',
-  VALID: 'badge-checkmark.svg',
-  WARNING: 'caution-triangle.svg',
+  DEFAULT: 'icon-badge.svg',
+  INVALID_HARD: 'error-badge.svg',
+  INVALID_SOFT: 'error-badge.svg',
+  PROCESSING: 'icon-badge.svg',
+  VALID: 'validated-badge.svg',
+  WARNING: 'warning-badge.svg',
 };
 
 export const MESSAGE_TYPE = {
