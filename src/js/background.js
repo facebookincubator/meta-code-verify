@@ -3,6 +3,7 @@ const manifestCache = new Map();
 
 const updateIcon = message => {
   chrome.browserAction.setIcon({ path: message.icon });
+  chrome.browserAction.setPopup({ popup: 'validated.html' });
 };
 
 export function handleMessages(message, _sender, sendResponse) {
