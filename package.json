@@ -9,10 +9,10 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build-local-dev": "yarn clean && yarn lint && yarn copyImagesAndConfig && yarn makeBundle",
+    "build-local-dev": "yarn clean && yarn lint && yarn copyStaticFilesAndConfig && yarn makeBundle",
     "clean": "rm -rf dist/chrome/*",
     "lint": "yarn makePrettier && yarn run eslint src/**",
-    "copyImagesAndConfig": "cp config/* dist/chrome && cp images/* dist/chrome",
+    "copyStaticFilesAndConfig": "cp config/* dist/chrome && cp images/* dist/chrome && cp src/html/* dist/chrome && cp src/css/* dist/chrome",
     "makeBundle": "yarn run rollup -c",
     "makePrettier": "yarn run prettier --write \"src/**/*.js\"",
     "test": "yarn lint && node --experimental-vm-modules --no-warnings node_modules/jest/bin/jest.js"
