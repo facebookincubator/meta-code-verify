@@ -11,7 +11,7 @@
   "scripts": {
     "build-local-dev": "yarn clean && yarn lint && yarn copyStaticFilesAndConfig && yarn makeBundle",
     "clean": "rm -rf dist/chrome/*",
-    "lint": "yarn makePrettier && yarn run eslint src/**",
+    "lint": "yarn makePrettier && yarn run eslint src/js/**",
     "copyStaticFilesAndConfig": "cp config/* dist/chrome && cp images/* dist/chrome && cp src/html/* dist/chrome && cp src/css/* dist/chrome",
     "makeBundle": "yarn run rollup -c",
     "makePrettier": "yarn run prettier --write \"src/**/*.js\"",
