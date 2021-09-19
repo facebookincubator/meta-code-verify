@@ -10,7 +10,8 @@
             "32": "temporary-extension-icon32.png",
             "48": "temporary-extension-icon48.png",
            "128": "temporary-extension-icon128.png"
-        }
+        },
+        "default_popup": "loading.html"
     },
     "icons":  {
         "32": "temporary-extension-icon32.png",
