@@ -1,0 +1,56 @@
+.content_body {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  margin: 16px;
+}
+
+.menu {
+  height: 20px;
+}
+
+.status_header {
+  font-family: SF Pro Text;
+  font-size: 13px;
+  line-height: 18px;
+
+  text-align: center;
+  letter-spacing: -0.08px;
+
+  color: #1C2B33;
+  margin-top: 12px;
+}
+
+.status_message {
+  font-family: SF Pro Text;
+  font-size: 13px;
+  line-height: 18px;
+
+  text-align: center;
+  letter-spacing: -0.08px;
+
+  color: #63788A;
+}
+
+.badge {
+  height: 20px;
+}
+
+.validated_body {
+  width: 256px;
+  height: 182px;
+  background: #FFFFFF;
+  margin: 0;
+}
+
+.validated_body_image {
+  height: 32px;
+  margin-top: 24px;
+  width: 158px;
+}
