@@ -3,6 +3,7 @@ import { jest } from '@jest/globals';
 window.chrome = {
   browserAction: {
     setIcon: jest.fn(),
+    setPopup: jest.fn(),
   },
   runtime: {
     onMessage: {

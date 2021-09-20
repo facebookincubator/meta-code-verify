@@ -1,4 +1,4 @@
-import { ICON_TYPE, MESSAGE_TYPE } from './config.js';
+import { ICON_STATE, MESSAGE_TYPE } from './config.js';
 
 const DOM_EVENTS = [
   'onabort',
@@ -209,7 +209,7 @@ const DOM_EVENTS = [
 ];
 
 const foundScripts = [];
-let currentState = ICON_TYPE.VALID;
+let currentState = ICON_STATE.VALID;
 
 export function storeFoundJS(scriptNodeMaybe, scriptList) {
   // need to get the src of the JS
@@ -230,10 +230,10 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
       lookupKey: hashLookupKey,
     });
   }
-  if (currentState == ICON_TYPE.VALID) {
+  if (currentState == ICON_STATE.VALID) {
     chrome.runtime.sendMessage({
       type: MESSAGE_TYPE.UPDATE_ICON,
-      icon: ICON_TYPE.PROCESSING,
+      icon: ICON_STATE.PROCESSING,
     });
   }
 }
@@ -252,7 +252,7 @@ export function hasInvalidAttributes(htmlElement) {
         );
         chrome.runtime.sendMessage({
           type: MESSAGE_TYPE.UPDATE_ICON,
-          icon: ICON_TYPE.INVALID_SOFT,
+          icon: ICON_STATE.INVALID_SOFT,
         });
       }
     });
@@ -348,17 +348,17 @@ export const processFoundJS = (origin, version) => {
         response => {
           pendingScriptCount--;
           if (response.valid) {
-            if (pendingScriptCount == 0 && currentState == ICON_TYPE.VALID) {
+            if (pendingScriptCount == 0 && currentState == ICON_STATE.VALID) {
               chrome.runtime.sendMessage({
                 type: MESSAGE_TYPE.UPDATE_ICON,
-                icon: ICON_TYPE.VALID,
+                icon: ICON_STATE.VALID,
               });
             }
           } else {
-            currentState = ICON_TYPE.INVALID_SOFT;
+            currentState = ICON_STATE.INVALID_SOFT;
             chrome.runtime.sendMessage({
               type: MESSAGE_TYPE.UPDATE_ICON,
-              icon: ICON_TYPE.INVALID_SOFT,
+              icon: ICON_STATE.INVALID_SOFT,
             });
           }
           console.log('processed the JS with SRC, response is ', response);
@@ -376,17 +376,17 @@ export const processFoundJS = (origin, version) => {
         response => {
           pendingScriptCount--;
           if (response.valid) {
-            if (pendingScriptCount == 0 && currentState == ICON_TYPE.VALID) {
+            if (pendingScriptCount == 0 && currentState == ICON_STATE.VALID) {
               chrome.runtime.sendMessage({
                 type: MESSAGE_TYPE.UPDATE_ICON,
-                icon: ICON_TYPE.VALID,
+                icon: ICON_STATE.VALID,
               });
             }
           } else {
-            currentState = ICON_TYPE.INVALID_SOFT;
+            currentState = ICON_STATE.INVALID_SOFT;
             chrome.runtime.sendMessage({
               type: MESSAGE_TYPE.UPDATE_ICON,
-              icon: ICON_TYPE.INVALID_SOFT,
+              icon: ICON_STATE.INVALID_SOFT,
             });
           }
           console.log('processed the RAW_JS, response is ', response);
@@ -399,5 +399,5 @@ export const processFoundJS = (origin, version) => {
 
 chrome.runtime.sendMessage({
   type: MESSAGE_TYPE.UPDATE_ICON,
-  icon: ICON_TYPE.PROCESSING,
+  icon: ICON_STATE.PROCESSING,
 });

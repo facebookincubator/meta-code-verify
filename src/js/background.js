@@ -2,8 +2,8 @@ import { MESSAGE_TYPE, ORIGIN_ENDPOINT } from './config.js';
 const manifestCache = new Map();
 
 const updateIcon = message => {
-  chrome.browserAction.setIcon({ path: message.icon });
-  chrome.browserAction.setPopup({ popup: 'validated.html' });
+  chrome.browserAction.setIcon({ path: message.icon.badge });
+  chrome.browserAction.setPopup({ popup: message.icon.popup });
 };
 
 export function handleMessages(message, _sender, sendResponse) {
