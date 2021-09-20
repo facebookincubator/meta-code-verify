@@ -1,10 +1,10 @@
-export const ICON_TYPE = {
-  DEFAULT: 'icon-badge.svg',
-  INVALID_HARD: 'error-badge.svg',
-  INVALID_SOFT: 'error-badge.svg',
-  PROCESSING: 'icon-badge.svg',
-  VALID: 'validated-badge.svg',
-  WARNING: 'warning-badge.svg',
+export const ICON_STATE = {
+  DEFAULT: { badge: 'icon-badge.svg', popup: 'loading.html' },
+  INVALID_HARD: { badge: 'error-badge.svg', popup: 'soft_invalid.html' },
+  INVALID_SOFT: { badge: 'error-badge.svg', popup: 'hard_invalid.html' },
+  PROCESSING: { badge: 'icon-badge.svg', popup: 'loading.html' },
+  VALID: { badge: 'validated-badge.svg', popup: 'validated.html' },
+  WARNING: { badge: 'warning-badge.svg', popup: 'warning.html' },
 };
 
 export const MESSAGE_TYPE = {

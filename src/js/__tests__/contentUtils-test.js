@@ -1,7 +1,7 @@
 'use strict';
 
 import { jest } from '@jest/globals';
-import { ICON_TYPE, MESSAGE_TYPE, ORIGIN_TYPE } from '../config.js';
+import { ICON_STATE, MESSAGE_TYPE, ORIGIN_TYPE } from '../config.js';
 import {
   hasInvalidAttributes,
   hasInvalidScripts,
@@ -52,7 +52,7 @@ describe('contentUtils', () => {
       const sentMessage = window.chrome.runtime.sendMessage.mock.calls[0][0];
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
       expect(sentMessage.type).toEqual(MESSAGE_TYPE.UPDATE_ICON);
-      expect(sentMessage.icon).toEqual(ICON_TYPE.PROCESSING);
+      expect(sentMessage.icon).toEqual(ICON_STATE.PROCESSING);
     });
     it.skip('storeFoundJS keeps existing icon if not valid', () => {
       // TODO: come back to this after testing processFoundJS
@@ -294,7 +294,7 @@ describe('contentUtils', () => {
       await (() => new Promise(res => setTimeout(res, 10)))();
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(9);
       expect(window.chrome.runtime.sendMessage.mock.calls[6][0].icon).toEqual(
-        ICON_TYPE.VALID
+        ICON_STATE.VALID
       );
     });
     it('should send valid icon update when no inline based scripts are invalid', async () => {
@@ -313,7 +313,7 @@ describe('contentUtils', () => {
       await (() => new Promise(res => setTimeout(res, 10)))();
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(11);
       expect(window.chrome.runtime.sendMessage.mock.calls[6][0].icon).toEqual(
-        ICON_TYPE.VALID
+        ICON_STATE.VALID
       );
     });
     it('should send invalid icon update when invalid response received with src', async () => {
@@ -332,7 +332,7 @@ describe('contentUtils', () => {
       await (() => new Promise(res => setTimeout(res, 10)))();
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(14);
       expect(window.chrome.runtime.sendMessage.mock.calls[7][0].icon).toEqual(
-        ICON_TYPE.INVALID_SOFT
+        ICON_STATE.INVALID_SOFT
       );
     });
     // it.todo(
