@@ -233,7 +233,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
   if (currentState == ICON_STATE.VALID) {
     chrome.runtime.sendMessage({
       type: MESSAGE_TYPE.UPDATE_ICON,
-      icon: ICON_STATE.WARNING,
+      icon: ICON_STATE.PROCESSING,
     });
   }
 }

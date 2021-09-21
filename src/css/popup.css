@@ -15,6 +15,23 @@
   flex-direction: column;
 }
 
+.anomaly_download_button {
+  border: 1px solid #CBD2D9;
+  box-sizing: border-box;
+  border-radius: 4px;
+  height: 36px;
+  width: 230px;
+  background: #FFFFFF;
+  font-family: SF Pro Text;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 20px;
+  text-align: center;
+  letter-spacing: -0.23px;
+  color: #1C2B33;
+}
+
 .download_button {
   border: 1px solid #CBD2D9;
   box-sizing: border-box;
@@ -88,11 +105,10 @@ header {
   font-family: SF Pro Text;
   font-size: 13px;
   line-height: 18px;
-
   text-align: center;
   letter-spacing: -0.08px;
-
   color: #63788A;
+  margin: 0 30px;
 }
 
 .validated_body {

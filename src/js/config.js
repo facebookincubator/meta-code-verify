@@ -1,7 +1,7 @@
 export const ICON_STATE = {
   DEFAULT: { badge: 'icon-badge.svg', popup: 'loading.html' },
-  INVALID_HARD: { badge: 'error-badge.svg', popup: 'soft_invalid.html' },
-  INVALID_SOFT: { badge: 'error-badge.svg', popup: 'hard_invalid.html' },
+  INVALID_HARD: { badge: 'error-badge.svg', popup: 'hard_invalid.html' },
+  INVALID_SOFT: { badge: 'error-badge.svg', popup: 'soft_invalid.html' },
   PROCESSING: { badge: 'icon-badge.svg', popup: 'loading.html' },
   VALID: { badge: 'validated-badge.svg', popup: 'validated.html' },
   WARNING: { badge: 'warning-badge.svg', popup: 'warning.html' },
