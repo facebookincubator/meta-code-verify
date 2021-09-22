@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="popup.css"/>
+  </head>
+  <body class="valid_body">
+    <div class="state_boundary" id="valid">
+      <header>
+        <img class="badge" src="icon-badge.svg" />
+        <img class="menu" src="menu-badge.svg" />
+      </header>
+      <div class="content_body">
+        <img class="validated_body_image" src="validated-header.svg" />
+        <div class="status_header">Validated</div>
+        <div class="status_message">No issues detected</div>
+      </div>
+    </div>
+    <div class="state_boundary" id="loading">
+      <header>
+        <img class="badge" src="icon-badge.svg" />
+        <img class="menu" src="menu-badge.svg" />
+      </header>
+      <div class="content_body">
+        <img class="loading_body_image" src="loading-header.svg" />
+        <div class="status_header">Validating</div>
+      </div>
+    </div>
+    <div class="state_boundary" id="warning">
+      <header>
+        <img class="badge" src="icon-badge.svg" />
+        <img class="menu" src="menu-badge.svg" />
+      </header>
+      <div class="content_body">
+        <img class="warning_body_image" src="warning-header.svg" />
+        <div class="status_header">Minor Issues Detected</div>
+        <div class="status_message">We weren't able to validate the page.</div>
+        <div class="action_bar">
+          <button class="download_button" type="button">Download</button>
+          <button class="retry_button" type="button">Retry</button>
+        </div>
+      </div>
+    </div>
+    <div class="state_boundary" id="error">
+      <header>
+        <img class="badge" src="icon-badge.svg" />
+        <img class="menu" src="menu-badge.svg" />
+      </header>
+      <div class="content_body">
+        <img class="error_body_image" src="error-header.svg" />
+        <div class="status_header">Anomaly Detected</div>
+        <div class="status_message">We detected a difference between what was sent and received.</div>
+        <div class="action_bar">
+          <button class="anomaly_download_button" type="button">Download JS</button>
+        </div>
+      </div>
+    </div>
+    <div class="state_boundary" id="menu">
+      <div class="menu_top_level">
+        <img class="badge" src="icon-badge.svg" />
+        <div class="menu_right_sidebar">
+          <div class="menu_title">
+            <p>Facebook Code Verify</p>
+            <button>
+              <img class="close_button" src="x.svg" />
+            </button>
+          </div>
+          <div class="menu_row">
+            <img class="row_image" src="circle-info.svg" />
+            <p>Learn More</p>
+            <img class="row_nav" src="chevron-right.svg" />
+          </div>
+          <div class="menu_row">
+            <img class="row_image" src="circle-download-cta.svg" />
+            <p>Download JS</p>
+            <img class="row_nav" src="chevron-right.svg" />
+          </div>
+          <div class="menu_row">
+            <img class="row_image" src="circle-exclamation-mark.svg" />
+            <p>Report Bug</p>
+            <img class="row_nav" src="chevron-right.svg" />
+          </div>
+          <div class="menu_footer">
+            <img class="Facebook" src="Family-Lockup-Inline_20_light-4x.svg" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="state_boundary" id="debug"></div>
+    <div class="state_boundary" id="download"></div>
+    <script src="popup.js"></script>
+  </body>
+</html>

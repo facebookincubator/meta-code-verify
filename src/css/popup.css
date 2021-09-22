@@ -56,6 +56,7 @@ header {
 }
 
 .menu {
+  cursor: pointer;
   height: 20px;
 }
 
@@ -89,6 +90,10 @@ header {
   color: #FFFFFF;
 }
 
+.state_boundary {
+  flex-direction: column;
+}
+
 .status_header {
   font-family: SF Pro Text;
   font-size: 13px;
@@ -111,7 +116,7 @@ header {
   margin: 0 30px;
 }
 
-.validated_body {
+.valid_body {
   width: 256px;
   height: 182px;
   background: #FFFFFF;
@@ -124,7 +129,7 @@ header {
   width: 158px;
 }
 
-.warning_body {
+.warning_body, .error_body {
   width: 256px;
   height: 245px;
   background: #FFFFFF;

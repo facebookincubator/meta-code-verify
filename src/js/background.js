@@ -3,7 +3,11 @@ const manifestCache = new Map();
 
 const updateIcon = message => {
   chrome.browserAction.setIcon({ path: message.icon.badge });
-  chrome.browserAction.setPopup({ popup: message.icon.popup });
+  const popupMessage = {
+    popup: message.icon.popup,
+  };
+  chrome.runtime.sendMessage(popupMessage);
+  chrome.browserAction.setPopup(popupMessage);
 };
 
 export function handleMessages(message, _sender, sendResponse) {
