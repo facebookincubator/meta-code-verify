@@ -1,15 +1,22 @@
 export const ICON_STATE = {
-  DEFAULT: { badge: 'icon-badge.svg', popup: 'loading.html' },
-  INVALID_HARD: { badge: 'error-badge.svg', popup: 'hard_invalid.html' },
-  INVALID_SOFT: { badge: 'error-badge.svg', popup: 'soft_invalid.html' },
-  PROCESSING: { badge: 'icon-badge.svg', popup: 'loading.html' },
-  VALID: { badge: 'validated-badge.svg', popup: 'validated.html' },
-  WARNING: { badge: 'warning-badge.svg', popup: 'warning.html' },
+  DEFAULT: { badge: 'icon-badge.svg', popup: 'popup.html?state=loading' },
+  INVALID_HARD: {
+    badge: 'error-badge.svg',
+    popup: 'popup.html?state=error',
+  },
+  INVALID_SOFT: {
+    badge: 'error-badge.svg',
+    popup: 'popup.html?state=error',
+  },
+  PROCESSING: { badge: 'icon-badge.svg', popup: 'popup.html?state=loading' },
+  VALID: { badge: 'validated-badge.svg', popup: 'popup.html?state=valid' },
+  WARNING: { badge: 'warning-badge.svg', popup: 'popup.html?state=warning' },
 };
 
 export const MESSAGE_TYPE = {
   JS_WITH_SRC: 'JS_WITH_SRC',
   LOAD_MANIFEST: 'LOAD_MANIFEST',
+  POPUP_STATE: 'POPUP_STATE',
   RAW_JS: 'RAW_JS',
   UPDATE_ICON: 'UPDATE_ICON',
 };
