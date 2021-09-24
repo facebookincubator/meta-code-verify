@@ -1,3 +1,5 @@
+let lastState = "loading";
+
 chrome.runtime.onMessage.addListener(message => {
   if (message && message.popup) {
     const state = message.popup.slice(message.popup.indexOf('=') + 1);
@@ -11,6 +13,12 @@ function attachListeners() {
   Array.from(menuButtonList).forEach(menuButton => {
     menuButton.addEventListener('click', () => updateDisplay('menu'));
   });
+
+  const menuRowList = document.getElementsByClassName('menu_row');
+  menuRowList[0].style.cursor = 'not-allowed';
+  menuRowList[1].style.cursor = 'not-allowed';
+  menuRowList[2].addEventListener('click', () => updateDisplay('debug'));
+  menuRowList[2].style.cursor = 'pointer';
 }
 
 function updateDisplay(state) {
@@ -24,6 +32,7 @@ function updateDisplay(state) {
       }
     }
   );
+  lastState = state;
 }
 
 function loadUp() {

@@ -15,7 +15,7 @@
   flex-direction: column;
 }
 
-.anomaly_download_button {
+.anomaly_download_button, .report_issue_button {
   border: 1px solid #CBD2D9;
   box-sizing: border-box;
   border-radius: 4px;
