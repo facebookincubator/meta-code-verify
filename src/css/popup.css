@@ -60,6 +60,77 @@ header {
   height: 20px;
 }
 
+.menu_body {
+  height: 242px;
+  width: 256px;
+}
+
+.menu_footer {
+  margin: 15px 24px 15px 16px;
+}
+
+.menu_right_sidebar {
+  display: flex;
+  flex-direction: column;
+  background: #F1F4F7;
+  box-shadow: 0px 0px 16px rgba(52, 72, 84, 0.05);
+  width: 209px;
+}
+
+.menu_row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding-bottom: 8px;
+}
+
+.menu_row > p {
+  font-family: SF Pro Text;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 20px;
+  letter-spacing: -0.23px;
+  color: #1C2B33;
+  flex: none;
+  order: 1;
+  flex-grow: 1;
+  margin: 0px 12px;
+}
+
+.menu_title {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  font-family: Optimistic Display;
+  font-style: normal;
+  font-weight: bold;
+  font-size: 17px;
+  line-height: 22px;
+  letter-spacing: 0.24px;
+  color: #000000;
+  flex: none;
+  order: 0;
+  flex-grow: 0;
+  margin: 0px 16px;
+}
+
+.menu_title > button {
+  border: none;
+  width: 24px;
+  height: 24px;
+  margin: 16px 0 0;
+}
+
+.menu_top_level {
+  display: flex;
+  flex-direction: row;
+}
+
+.menu_top_level > .badge {
+  margin: 16px 16px 0 16px;
+}
+
 .loading_body {
   width: 256px;
   height: 163px;
@@ -90,12 +161,28 @@ header {
   color: #FFFFFF;
 }
 
+.row_image {
+  flex: none;
+  order: 0;
+  flex-grow: 0;
+  margin: 0 0 0 12px;
+}
+
+.row_nav {
+  flex: none;
+  order: 2;
+  flex-grow: 0;
+  margin: 0px 12px;
+}
+
 .state_boundary {
   flex-direction: column;
 }
 
 .status_header {
   font-family: SF Pro Text;
+  font-style: normal;
+  font-weight: 600;
   font-size: 13px;
   line-height: 18px;
 
@@ -108,6 +195,8 @@ header {
 
 .status_message {
   font-family: SF Pro Text;
+  font-style: normal;
+  font-weight: normal;
   font-size: 13px;
   line-height: 18px;
   text-align: center;
