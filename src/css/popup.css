@@ -117,6 +117,7 @@ header {
 
 .menu_title > button {
   border: none;
+  cursor: pointer;
   width: 24px;
   height: 24px;
   margin: 16px 0 0;
