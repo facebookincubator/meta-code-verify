@@ -1,9 +1,8 @@
-const debugList = ['problem 1', 'problem 2', 'problem 3'];
+const debugList = [];
 
 chrome.runtime.onMessage.addListener(message => {
   if (message && message.popup) {
     const state = message.popup.slice(message.popup.indexOf('=') + 1);
-    console.log('state from listener is ', state);
     updateDisplay(state);
   }
 
@@ -36,6 +35,7 @@ function attachListeners() {
       useragent: window.navigator.userAgent,
       debuginfo: debugList.join('\n'),
     };
+    // console.log('debug info', defaultResponse);
     const reportBugURL =
       'https://www.internalfb.com/butterfly/form/3045948462349251?default_responses=' +
       JSON.stringify(default_responses);
