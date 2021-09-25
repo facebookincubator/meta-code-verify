@@ -6,9 +6,13 @@ const extractMetaAndLoad = () => {
   const versionMetaTag = document.getElementsByName(
     'binary-transparency-manifest-key'
   );
-  console.log('processing version metatag ', versionMetaTag);
+  chrome.runtime.sendMessage({
+    debugMessage: 'processing version metatag ' + versionMetaTag,
+  });
   if (versionMetaTag.length < 1) {
-    console.log('processed version meta tag, missing tag warning');
+    chrome.runtime.sendMessage({
+      debugMessage: 'version meta tag is missing!',
+    });
   }
   const version = versionMetaTag[0].content;
   // send message to Service Worker to download the correct manifest
@@ -19,9 +23,10 @@ const extractMetaAndLoad = () => {
       version: version,
     },
     response => {
-      console.log('proc manifest load response is ', response);
+      chrome.runtime.sendMessage({
+        debugMessage: 'manifest load response is ' + response,
+      });
       if (response.valid) {
-        // work through the list of scripts we've found
         window.setTimeout(
           () => processFoundJS(ORIGIN_TYPE.WHATSAPP, version),
           0

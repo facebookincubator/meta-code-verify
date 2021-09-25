@@ -223,7 +223,9 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     const hashLookupAttribute =
       scriptNodeMaybe.attributes['data-binary-transparency-hash-key'];
     const hashLookupKey = hashLookupAttribute && hashLookupAttribute.value;
-    console.log('proc hashLookupKey is ', hashLookupKey);
+    chrome.runtime.sendMessage({
+      debugMessage: 'hashLookupKey for inline js is ' + hashLookupKey + 'for ' +scriptNodeMaybe.innerHTML,
+    });
     scriptList.push({
       type: MESSAGE_TYPE.RAW_JS,
       rawjs: scriptNodeMaybe.innerHTML,
@@ -246,10 +248,9 @@ export function hasInvalidAttributes(htmlElement) {
     Array.from(htmlElement.attributes).forEach(elementAttribute => {
       // check first for violating attributes
       if (DOM_EVENTS.indexOf(elementAttribute.localName) >= 0) {
-        // TODO: convert this to a failure case and show a BZZZZZZT to the user
-        console.log(
-          `processing violating attribute ${elementAttribute.localName} from element ${htmlElement.outerHTML}`
-        );
+        chrome.runtime.sendMessage({
+          debugMessage: 'violating attribute ' + elementAttribute.localName + ' from element ' + htmlElement.outerHTML,
+        });
         chrome.runtime.sendMessage({
           type: MESSAGE_TYPE.UPDATE_ICON,
           icon: ICON_STATE.INVALID_SOFT,
@@ -295,15 +296,12 @@ export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
 }
 
 export const scanForScripts = () => {
-  console.log('proc scanForScripts is working really well!');
-
   const allElements = document.getElementsByTagName('*');
 
   Array.from(allElements).forEach(allElement => {
     hasInvalidAttributes(allElement);
     // next check for existing script elements and if they're violating
     if (allElement.nodeName === 'SCRIPT') {
-      console.log('processed all script elements are ', allElement);
       storeFoundJS(allElement, foundScripts);
     }
   });
@@ -316,10 +314,9 @@ export const scanForScripts = () => {
           hasInvalidScripts(checkScript, foundScripts);
         });
       } else if (mutation.type === 'attributes') {
-        console.log(
-          'processed mutation and invalid attribute added or changed ',
-          mutation.target
-        );
+        chrome.runtime.sendMessage({
+          debugMessage: 'Processed DOM mutation and invalid attribute added or changed ' + mutation.target,
+        });
       }
     });
   });
@@ -335,7 +332,6 @@ export const processFoundJS = (origin, version) => {
   // foundScripts
   const scripts = foundScripts.splice(0);
   let pendingScriptCount = scripts.length;
-  console.log('proc scripts that were found', scripts.length);
   scripts.forEach(script => {
     if (script.src) {
       chrome.runtime.sendMessage(
@@ -361,7 +357,9 @@ export const processFoundJS = (origin, version) => {
               icon: ICON_STATE.INVALID_SOFT,
             });
           }
-          console.log('processed the JS with SRC, response is ', response);
+          chrome.runtime.sendMessage({
+            debugMessage: 'processed JS with SRC, response is ' + response,
+          });
         }
       );
     } else {
@@ -389,7 +387,9 @@ export const processFoundJS = (origin, version) => {
               icon: ICON_STATE.INVALID_SOFT,
             });
           }
-          console.log('processed the RAW_JS, response is ', response);
+          chrome.runtime.sendMessage({
+            debugMessage: 'processed the RAW_JS, response is ' + response,
+          });
         }
       );
     }
