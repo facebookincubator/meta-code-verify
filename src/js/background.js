@@ -1,18 +1,20 @@
 import { MESSAGE_TYPE, ORIGIN_ENDPOINT } from './config.js';
 const manifestCache = new Map();
 
-const updateIcon = message => {
-  chrome.browserAction.setIcon({ path: message.icon.badge });
+const updateIcon = (message, sender) => {
+  chrome.pageAction.setIcon({ tabId: sender.tab.id, path: message.icon.badge });
   const popupMessage = {
+    tabId: sender.tab.id,
     popup: message.icon.popup,
   };
   chrome.runtime.sendMessage(popupMessage);
-  chrome.browserAction.setPopup(popupMessage);
+  chrome.pageAction.setPopup(popupMessage);
+  chrome.pageAction.show(sender.tab.id);
 };
 
-export function handleMessages(message, _sender, sendResponse) {
+export function handleMessages(message, sender, sendResponse) {
   if (message.type == MESSAGE_TYPE.UPDATE_ICON) {
-    updateIcon(message);
+    updateIcon(message, sender);
     return;
   }
 
@@ -42,9 +44,13 @@ export function handleMessages(message, _sender, sendResponse) {
         origin.set(message.version, json[message.version]);
         sendResponse({ valid: true });
       })
-      .catch(err => {
+      .catch(error => {
         chrome.runtime.sendMessage({
-          debugMessage: 'Error fetching manifest, version '+ message.version + ' error ' + error,
+          debugMessage:
+            'Error fetching manifest, version ' +
+            message.version +
+            ' error ' +
+            error,
         });
         sendResponse({ valid: false });
       });
@@ -55,7 +61,8 @@ export function handleMessages(message, _sender, sendResponse) {
     const origin = manifestCache.get(message.origin);
     if (!origin) {
       chrome.runtime.sendMessage({
-        debugMessage: 'Error: JS with SRC had no matching origin ' + message.origin,
+        debugMessage:
+          'Error: JS with SRC had no matching origin ' + message.origin,
       });
       sendResponse({ valid: false, reason: 'no matching origin' });
       return;
@@ -63,7 +70,11 @@ export function handleMessages(message, _sender, sendResponse) {
     const manifest = origin.get(message.version);
     if (!manifest) {
       chrome.runtime.sendMessage({
-        debugMessage: 'Error: JS with SRC had no matching manifest. origin: ' + message.origin + ' version: ' + message.version,
+        debugMessage:
+          'Error: JS with SRC had no matching manifest. origin: ' +
+          message.origin +
+          ' version: ' +
+          message.version,
       });
       sendResponse({ valid: false, reason: 'no matching manifest' });
       return;
@@ -72,7 +83,13 @@ export function handleMessages(message, _sender, sendResponse) {
     const hashToMatch = manifest[jsPath];
     if (!hashToMatch) {
       chrome.runtime.sendMessage({
-        debugMessage: 'Error: hash does not match ' + message.origin + ', ' + message.version + ', unmatched JS is ' + message.src,
+        debugMessage:
+          'Error: hash does not match ' +
+          message.origin +
+          ', ' +
+          message.version +
+          ', unmatched JS is ' +
+          message.src,
       });
       sendResponse({ valid: false, reason: 'no matching hash' });
       return;
@@ -97,7 +114,15 @@ export function handleMessages(message, _sender, sendResponse) {
       })
       .catch(error => {
         chrome.runtime.sendMessage({
-          debugMessage: 'Error: Processing JS with SRC ' + message.origin + ', ' + message.version + ' problematic JS is ' + messages.src,
+          debugMessage:
+            'Error: Processing JS with SRC ' +
+            message.origin +
+            ', ' +
+            message.version +
+            ' problematic JS is ' +
+            message.src +
+            'error is ' +
+            error,
         });
       });
     return true;
@@ -115,7 +140,11 @@ export function handleMessages(message, _sender, sendResponse) {
     const manifest = origin.get(message.version);
     if (!manifest) {
       chrome.runtime.sendMessage({
-        debugMessage: 'Error: JS with SRC had no matching manifest. origin: ' + message.origin + ' version: ' + message.version,
+        debugMessage:
+          'Error: JS with SRC had no matching manifest. origin: ' +
+          message.origin +
+          ' version: ' +
+          message.version,
       });
       sendResponse({ valid: false, reason: 'no matching manifest' });
       return;
@@ -138,7 +167,13 @@ export function handleMessages(message, _sender, sendResponse) {
 
       if (!hashToMatch) {
         chrome.runtime.sendMessage({
-          debugMessage: 'Error: hash does not match ' + message.origin + ', ' + message.version + ', unmatched JS is ' + message.rawjs,
+          debugMessage:
+            'Error: hash does not match ' +
+            message.origin +
+            ', ' +
+            message.version +
+            ', unmatched JS is ' +
+            message.rawjs,
         });
         sendResponse({ valid: false, reason: 'no matching hash' });
         return;
@@ -147,7 +182,13 @@ export function handleMessages(message, _sender, sendResponse) {
         sendResponse({ valid: true });
       } else {
         chrome.runtime.sendMessage({
-          debugMessage: 'Error: hash does not match ' + message.origin + ', ' + message.version + ', unmatched JS is ' + message.rawjs,
+          debugMessage:
+            'Error: hash does not match ' +
+            message.origin +
+            ', ' +
+            message.version +
+            ', unmatched JS is ' +
+            message.rawjs,
         });
         sendResponse({ valid: false, reason: 'no matching hash' });
       }

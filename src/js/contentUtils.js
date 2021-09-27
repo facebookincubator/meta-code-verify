@@ -224,7 +224,11 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
       scriptNodeMaybe.attributes['data-binary-transparency-hash-key'];
     const hashLookupKey = hashLookupAttribute && hashLookupAttribute.value;
     chrome.runtime.sendMessage({
-      debugMessage: 'hashLookupKey for inline js is ' + hashLookupKey + 'for ' +scriptNodeMaybe.innerHTML,
+      debugMessage:
+        'hashLookupKey for inline js is ' +
+        hashLookupKey +
+        'for ' +
+        scriptNodeMaybe.innerHTML,
     });
     scriptList.push({
       type: MESSAGE_TYPE.RAW_JS,
@@ -249,7 +253,11 @@ export function hasInvalidAttributes(htmlElement) {
       // check first for violating attributes
       if (DOM_EVENTS.indexOf(elementAttribute.localName) >= 0) {
         chrome.runtime.sendMessage({
-          debugMessage: 'violating attribute ' + elementAttribute.localName + ' from element ' + htmlElement.outerHTML,
+          debugMessage:
+            'violating attribute ' +
+            elementAttribute.localName +
+            ' from element ' +
+            htmlElement.outerHTML,
         });
         chrome.runtime.sendMessage({
           type: MESSAGE_TYPE.UPDATE_ICON,
@@ -315,7 +323,9 @@ export const scanForScripts = () => {
         });
       } else if (mutation.type === 'attributes') {
         chrome.runtime.sendMessage({
-          debugMessage: 'Processed DOM mutation and invalid attribute added or changed ' + mutation.target,
+          debugMessage:
+            'Processed DOM mutation and invalid attribute added or changed ' +
+            mutation.target,
         });
       }
     });
