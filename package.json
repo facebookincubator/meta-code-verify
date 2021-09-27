@@ -10,9 +10,11 @@
   "private": true,
   "scripts": {
     "build-local-dev": "yarn clean && yarn lint && yarn copyStaticFilesAndConfig && yarn makeBundle",
-    "clean": "rm -rf dist/chrome/*",
+    "clean": "rm -rf dist/chrome/* dist/edge/*",
     "lint": "yarn makePrettier && yarn run eslint src/js/**",
-    "copyStaticFilesAndConfig": "cp config/* dist/chrome && cp images/* dist/chrome && cp src/html/* dist/chrome && cp src/css/* dist/chrome",
+    "copyChromeFilesAndConfig": "cp config/* dist/chrome && cp images/* dist/chrome && cp src/html/* dist/chrome && cp src/css/* dist/chrome",
+    "copyEdgeFilesAndConfig": "cp config/* dist/edge && cp images/* dist/edge && cp src/html/* dist/edge && cp src/css/* dist/edge",
+    "copyStaticFilesAndConfig": "yarn copyChromeFilesAndConfig && yarn copyEdgeFilesAndConfig",
     "makeBundle": "yarn run rollup -c",
     "makePrettier": "yarn run prettier --write \"src/**/*.js\"",
     "test": "yarn lint && node --experimental-vm-modules --no-warnings node_modules/jest/bin/jest.js"
