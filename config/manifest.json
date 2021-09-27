@@ -4,7 +4,7 @@
     "version": "0.1",
 
     "description": "An extension to verify the code running in your browser matches what was published.",
-    "browser_action": {
+    "page_action": {
         "default_title": "Facebook Code Verify",
         "default_icon": {
             "32": "temporary-extension-icon32.png",
