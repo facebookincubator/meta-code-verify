@@ -1,4 +1,5 @@
 const debugList = [];
+let debugUrl = '';
 
 chrome.runtime.onMessage.addListener(message => {
   if (message && message.popup) {
@@ -6,7 +7,13 @@ chrome.runtime.onMessage.addListener(message => {
     updateDisplay(state);
   }
 
+  if (message && message.senderUrl) {
+    debugUrl = message.senderUrl;
+  }
+
+  console.log('we got a message ', message);
   if (message && message.debugMessage) {
+    console.log('adding message to debug queue ', message.debugMessage);
     debugList.push(message.debugMessage);
   }
 });
@@ -30,8 +37,9 @@ function attachListeners() {
     'report_issue_button'
   );
   reportBugButton[0].addEventListener('click', () => {
+    console.log('debug info is ', debugList.join('\n'));
     const default_responses = {
-      bug_url: document.location,
+      bug_url: debugUrl,
       useragent: window.navigator.userAgent,
       debuginfo: debugList.join('\n'),
     };

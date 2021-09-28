@@ -2,17 +2,24 @@ import { MESSAGE_TYPE, ORIGIN_ENDPOINT } from './config.js';
 const manifestCache = new Map();
 
 const updateIcon = (message, sender) => {
+  console.log('background messages are ', message);
   chrome.pageAction.setIcon({ tabId: sender.tab.id, path: message.icon.badge });
   const popupMessage = {
     tabId: sender.tab.id,
     popup: message.icon.popup,
   };
-  chrome.runtime.sendMessage(popupMessage);
   chrome.pageAction.setPopup(popupMessage);
+  const messageForPopup = {
+    popup: message.icon.popup,
+    senderUrl: sender.tab.url,
+    tabId: sender.tab.id,
+  };
+  chrome.runtime.sendMessage(messageForPopup);
   chrome.pageAction.show(sender.tab.id);
 };
 
 export function handleMessages(message, sender, sendResponse) {
+  console.log('in handle messages ', message);
   if (message.type == MESSAGE_TYPE.UPDATE_ICON) {
     updateIcon(message, sender);
     return;
@@ -50,7 +57,7 @@ export function handleMessages(message, sender, sendResponse) {
             'Error fetching manifest, version ' +
             message.version +
             ' error ' +
-            error,
+            JSON.stringify(error).substring(0, 500),
         });
         sendResponse({ valid: false });
       });
@@ -122,7 +129,7 @@ export function handleMessages(message, sender, sendResponse) {
             ' problematic JS is ' +
             message.src +
             'error is ' +
-            error,
+            JSON.stringify(error).substring(0, 500),
         });
       });
     return true;
@@ -173,7 +180,7 @@ export function handleMessages(message, sender, sendResponse) {
             ', ' +
             message.version +
             ', unmatched JS is ' +
-            message.rawjs,
+            message.rawjs.substring(0, 500),
         });
         sendResponse({ valid: false, reason: 'no matching hash' });
         return;
@@ -188,7 +195,7 @@ export function handleMessages(message, sender, sendResponse) {
             ', ' +
             message.version +
             ', unmatched JS is ' +
-            message.rawjs,
+            message.rawjs.substring(0, 500),
         });
         sendResponse({ valid: false, reason: 'no matching hash' });
       }
