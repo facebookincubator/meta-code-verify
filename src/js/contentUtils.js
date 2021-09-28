@@ -307,6 +307,7 @@ export const scanForScripts = () => {
   const allElements = document.getElementsByTagName('*');
 
   Array.from(allElements).forEach(allElement => {
+    console.log('found existing scripts');
     hasInvalidAttributes(allElement);
     // next check for existing script elements and if they're violating
     if (allElement.nodeName === 'SCRIPT') {
@@ -316,6 +317,7 @@ export const scanForScripts = () => {
 
   // track any new scripts that get loaded in
   const scriptMutationObserver = new MutationObserver(mutationsList => {
+    console.log('mutation. observer. is. observing.');
     mutationsList.forEach(mutation => {
       if (mutation.type === 'childList') {
         Array.from(mutation.addedNodes).forEach(checkScript => {
@@ -368,7 +370,9 @@ export const processFoundJS = (origin, version) => {
             });
           }
           chrome.runtime.sendMessage({
-            debugMessage: 'processed JS with SRC, response is ' + response,
+            debugMessage:
+              'processed JS with SRC, response is ' +
+              JSON.stringify(response).substring(0, 500),
           });
         }
       );
@@ -398,7 +402,9 @@ export const processFoundJS = (origin, version) => {
             });
           }
           chrome.runtime.sendMessage({
-            debugMessage: 'processed the RAW_JS, response is ' + response,
+            debugMessage:
+              'processed the RAW_JS, response is ' +
+              JSON.stringify(response).substring(0, 500),
           });
         }
       );

@@ -7,7 +7,8 @@ const extractMetaAndLoad = () => {
     'binary-transparency-manifest-key'
   );
   chrome.runtime.sendMessage({
-    debugMessage: 'processing version metatag ' + versionMetaTag,
+    debugMessage:
+      'processing version metatag ' + JSON.stringify(versionMetaTag),
   });
   if (versionMetaTag.length < 1) {
     chrome.runtime.sendMessage({
@@ -15,6 +16,7 @@ const extractMetaAndLoad = () => {
     });
   }
   const version = versionMetaTag[0].content;
+  console.log('wa meta tag version is ', version);
   // send message to Service Worker to download the correct manifest
   chrome.runtime.sendMessage(
     {
@@ -24,7 +26,10 @@ const extractMetaAndLoad = () => {
     },
     response => {
       chrome.runtime.sendMessage({
-        debugMessage: 'manifest load response is ' + response,
+        debugMessage:
+          'manifest load response is ' + response
+            ? JSON.stringify(response).substring(0, 500)
+            : '',
       });
       if (response.valid) {
         window.setTimeout(
