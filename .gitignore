@@ -1,3 +1,4 @@
 dist/chrome
 dist/edge
+dist/firefox
 node_modules

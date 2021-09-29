@@ -7,6 +7,9 @@ export default [
         }, {
             file: 'dist/edge/contentWA.js',
             format: 'iife'
+        }, {
+            file: 'dist/firefox/contentWA.js',
+            format: 'iife'
         }]
     },
     {
@@ -16,6 +19,9 @@ export default [
             format: 'iife'
         }, {
             file: 'dist/edge/contentFB.js',
+            format: 'iife'
+        }, {
+            file: 'dist/firefox/contentFB.js',
             format: 'iife'
         }]
     },
@@ -27,6 +33,9 @@ export default [
         }, {
             file: 'dist/edge/background.js',
             format: 'iife'
+        }, {
+            file: 'dist/firefox/background.js',
+            format: 'iife'
         }]
     },
     {
@@ -36,6 +45,9 @@ export default [
             format: 'iife'
         }, {
             file: 'dist/edge/popup.js',
+            format: 'iife'
+        }, {
+            file: 'dist/firefox/popup.js',
             format: 'iife'
         }]
     }
