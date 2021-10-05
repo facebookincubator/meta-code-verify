@@ -23,7 +23,7 @@ export const MESSAGE_TYPE = {
 
 export const ORIGIN_ENDPOINT = {
   FACEBOOK: '',
-  WHATSAPP: 'https://web.whatsapp.com/bt-manifest',
+  WHATSAPP: '/bt-manifest',
 };
 
 export const ORIGIN_TYPE = {
