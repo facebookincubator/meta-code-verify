@@ -43,9 +43,13 @@ export function handleMessages(message, sender, sendResponse) {
     }
 
     // on cache miss load missing manifest
-    const endpoint = ORIGIN_ENDPOINT[message.origin] + '/' + message.version;
+    const endpoint =
+      new URL(sender.tab.url).origin +
+      ORIGIN_ENDPOINT[message.origin] +
+      '/' +
+      message.version;
     // TODO: Add error handling here
-    fetch(endpoint, { METHOD: 'GET' })
+    fetch(endpoint, { METHOD: 'GET', mode: 'no-cors' })
       .then(response => response.json())
       .then(json => {
         origin.set(message.version, json[message.version]);
