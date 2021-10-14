@@ -224,7 +224,8 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
       scriptNodeMaybe.attributes['data-binary-transparency-hash-key'];
     const hashLookupKey = hashLookupAttribute && hashLookupAttribute.value;
     chrome.runtime.sendMessage({
-      debugMessage:
+      type: MESSAGE_TYPE.DEBUG,
+      log:
         'hashLookupKey for inline js is ' +
         hashLookupKey +
         'for ' +
@@ -253,7 +254,8 @@ export function hasInvalidAttributes(htmlElement) {
       // check first for violating attributes
       if (DOM_EVENTS.indexOf(elementAttribute.localName) >= 0) {
         chrome.runtime.sendMessage({
-          debugMessage:
+          type: MESSAGE_TYPE.DEBUG,
+          log:
             'violating attribute ' +
             elementAttribute.localName +
             ' from element ' +
@@ -325,7 +327,8 @@ export const scanForScripts = () => {
         });
       } else if (mutation.type === 'attributes') {
         chrome.runtime.sendMessage({
-          debugMessage:
+          type: MESSAGE_TYPE.DEBUG,
+          log:
             'Processed DOM mutation and invalid attribute added or changed ' +
             mutation.target,
         });
@@ -370,7 +373,8 @@ export const processFoundJS = (origin, version) => {
             });
           }
           chrome.runtime.sendMessage({
-            debugMessage:
+            type: MESSAGE_TYPE.DEBUG,
+            log:
               'processed JS with SRC, response is ' +
               JSON.stringify(response).substring(0, 500),
           });
@@ -402,7 +406,8 @@ export const processFoundJS = (origin, version) => {
             });
           }
           chrome.runtime.sendMessage({
-            debugMessage:
+            type: MESSAGE_TYPE.DEBUG,
+            log:
               'processed the RAW_JS, response is ' +
               JSON.stringify(response).substring(0, 500),
           });

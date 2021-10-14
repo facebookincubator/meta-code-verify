@@ -14,6 +14,7 @@ export const ICON_STATE = {
 };
 
 export const MESSAGE_TYPE = {
+  DEBUG: 'DEBUG',
   JS_WITH_SRC: 'JS_WITH_SRC',
   LOAD_MANIFEST: 'LOAD_MANIFEST',
   POPUP_STATE: 'POPUP_STATE',
