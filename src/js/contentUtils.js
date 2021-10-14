@@ -326,6 +326,7 @@ export const scanForScripts = () => {
           hasInvalidScripts(checkScript, foundScripts);
         });
       } else if (mutation.type === 'attributes') {
+        // TODO: Should send error state here
         chrome.runtime.sendMessage({
           type: MESSAGE_TYPE.DEBUG,
           log:
