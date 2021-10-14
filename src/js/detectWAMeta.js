@@ -7,12 +7,14 @@ const extractMetaAndLoad = () => {
     'binary-transparency-manifest-key'
   );
   chrome.runtime.sendMessage({
-    debugMessage:
+    type: MESSAGE_TYPE.DEBUG,
+    log:
       'processing version metatag ' + JSON.stringify(versionMetaTag),
   });
   if (versionMetaTag.length < 1) {
     chrome.runtime.sendMessage({
-      debugMessage: 'version meta tag is missing!',
+      type: MESSAGE_TYPE.DEBUG,
+      log: 'version meta tag is missing!',
     });
   }
   const version = versionMetaTag[0].content;
@@ -26,7 +28,8 @@ const extractMetaAndLoad = () => {
     },
     response => {
       chrome.runtime.sendMessage({
-        debugMessage:
+        type: MESSAGE_TYPE.DEBUG,
+        log:
           'manifest load response is ' + response
             ? JSON.stringify(response).substring(0, 500)
             : '',

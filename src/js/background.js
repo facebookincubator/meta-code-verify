@@ -224,7 +224,7 @@ export function handleMessages(message, sender, sendResponse) {
     return true;
   }
 
-  if (message.type = MESSAGE_TYPE.DEBUG) {
+  if ((message.type = MESSAGE_TYPE.DEBUG)) {
     addDebugLog(sender.tab.id, message.log);
     return;
   }
