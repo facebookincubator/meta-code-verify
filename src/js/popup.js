@@ -1,4 +1,5 @@
-const debugList = [];
+import { MESSAGE_TYPE } from './config.js';
+
 let debugUrl = '';
 
 chrome.runtime.onMessage.addListener(message => {
@@ -31,17 +32,28 @@ function attachListeners() {
     'report_issue_button'
   );
   reportBugButton[0].addEventListener('click', () => {
-    console.log('debug info is ', debugList.join('\n'));
-    const default_responses = {
-      bug_url: debugUrl,
-      useragent: window.navigator.userAgent,
-      debuginfo: debugList.join('\n'),
-    };
-    // console.log('debug info', defaultResponse);
-    const reportBugURL =
-      'https://www.internalfb.com/butterfly/form/3045948462349251?default_responses=' +
-      JSON.stringify(default_responses);
-    chrome.tabs.create({ url: reportBugURL });
+    chrome.tabs.query({ active: true, currentWindow: true }, tabList => {
+      chrome.runtime.sendMessage(
+        {
+          type: MESSAGE_TYPE.GET_DEBUG,
+          tabId: tabList[0].id,
+        },
+        response => {
+          const debugList = response.debugList;
+          console.log('debug url is ', debugUrl);
+          console.log('debug info is ', debugList.join('\n'));
+          const default_responses = {
+            bug_url: debugUrl,
+            useragent: window.navigator.userAgent,
+            debuginfo: window.btoa(debugList.join('\n')),
+          };
+          const reportBugURL =
+            'https://www.internalfb.com/butterfly/form/3045948462349251?default_responses=' +
+            JSON.stringify(default_responses);
+          chrome.tabs.create({ url: reportBugURL });
+        }
+      );
+    });
   });
 }
 

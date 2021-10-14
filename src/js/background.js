@@ -224,8 +224,15 @@ export function handleMessages(message, sender, sendResponse) {
     return true;
   }
 
-  if ((message.type = MESSAGE_TYPE.DEBUG)) {
+  if (message.type == MESSAGE_TYPE.DEBUG) {
     addDebugLog(sender.tab.id, message.log);
+    return;
+  }
+
+  if (message.type == MESSAGE_TYPE.GET_DEBUG) {
+    const debuglist = getDebugLog(message.tabId);
+    console.log('debug list is ', message.tabId, debuglist);
+    sendResponse({ valid: true, debugList: debuglist });
     return;
   }
 }
