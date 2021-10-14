@@ -11,6 +11,7 @@ const extractMetaAndLoad = () => {
     log: 'processing version metatag ' + JSON.stringify(versionMetaTag),
   });
   if (versionMetaTag.length < 1) {
+    // TODO add Error state here
     chrome.runtime.sendMessage({
       type: MESSAGE_TYPE.DEBUG,
       log: 'version meta tag is missing!',
@@ -26,6 +27,7 @@ const extractMetaAndLoad = () => {
       version: version,
     },
     response => {
+      // TODO add Warning state here
       chrome.runtime.sendMessage({
         type: MESSAGE_TYPE.DEBUG,
         log:
