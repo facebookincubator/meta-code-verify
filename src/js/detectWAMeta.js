@@ -8,8 +8,7 @@ const extractMetaAndLoad = () => {
   );
   chrome.runtime.sendMessage({
     type: MESSAGE_TYPE.DEBUG,
-    log:
-      'processing version metatag ' + JSON.stringify(versionMetaTag),
+    log: 'processing version metatag ' + JSON.stringify(versionMetaTag),
   });
   if (versionMetaTag.length < 1) {
     chrome.runtime.sendMessage({
