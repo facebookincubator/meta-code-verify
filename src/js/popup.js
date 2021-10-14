@@ -10,12 +10,6 @@ chrome.runtime.onMessage.addListener(message => {
   if (message && message.senderUrl) {
     debugUrl = message.senderUrl;
   }
-
-  console.log('we got a message ', message);
-  if (message && message.debugMessage) {
-    console.log('adding message to debug queue ', message.debugMessage);
-    debugList.push(message.debugMessage);
-  }
 });
 
 function attachListeners() {
