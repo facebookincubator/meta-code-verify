@@ -65,7 +65,7 @@ export function handleMessages(message, sender, sendResponse) {
       '/' +
       message.version;
     // TODO: Add error handling here
-    fetch(endpoint, { METHOD: 'GET', mode: 'no-cors' })
+    fetch(endpoint, { METHOD: 'GET' })
       .then(response => response.json())
       .then(json => {
         origin.set(message.version, json[message.version]);
