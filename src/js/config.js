@@ -28,6 +28,11 @@ export const ORIGIN_ENDPOINT = {
   WHATSAPP: '/bt-manifest',
 };
 
+export const ORIGIN_TIMEOUT = {
+  FACEBOOK: 176400000,
+  WHATSAPP: 0,
+};
+
 export const ORIGIN_TYPE = {
   FACEBOOK: 'FACEBOOK',
   WHATSAPP: 'WHATSAPP',
