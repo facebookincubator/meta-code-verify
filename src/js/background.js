@@ -1,4 +1,4 @@
-import { MESSAGE_TYPE, ORIGIN_ENDPOINT } from './config.js';
+import { MESSAGE_TYPE, ORIGIN_ENDPOINT, ORIGIN_TIMEOUT } from './config.js';
 const manifestCache = new Map();
 const debugCache = new Map();
 
@@ -45,7 +45,8 @@ export function handleMessages(message, sender, sendResponse) {
     // check manifest cache
     let origin = manifestCache.get(message.origin);
     if (origin) {
-      const manifest = origin.get(message.version);
+      const manifestObj = origin.get(message.version);
+      const manifest = manifestObj && manifestObj.json;
       if (manifest) {
         // on cache hit sendResponse
         sendResponse({ valid: true });
@@ -58,6 +59,15 @@ export function handleMessages(message, sender, sendResponse) {
       manifestCache.set(message.origin, origin);
     }
 
+    // roll through the existing manifests and remove expired ones
+    if (ORIGIN_TIMEOUT[message.origin] > 0) {
+      for (let [key, manif] of origin.entries()) {
+        if (manif.start + ORIGIN_TIMEOUT[message.origin] > Date.now()) {
+          origin.delete(key);
+        }
+      }
+    }
+
     // on cache miss load missing manifest
     const endpoint =
       new URL(sender.tab.url).origin +
@@ -68,7 +78,10 @@ export function handleMessages(message, sender, sendResponse) {
     fetch(endpoint, { METHOD: 'GET' })
       .then(response => response.json())
       .then(json => {
-        origin.set(message.version, json[message.version]);
+        origin.set(message.version, {
+          json: json[message.version],
+          start: Date.now(),
+        });
         sendResponse({ valid: true });
       })
       .catch(error => {
@@ -94,7 +107,8 @@ export function handleMessages(message, sender, sendResponse) {
       sendResponse({ valid: false, reason: 'no matching origin' });
       return;
     }
-    const manifest = origin.get(message.version);
+    const manifestObj = origin.get(message.version);
+    const manifest = manifestObj && manifestObj.json;
     if (!manifest) {
       addDebugLog(
         sender.tab.id,
@@ -165,7 +179,8 @@ export function handleMessages(message, sender, sendResponse) {
       sendResponse({ valid: false, reason: 'no matching origin' });
       return;
     }
-    const manifest = origin.get(message.version);
+    const manifestObj = origin.get(message.version);
+    const manifest = manifestObj && manifestObj.json;
     if (!manifest) {
       addDebugLog(
         sender.tab.id,
