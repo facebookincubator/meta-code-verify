@@ -238,3 +238,8 @@ export function handleMessages(message, sender, sendResponse) {
 }
 
 chrome.runtime.onMessage.addListener(handleMessages);
+chrome.tabs.onRemoved.addListener(tabId => {
+  if (debugCache.has(tabId)) {
+    debugCache.delete(tabId);
+  }
+});
