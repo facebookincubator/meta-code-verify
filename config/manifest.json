@@ -29,7 +29,7 @@
             "run_at": "document_start"
         },
         {
-            "matches": ["*://*.whatsapp.com/*"],
+            "matches": ["*://web*.whatsapp.com/*"],
             "js": ["contentWA.js"],
             "run_at": "document_start"
         }
