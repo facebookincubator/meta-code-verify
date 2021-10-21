@@ -464,6 +464,18 @@ export const extractMetaAndLoad = origin => {
   );
 };
 
+export function startFor(origin) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      extractMetaAndLoad(origin);
+    });
+  } else {
+    extractMetaAndLoad(origin);
+  }
+
+  scanForScripts();
+}
+
 chrome.runtime.sendMessage({
   type: MESSAGE_TYPE.UPDATE_ICON,
   icon: ICON_STATE.PROCESSING,
