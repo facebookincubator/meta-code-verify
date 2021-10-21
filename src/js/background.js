@@ -98,6 +98,16 @@ export function handleMessages(message, sender, sendResponse) {
   }
 
   if (message.type == MESSAGE_TYPE.JS_WITH_SRC) {
+    // exclude known extension scripts from analysis
+    if (message.src.indexOf('chrome-extension://') === 0) {
+      addDebugLog(
+        sender.tab.id,
+        'Warning: User installed extension inserted script ' + message.src
+      );
+      sendResponse({ valid: true, reason: 'User installed extension has inserted script' });
+      return;
+    }
+
     const origin = manifestCache.get(message.origin);
     if (!origin) {
       addDebugLog(
