@@ -326,7 +326,11 @@ export const scanForScripts = () => {
           hasInvalidScripts(checkScript, foundScripts);
         });
       } else if (mutation.type === 'attributes') {
-        // TODO: Should send error state here
+        currentState = ICON_STATE.INVALID_SOFT;
+        chrome.runtime.sendMessage({
+          type: MESSAGE_TYPE.UPDATE_ICON,
+          icon: ICON_STATE.INVALID_SOFT,
+        });
         chrome.runtime.sendMessage({
           type: MESSAGE_TYPE.DEBUG,
           log:
@@ -417,6 +421,47 @@ export const processFoundJS = (origin, version) => {
     }
   });
   window.setTimeout(() => processFoundJS(origin, version), 3000);
+};
+
+export const extractMetaAndLoad = origin => {
+  // extract JS version from the page
+  const versionMetaTag = document.getElementsByName(
+    'binary-transparency-manifest-key'
+  );
+  chrome.runtime.sendMessage({
+    type: MESSAGE_TYPE.DEBUG,
+    log: 'processing version metatag ' + JSON.stringify(versionMetaTag),
+  });
+  if (versionMetaTag.length < 1) {
+    // TODO add Error state here
+    chrome.runtime.sendMessage({
+      type: MESSAGE_TYPE.DEBUG,
+      log: 'version meta tag is missing!',
+    });
+  }
+  const version = versionMetaTag[0].content;
+  console.log('wa meta tag version is ', version);
+  // send message to Service Worker to download the correct manifest
+  chrome.runtime.sendMessage(
+    {
+      type: MESSAGE_TYPE.LOAD_MANIFEST,
+      origin: origin,
+      version: version,
+    },
+    response => {
+      // TODO add Warning state here
+      chrome.runtime.sendMessage({
+        type: MESSAGE_TYPE.DEBUG,
+        log:
+          'manifest load response is ' + response
+            ? JSON.stringify(response).substring(0, 500)
+            : '',
+      });
+      if (response.valid) {
+        window.setTimeout(() => processFoundJS(origin, version), 0);
+      }
+    }
+  );
 };
 
 chrome.runtime.sendMessage({
