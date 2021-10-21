@@ -30,6 +30,7 @@
         },
         {
             "matches": ["*://*.whatsapp.com/*"],
+            // "exclude_matches": ["*://www.whatsapp.com/"],
             "js": ["contentWA.js"],
             "run_at": "document_start"
         }

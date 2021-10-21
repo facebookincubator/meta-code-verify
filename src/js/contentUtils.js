@@ -261,6 +261,7 @@ export function hasInvalidAttributes(htmlElement) {
             ' from element ' +
             htmlElement.outerHTML,
         });
+        currentState = ICON_STATE.INVALID_SOFT;
         chrome.runtime.sendMessage({
           type: MESSAGE_TYPE.UPDATE_ICON,
           icon: ICON_STATE.INVALID_SOFT,
@@ -433,11 +434,16 @@ export const extractMetaAndLoad = origin => {
     log: 'processing version metatag ' + JSON.stringify(versionMetaTag),
   });
   if (versionMetaTag.length < 1) {
-    // TODO add Error state here
+    currentState = ICON_STATE.INVALID_SOFT;
+    chrome.runtime.sendMessage({
+      type: MESSAGE_TYPE.UPDATE_ICON,
+      icon: ICON_STATE.INVALID_SOFT,
+    });
     chrome.runtime.sendMessage({
       type: MESSAGE_TYPE.DEBUG,
       log: 'version meta tag is missing!',
     });
+    return;
   }
   const version = versionMetaTag[0].content;
   console.log('wa meta tag version is ', version);
