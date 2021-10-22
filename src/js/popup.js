@@ -62,7 +62,7 @@ function updateDisplay(state) {
     element => {
       if (element.id == state) {
         element.style.display = 'flex';
-        document.body.class = state + '_body';
+        document.body.className = state + '_body';
       } else {
         element.style.display = 'none';
       }
