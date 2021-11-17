@@ -431,7 +431,9 @@ export const extractMetaAndLoad = origin => {
   );
   chrome.runtime.sendMessage({
     type: MESSAGE_TYPE.DEBUG,
-    log: 'processing version metatag ' + JSON.stringify(versionMetaTag && versionMetaTag[0]),
+    log:
+      'processing version metatag ' +
+      JSON.stringify(versionMetaTag && versionMetaTag[0]),
   });
   if (versionMetaTag.length < 1) {
     currentState = ICON_STATE.INVALID_SOFT;
