@@ -30,7 +30,7 @@
         },
         {
             "matches": ["*://*.whatsapp.com/*"],
-            "exclude_matches": ["*://www.whatsapp.com/"],
+            "exclude_matches": ["*://www.whatsapp.com/", "*://*.whatsapp.com/bt-manifest/*"],
             "js": ["contentWA.js"],
             "run_at": "document_start"
         }
