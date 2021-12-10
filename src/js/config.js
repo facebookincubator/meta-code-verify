@@ -23,11 +23,6 @@ export const MESSAGE_TYPE = {
   UPDATE_ICON: 'UPDATE_ICON',
 };
 
-export const ORIGIN_ENDPOINT = {
-  FACEBOOK: '/btmanifest',
-  WHATSAPP: '/bt-manifest',
-};
-
 export const ORIGIN_TIMEOUT = {
   FACEBOOK: 176400000,
   WHATSAPP: 0,

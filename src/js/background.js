@@ -1,4 +1,4 @@
-import { MESSAGE_TYPE, ORIGIN_ENDPOINT, ORIGIN_TIMEOUT } from './config.js';
+import { MESSAGE_TYPE, ORIGIN_TIMEOUT } from './config.js';
 const manifestCache = new Map();
 const debugCache = new Map();
 
@@ -29,6 +29,62 @@ function addDebugLog(tabId, debugMessage) {
   tabDebugList.push(debugMessage);
 }
 
+const fromHexString = hexString =>
+  new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+const toHexString = bytes =>
+  bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
+
+async function validateManifest(rootHash, leaves) {
+  console.log('initial leaves are ', leaves);
+  let oldhashes = leaves.map(
+    leaf => fromHexString(leaf.replace('0x', '')).buffer
+  );
+  let newhashes = [];
+  let bonus = '';
+
+  while (oldhashes.length > 1) {
+    for (let index = 0; index < oldhashes.length; index += 2) {
+      const validSecondValue = index + 1 < oldhashes.length;
+      if (validSecondValue) {
+        const hashValue = new Uint8Array(
+          oldhashes[index].byteLength + oldhashes[index + 1].byteLength
+        );
+        hashValue.set(new Uint8Array(oldhashes[index]), 0);
+        hashValue.set(
+          new Uint8Array(oldhashes[index + 1]),
+          oldhashes[index].byteLength
+        );
+        newhashes.push(await crypto.subtle.digest('SHA-256', hashValue.buffer));
+      } else {
+        bonus = oldhashes[index];
+      }
+    }
+    oldhashes = newhashes;
+    if (bonus !== '') {
+      oldhashes.push(bonus);
+    }
+    console.log(
+      'layer hex is ',
+      oldhashes.map(hash => {
+        return Array.from(new Uint8Array(hash))
+          .map(b => b.toString(16).padStart(2, ''))
+          .join('');
+      })
+    );
+    newhashes = [];
+    bonus = '';
+    console.log(
+      'in loop hashes.length is',
+      oldhashes.length,
+      rootHash,
+      oldhashes
+    );
+  }
+  const lastHash = toHexString(new Uint8Array(oldhashes[0]));
+  console.log('before return comparison', rootHash, lastHash);
+  return lastHash === rootHash;
+}
+
 function getDebugLog(tabId) {
   let tabDebugList = debugCache.get(tabId);
   return tabDebugList == null ? [] : tabDebugList;
@@ -46,7 +102,7 @@ export function handleMessages(message, sender, sendResponse) {
     let origin = manifestCache.get(message.origin);
     if (origin) {
       const manifestObj = origin.get(message.version);
-      const manifest = manifestObj && manifestObj.json;
+      const manifest = manifestObj && manifestObj.leaves;
       if (manifest) {
         // on cache hit sendResponse
         sendResponse({ valid: true });
@@ -68,31 +124,25 @@ export function handleMessages(message, sender, sendResponse) {
       }
     }
 
-    // on cache miss load missing manifest
-    const endpoint =
-      new URL(sender.tab.url).origin +
-      ORIGIN_ENDPOINT[message.origin] +
-      '/' +
-      message.version;
-    fetch(endpoint, { METHOD: 'GET' })
-      .then(response => response.json())
-      .then(json => {
+    // validate manifest
+    const slicedHash = message.rootHash.slice(2);
+    const slicedLeaves = message.leaves.map(leaf => {
+      return leaf.slice(2);
+    });
+    validateManifest(slicedHash, slicedLeaves).then(valid => {
+      if (valid) {
+        // store manifest to subsequently validate JS
+        console.log('result is ', valid);
         origin.set(message.version, {
-          json: json[message.version],
+          leaves: slicedLeaves,
+          root: slicedHash,
           start: Date.now(),
         });
         sendResponse({ valid: true });
-      })
-      .catch(error => {
-        addDebugLog(
-          sender.tab.id,
-          'Error fetching manifest, version ' +
-            message.version +
-            ' error ' +
-            JSON.stringify(error).substring(0, 500)
-        );
+      } else {
         sendResponse({ valid: false });
-      });
+      }
+    });
     return true;
   }
 
@@ -123,7 +173,7 @@ export function handleMessages(message, sender, sendResponse) {
       return;
     }
     const manifestObj = origin.get(message.version);
-    const manifest = manifestObj && manifestObj.json;
+    const manifest = manifestObj && manifestObj.leaves;
     if (!manifest) {
       addDebugLog(
         sender.tab.id,
@@ -135,22 +185,6 @@ export function handleMessages(message, sender, sendResponse) {
       sendResponse({ valid: false, reason: 'no matching manifest' });
       return;
     }
-    const jsPath = new URL(message.src).pathname;
-    const hashToMatch = manifest[jsPath];
-    if (!hashToMatch) {
-      addDebugLog(
-        sender.tab.id,
-        'Error: hash does not match ' +
-          message.origin +
-          ', ' +
-          message.version +
-          ', unmatched JS is ' +
-          message.src
-      );
-      sendResponse({ valid: false, reason: 'no matching hash' });
-      return;
-    }
-
     // fetch the src
     fetch(message.src, { METHOD: 'GET' })
       .then(response => response.text())
@@ -158,7 +192,7 @@ export function handleMessages(message, sender, sendResponse) {
         // hash the src
         const encoder = new TextEncoder();
         const encodedJS = encoder.encode(jsText);
-        return crypto.subtle.digest('SHA-384', encodedJS);
+        return crypto.subtle.digest('SHA-256', encodedJS);
       })
       .then(jsHashBuffer => {
         const jsHashArray = Array.from(new Uint8Array(jsHashBuffer));
@@ -166,7 +200,7 @@ export function handleMessages(message, sender, sendResponse) {
           .map(b => b.toString(16).padStart(2, '0'))
           .join('');
         // compare hashes
-        sendResponse({ valid: jsHash === hashToMatch });
+        sendResponse({ valid: manifestObj.leaves.includes(jsHash) });
       })
       .catch(error => {
         addDebugLog(
@@ -195,7 +229,7 @@ export function handleMessages(message, sender, sendResponse) {
       return;
     }
     const manifestObj = origin.get(message.version);
-    const manifest = manifestObj && manifestObj.json;
+    const manifest = manifestObj && manifestObj.leaves;
     if (!manifest) {
       addDebugLog(
         sender.tab.id,
@@ -212,31 +246,13 @@ export function handleMessages(message, sender, sendResponse) {
     const encoder = new TextEncoder();
     const encodedJS = encoder.encode(message.rawjs);
     // hash the src
-    crypto.subtle.digest('SHA-384', encodedJS).then(jsHashBuffer => {
+    crypto.subtle.digest('SHA-256', encodedJS).then(jsHashBuffer => {
       const jsHashArray = Array.from(new Uint8Array(jsHashBuffer));
       const jsHash = jsHashArray
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
 
-      let hashToMatch = manifest[message.lookupKey];
-      if (hashToMatch == null) {
-        hashToMatch = manifest['inline-js-' + jsHash];
-      }
-
-      if (!hashToMatch) {
-        addDebugLog(
-          sender.tab.id,
-          'Error: hash does not match ' +
-            message.origin +
-            ', ' +
-            message.version +
-            ', unmatched JS is ' +
-            message.rawjs.substring(0, 500)
-        );
-        sendResponse({ valid: false, reason: 'no matching hash' });
-        return;
-      }
-      if (jsHash === hashToMatch) {
+      if (manifestObj.leaves.includes(jsHash)) {
         sendResponse({ valid: true });
       } else {
         addDebugLog(
@@ -248,7 +264,16 @@ export function handleMessages(message, sender, sendResponse) {
             ', unmatched JS is ' +
             message.rawjs.substring(0, 500)
         );
-        sendResponse({ valid: false, reason: 'no matching hash' });
+        sendResponse({
+          valid: false,
+          reason:
+            'Error: hash does not match ' +
+            message.origin +
+            ', ' +
+            message.version +
+            ', unmatched JS is ' +
+            message.rawjs,
+        });
       }
     });
     return true;
