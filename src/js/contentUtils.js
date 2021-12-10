@@ -208,16 +208,66 @@ const DOM_EVENTS = [
   'onwheel',
 ];
 
-const foundScripts = [];
+const foundScripts = new Map();
+foundScripts.set('', []);
 let currentState = ICON_STATE.VALID;
+let currentOrigin = '';
 
 export function storeFoundJS(scriptNodeMaybe, scriptList) {
+  // check if it's the manifest node
+  if (
+    scriptNodeMaybe.id === 'binary-transparency-manifest' ||
+    scriptNodeMaybe.getAttribute('name') === 'binary-transparency-manifest'
+  ) {
+    // TODO: if so, send it off to validate
+    const rawManifest = JSON.parse(scriptNodeMaybe.innerHTML);
+    const version = rawManifest.version;
+    // now that we know the actual version of the scripts, transfer the ones we know about.
+    if (foundScripts.has('')) {
+      foundScripts.set(version, foundScripts.get(''));
+      foundScripts.delete('');
+    } else {
+      foundScripts.set(version, []);
+    }
+    chrome.runtime.sendMessage(
+      {
+        type: MESSAGE_TYPE.LOAD_MANIFEST,
+        leaves: rawManifest.leaves,
+        origin: currentOrigin,
+        rootHash: rawManifest.root,
+        version: version,
+      },
+      response => {
+        chrome.runtime.sendMessage({
+          type: MESSAGE_TYPE.DEBUG,
+          log:
+            'manifest load response is ' + response
+              ? JSON.stringify(response).substring(0, 500)
+              : '',
+        });
+        // then start processing of it's JS
+        // TODO: processing needs to factor in version
+        if (response.valid) {
+          window.setTimeout(() => processFoundJS(currentOrigin, version), 0);
+        } else {
+          // TODO add Warning state here
+        }
+      }
+    );
+    // TODO: start timeout to check if manifest hasn't loaded?
+  }
+  if (scriptNodeMaybe.getAttribute('type') === 'application/json') {
+    // ignore innocuous data.
+    return;
+  }
   // need to get the src of the JS
   if (scriptNodeMaybe.src != null && scriptNodeMaybe.src !== '') {
-    scriptList.push({
-      type: MESSAGE_TYPE.JS_WITH_SRC,
-      src: scriptNodeMaybe.src,
-    });
+    if (scriptList.size === 1) {
+      scriptList.get(scriptList.keys().next().value).push({
+        type: MESSAGE_TYPE.JS_WITH_SRC,
+        src: scriptNodeMaybe.src,
+      });
+    }
   } else {
     // no src, access innerHTML for the code
     const hashLookupAttribute =
@@ -231,11 +281,13 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
         'for ' +
         scriptNodeMaybe.innerHTML,
     });
-    scriptList.push({
-      type: MESSAGE_TYPE.RAW_JS,
-      rawjs: scriptNodeMaybe.innerHTML,
-      lookupKey: hashLookupKey,
-    });
+    if (scriptList.size === 1) {
+      scriptList.get(scriptList.keys().next().value).push({
+        type: MESSAGE_TYPE.RAW_JS,
+        rawjs: scriptNodeMaybe.innerHTML,
+        lookupKey: hashLookupKey,
+      });
+    }
   }
   if (currentState == ICON_STATE.VALID) {
     chrome.runtime.sendMessage({
@@ -351,7 +403,7 @@ export const scanForScripts = () => {
 
 export const processFoundJS = (origin, version) => {
   // foundScripts
-  const scripts = foundScripts.splice(0);
+  const scripts = foundScripts.get(version).splice(0);
   let pendingScriptCount = scripts.length;
   scripts.forEach(script => {
     if (script.src) {
@@ -424,63 +476,8 @@ export const processFoundJS = (origin, version) => {
   window.setTimeout(() => processFoundJS(origin, version), 3000);
 };
 
-export const extractMetaAndLoad = origin => {
-  // extract JS version from the page
-  const versionMetaTag = document.getElementsByName(
-    'binary-transparency-manifest-key'
-  );
-  chrome.runtime.sendMessage({
-    type: MESSAGE_TYPE.DEBUG,
-    log:
-      'processing version metatag ' +
-      JSON.stringify(versionMetaTag && versionMetaTag[0]),
-  });
-  if (versionMetaTag.length < 1) {
-    currentState = ICON_STATE.INVALID_SOFT;
-    chrome.runtime.sendMessage({
-      type: MESSAGE_TYPE.UPDATE_ICON,
-      icon: ICON_STATE.INVALID_SOFT,
-    });
-    chrome.runtime.sendMessage({
-      type: MESSAGE_TYPE.DEBUG,
-      log: 'version meta tag is missing!',
-    });
-    return;
-  }
-  const version = versionMetaTag[0].content;
-  console.log('wa meta tag version is ', version);
-  // send message to Service Worker to download the correct manifest
-  chrome.runtime.sendMessage(
-    {
-      type: MESSAGE_TYPE.LOAD_MANIFEST,
-      origin: origin,
-      version: version,
-    },
-    response => {
-      // TODO add Warning state here
-      chrome.runtime.sendMessage({
-        type: MESSAGE_TYPE.DEBUG,
-        log:
-          'manifest load response is ' + response
-            ? JSON.stringify(response).substring(0, 500)
-            : '',
-      });
-      if (response.valid) {
-        window.setTimeout(() => processFoundJS(origin, version), 0);
-      }
-    }
-  );
-};
-
 export function startFor(origin) {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      extractMetaAndLoad(origin);
-    });
-  } else {
-    extractMetaAndLoad(origin);
-  }
-
+  currentOrigin = origin;
   scanForScripts();
 }
 
