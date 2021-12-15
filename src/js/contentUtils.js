@@ -1,4 +1,4 @@
-import { ICON_STATE, MESSAGE_TYPE } from './config.js';
+import { ICON_STATE, MESSAGE_TYPE, ORIGIN_TYPE } from './config.js';
 
 const DOM_EVENTS = [
   'onabort',
@@ -212,6 +212,7 @@ const foundScripts = new Map();
 foundScripts.set('', []);
 let currentState = ICON_STATE.VALID;
 let currentOrigin = '';
+let currentFilterType = '';
 
 export function storeFoundJS(scriptNodeMaybe, scriptList) {
   // check if it's the manifest node
@@ -219,9 +220,29 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     scriptNodeMaybe.id === 'binary-transparency-manifest' ||
     scriptNodeMaybe.getAttribute('name') === 'binary-transparency-manifest'
   ) {
-    // TODO: if so, send it off to validate
     const rawManifest = JSON.parse(scriptNodeMaybe.innerHTML);
-    const version = rawManifest.version;
+
+    let leaves = rawManifest.leaves;
+    let otherHashes = '';
+    let otherType = '';
+    let roothash = rawManifest.root;
+    let version = rawManifest.version;
+
+    if ([ORIGIN_TYPE.FACEBOOK].includes(currentOrigin)) {
+      leaves = rawManifest.manifest;
+      otherHashes = rawManifest.manifest_hashes;
+      otherType = scriptNodeMaybe.getAttribute('data-manifest-type');
+      roothash = otherHashes.main;
+      version = scriptNodeMaybe.getAttribute('data-manifest-rev');
+
+      if (currentFilterType != '') {
+        currentFilterType = 'BOTH';
+      }
+      if (currentFilterType === '') {
+        currentFilterType = otherType;
+      }
+      console.log('currentFilterType', currentFilterType);
+    }
     // now that we know the actual version of the scripts, transfer the ones we know about.
     if (foundScripts.has('')) {
       foundScripts.set(version, foundScripts.get(''));
@@ -232,9 +253,11 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     chrome.runtime.sendMessage(
       {
         type: MESSAGE_TYPE.LOAD_MANIFEST,
-        leaves: rawManifest.leaves,
+        leaves: leaves,
         origin: currentOrigin,
-        rootHash: rawManifest.root,
+        otherHashes: otherHashes,
+        otherType: otherType,
+        rootHash: roothash,
         version: version,
       },
       response => {
@@ -246,11 +269,10 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
               : '',
         });
         // then start processing of it's JS
-        // TODO: processing needs to factor in version
         if (response.valid) {
           window.setTimeout(() => processFoundJS(currentOrigin, version), 0);
         } else {
-          // TODO add Warning state here
+          // TODO add Error state here, manifest didn't validate
         }
       }
     );
