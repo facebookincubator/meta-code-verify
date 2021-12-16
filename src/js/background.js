@@ -1,4 +1,4 @@
-import { MESSAGE_TYPE, ORIGIN_TIMEOUT } from './config.js';
+import { MESSAGE_TYPE, ORIGIN_TIMEOUT, ORIGIN_TYPE } from './config.js';
 const manifestCache = new Map();
 const debugCache = new Map();
 
@@ -85,6 +85,40 @@ async function validateManifest(rootHash, leaves) {
   return lastHash === rootHash;
 }
 
+async function validateMetaCompanyManifest(rootHash, otherHashes, leaves) {
+  // merge all the hashes into one
+  const megaHash = JSON.stringify(leaves);
+  // hash it
+  const encoder = new TextEncoder();
+  const encodedMegaHash = encoder.encode(megaHash);
+  const jsHashArray = Array.from(
+    new Uint8Array(await crypto.subtle.digest('SHA-256', encodedMegaHash))
+  );
+  const jsHash = jsHashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  // compare to main and long tail, it should match one
+  // then hash it with the other
+  let combinedHash = '';
+  if (jsHash === otherHashes.main || jsHash === otherHashes.longtail) {
+    const combinedHashArray = Array.from(
+      new Uint8Array(
+        await crypto.subtle.digest(
+          'SHA-256',
+          encoder.encode(otherHashes.longtail + otherHashes.main)
+        )
+      )
+    );
+    combinedHash = combinedHashArray
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  } else {
+    return false;
+  }
+
+  // ensure result matches root, return.
+  console.log('combined hash is ', combinedHash, rootHash);
+  return combinedHash === rootHash;
+}
+
 function getDebugLog(tabId) {
   let tabDebugList = debugCache.get(tabId);
   return tabDebugList == null ? [] : tabDebugList;
@@ -103,7 +137,7 @@ export function handleMessages(message, sender, sendResponse) {
     if (origin) {
       const manifestObj = origin.get(message.version);
       const manifest = manifestObj && manifestObj.leaves;
-      if (manifest) {
+      if (manifest && message.otherType === '') {
         // on cache hit sendResponse
         sendResponse({ valid: true });
         return;
@@ -125,24 +159,32 @@ export function handleMessages(message, sender, sendResponse) {
     }
 
     // validate manifest
-    const slicedHash = message.rootHash.slice(2);
-    const slicedLeaves = message.leaves.map(leaf => {
-      return leaf.slice(2);
-    });
-    validateManifest(slicedHash, slicedLeaves).then(valid => {
-      if (valid) {
-        // store manifest to subsequently validate JS
-        console.log('result is ', valid);
-        origin.set(message.version, {
-          leaves: slicedLeaves,
-          root: slicedHash,
-          start: Date.now(),
-        });
-        sendResponse({ valid: true });
-      } else {
-        sendResponse({ valid: false });
-      }
-    });
+    if ([ORIGIN_TYPE.FACEBOOK].includes(message.origin)) {
+      validateMetaCompanyManifest(
+        message.rootHash,
+        message.otherHashes,
+        message.leaves
+      ).then();
+    } else {
+      const slicedHash = message.rootHash.slice(2);
+      const slicedLeaves = message.leaves.map(leaf => {
+        return leaf.slice(2);
+      });
+      validateManifest(slicedHash, slicedLeaves).then(valid => {
+        if (valid) {
+          // store manifest to subsequently validate JS
+          console.log('result is ', valid);
+          origin.set(message.version, {
+            leaves: slicedLeaves,
+            root: slicedHash,
+            start: Date.now(),
+          });
+          sendResponse({ valid: true });
+        } else {
+          sendResponse({ valid: false });
+        }
+      });
+    }
     return true;
   }
 
@@ -252,6 +294,7 @@ export function handleMessages(message, sender, sendResponse) {
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
 
+      console.log('generate hash is ', jsHash);
       if (manifestObj.leaves.includes(jsHash)) {
         sendResponse({ valid: true });
       } else {
