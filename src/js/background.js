@@ -164,7 +164,20 @@ export function handleMessages(message, sender, sendResponse) {
         message.rootHash,
         message.otherHashes,
         message.leaves
-      ).then();
+      ).then(valid => {
+        console.log('result is ', valid);
+        if (valid) {
+          let manifest = origin.get(message.version);
+          if (!manifest) {
+            manifest = [];
+            origin.set(message.version, manifest);
+          }
+          message.leaves.forEach(leaf => manifest.push(leaf));
+          sendResponse({ valid: true });
+        } else {
+          sendResponse({ valid: false });
+        }
+      });
     } else {
       const slicedHash = message.rootHash.slice(2);
       const slicedLeaves = message.leaves.map(leaf => {
