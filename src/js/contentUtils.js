@@ -232,7 +232,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
       leaves = rawManifest.manifest;
       otherHashes = rawManifest.manifest_hashes;
       otherType = scriptNodeMaybe.getAttribute('data-manifest-type');
-      roothash = otherHashes.main;
+      roothash = otherHashes.combined_hash;
       version = scriptNodeMaybe.getAttribute('data-manifest-rev');
 
       if (currentFilterType != '') {
