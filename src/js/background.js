@@ -119,6 +119,63 @@ async function validateMetaCompanyManifest(rootHash, otherHashes, leaves) {
   return combinedHash === rootHash;
 }
 
+async function processJSWithSrc(message, manifest, tabId) {
+  console.log('in processJSWithSrc');
+  try {
+    const sourceResponse = await fetch(message.src, { METHOD: 'GET' });
+    let sourceText = await sourceResponse.text();
+    if (sourceText.indexOf('if (self.CavalryLogger) {') === 0) {
+      sourceText = sourceText.slice(66);
+    }
+    // if ([ORIGIN_TYPE.FACEBOOK].includes(message.origin)) {
+    //   sourceText = unescape(sourceText);
+    // }
+    // strip i18n delimiters
+    // eslint-disable-next-line no-useless-escape
+    const i18nRegexp = /\/\*FBT_CALL\*\/[^\/]*\/\*FBT_CALL\*\//g;
+    const i18nStripped = sourceText.replace(i18nRegexp, '');
+    // split package up if necessary
+    const packages = i18nStripped.split('/*FB_PKG_DELIM*/\n');
+    const encoder = new TextEncoder();
+    for (let i = 0; i < packages.length; i++) {
+      const encodedPackage = encoder.encode(packages[i]);
+      const packageHashBuffer = await crypto.subtle.digest(
+        'SHA-256',
+        encodedPackage
+      );
+      const packageHash = Array.from(new Uint8Array(packageHashBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      console.log(
+        'manifest is ',
+        manifest.leaves.length,
+        manifest.leaves.includes(packageHash),
+        packageHash
+      );
+      if (!manifest.leaves.includes(packageHash)) {
+        return false;
+      }
+    }
+    return true; // YAY!
+  } catch (error) {
+    console.log('error occurred!', error);
+    addDebugLog(
+      tabId,
+      'Error: Processing JS with SRC ' +
+        message.origin +
+        ', ' +
+        message.version +
+        ' problematic JS is ' +
+        message.src +
+        'error is ' +
+        JSON.stringify(error).substring(0, 500)
+    );
+    return false;
+  }
+}
+
+// async function processRawJS() {}
+
 function getDebugLog(tabId) {
   let tabDebugList = debugCache.get(tabId);
   return tabDebugList == null ? [] : tabDebugList;
@@ -132,32 +189,6 @@ export function handleMessages(message, sender, sendResponse) {
   }
 
   if (message.type == MESSAGE_TYPE.LOAD_MANIFEST) {
-    // check manifest cache
-    let origin = manifestCache.get(message.origin);
-    if (origin) {
-      const manifestObj = origin.get(message.version);
-      const manifest = manifestObj && manifestObj.leaves;
-      if (manifest && message.otherType === '') {
-        // on cache hit sendResponse
-        sendResponse({ valid: true });
-        return;
-      }
-    }
-    // populate origin if not there
-    if (origin == null) {
-      origin = new Map();
-      manifestCache.set(message.origin, origin);
-    }
-
-    // roll through the existing manifests and remove expired ones
-    if (ORIGIN_TIMEOUT[message.origin] > 0) {
-      for (let [key, manif] of origin.entries()) {
-        if (manif.start + ORIGIN_TIMEOUT[message.origin] > Date.now()) {
-          origin.delete(key);
-        }
-      }
-    }
-
     // validate manifest
     if ([ORIGIN_TYPE.FACEBOOK].includes(message.origin)) {
       validateMetaCompanyManifest(
@@ -167,12 +198,34 @@ export function handleMessages(message, sender, sendResponse) {
       ).then(valid => {
         console.log('result is ', valid);
         if (valid) {
+          let origin = manifestCache.get(message.origin);
+          if (origin == null) {
+            origin = new Map();
+            manifestCache.set(message.origin, origin);
+          }
+          // roll through the existing manifests and remove expired ones
+          if (ORIGIN_TIMEOUT[message.origin] > 0) {
+            for (let [key, manif] of origin.entries()) {
+              if (manif.start + ORIGIN_TIMEOUT[message.origin] < Date.now()) {
+                origin.delete(key);
+              }
+            }
+          }
+
           let manifest = origin.get(message.version);
           if (!manifest) {
-            manifest = [];
+            manifest = {
+              leaves: [],
+              root: message.rootHash,
+              start: Date.now(),
+            };
             origin.set(message.version, manifest);
           }
-          message.leaves.forEach(leaf => manifest.push(leaf));
+          message.leaves.forEach(leaf => {
+            if (!manifest.leaves.includes(leaf)) {
+              manifest.leaves.push(leaf);
+            }
+          });
           sendResponse({ valid: true });
         } else {
           sendResponse({ valid: false });
@@ -186,6 +239,19 @@ export function handleMessages(message, sender, sendResponse) {
       validateManifest(slicedHash, slicedLeaves).then(valid => {
         if (valid) {
           // store manifest to subsequently validate JS
+          let origin = manifestCache.get(message.origin);
+          if (origin == null) {
+            origin = new Map();
+            manifestCache.set(message.origin, origin);
+          }
+          // roll through the existing manifests and remove expired ones
+          if (ORIGIN_TIMEOUT[message.origin] > 0) {
+            for (let [key, manif] of origin.entries()) {
+              if (manif.start + ORIGIN_TIMEOUT[message.origin] < Date.now()) {
+                origin.delete(key);
+              }
+            }
+          }
           console.log('result is ', valid);
           origin.set(message.version, {
             leaves: slicedLeaves,
@@ -240,36 +306,11 @@ export function handleMessages(message, sender, sendResponse) {
       sendResponse({ valid: false, reason: 'no matching manifest' });
       return;
     }
-    // fetch the src
-    fetch(message.src, { METHOD: 'GET' })
-      .then(response => response.text())
-      .then(jsText => {
-        // hash the src
-        const encoder = new TextEncoder();
-        const encodedJS = encoder.encode(jsText);
-        return crypto.subtle.digest('SHA-256', encodedJS);
-      })
-      .then(jsHashBuffer => {
-        const jsHashArray = Array.from(new Uint8Array(jsHashBuffer));
-        const jsHash = jsHashArray
-          .map(b => b.toString(16).padStart(2, '0'))
-          .join('');
-        // compare hashes
-        sendResponse({ valid: manifestObj.leaves.includes(jsHash) });
-      })
-      .catch(error => {
-        addDebugLog(
-          sender.tab.id,
-          'Error: Processing JS with SRC ' +
-            message.origin +
-            ', ' +
-            message.version +
-            ' problematic JS is ' +
-            message.src +
-            'error is ' +
-            JSON.stringify(error).substring(0, 500)
-        );
-      });
+    // fetch and process the src
+    processJSWithSrc(message, manifestObj, sender.tab.id).then(valid => {
+      console.log('sending processJSWithSrc response ', valid);
+      sendResponse({ valid: valid });
+    });
     return true;
   }
 
