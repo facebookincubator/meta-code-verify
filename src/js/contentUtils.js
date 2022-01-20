@@ -241,15 +241,13 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
       if (currentFilterType === '') {
         currentFilterType = otherType;
       }
-      console.log('currentFilterType', currentFilterType);
     }
     // now that we know the actual version of the scripts, transfer the ones we know about.
     if (foundScripts.has('')) {
       foundScripts.set(version, foundScripts.get(''));
       foundScripts.delete('');
-    } else {
-      foundScripts.set(version, []);
     }
+
     chrome.runtime.sendMessage(
       {
         type: MESSAGE_TYPE.LOAD_MANIFEST,
@@ -288,6 +286,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
       scriptList.get(scriptList.keys().next().value).push({
         type: MESSAGE_TYPE.JS_WITH_SRC,
         src: scriptNodeMaybe.src,
+        otherType: '', // TODO: read from DOM when available
       });
     }
   } else {
@@ -295,19 +294,12 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     const hashLookupAttribute =
       scriptNodeMaybe.attributes['data-binary-transparency-hash-key'];
     const hashLookupKey = hashLookupAttribute && hashLookupAttribute.value;
-    chrome.runtime.sendMessage({
-      type: MESSAGE_TYPE.DEBUG,
-      log:
-        'hashLookupKey for inline js is ' +
-        hashLookupKey +
-        'for ' +
-        scriptNodeMaybe.innerHTML,
-    });
     if (scriptList.size === 1) {
       scriptList.get(scriptList.keys().next().value).push({
         type: MESSAGE_TYPE.RAW_JS,
         rawjs: scriptNodeMaybe.innerHTML,
         lookupKey: hashLookupKey,
+        otherType: '', // TODO: read from DOM when available
       });
     }
   }
@@ -425,7 +417,17 @@ export const scanForScripts = () => {
 
 export const processFoundJS = (origin, version) => {
   // foundScripts
-  const scripts = foundScripts.get(version).splice(0);
+  const fullscripts = foundScripts.get(version).splice(0);
+  const scripts = fullscripts.filter(script => {
+    if (
+      script.otherType === currentFilterType ||
+      ['BOTH', ''].includes(currentFilterType)
+    ) {
+      return true;
+    } else {
+      foundScripts.get(version).push(script);
+    }
+  });
   let pendingScriptCount = scripts.length;
   scripts.forEach(script => {
     if (script.src) {
