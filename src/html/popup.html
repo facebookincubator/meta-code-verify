@@ -48,7 +48,7 @@
       <div class="content_body">
         <img class="error_body_image" src="error-header.svg" />
         <div class="status_header">Validation Failure</div>
-        <div class="status_message">The source code on this page doesn't match what was sent to other users. <span class="status_message_highlight">Download the source code</span> to examine why the page wasn not validated.</div>
+        <div class="status_message">The source code on this page doesn't match what was sent to other users. <span class="status_message_highlight">Download the source code</span> to examine why the page was not validated.</div>
         <div class="action_bar">
           <button class="anomaly_learn_more_button" type="button">Learn more</button>
         </div>
@@ -98,7 +98,18 @@
         </div>
       </div>
     </div>
-    <div class="state_boundary" id="download"></div>
+    <div class="state_boundary" id="download">
+      <header>
+        <img class="badge" src="icon-badge.svg" />
+        <img class="menu" src="menu-badge.svg" />
+      </header>
+      <div class="content_body">
+        <div class="status_message">Download a .zip file containing all running JavaScript on the page.</div>
+        <div class="action_bar">
+          <button class="report_issue_button" type="button">Not Working Yet</button>
+        </div>
+      </div>
+    </div>
     <script src="popup.js"></script>
   </body>
 </html>
