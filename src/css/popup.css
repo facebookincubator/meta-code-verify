@@ -15,7 +15,7 @@
   flex-direction: column;
 }
 
-.anomaly_learn_more_button {
+.anomaly_learn_more_button, .report_issue_button {
   border: 1px solid #CBD2D9;
   box-sizing: border-box;
   border-radius: 4px;
@@ -30,23 +30,6 @@
   text-align: center;
   letter-spacing: -0.23px;
   color: #FFFFFF;
-}
-
-.report_issue_button {
-  border: 1px solid #CBD2D9;
-  box-sizing: border-box;
-  border-radius: 4px;
-  height: 36px;
-  width: 230px;
-  background: #FFFFFF;
-  font-family: SF Pro Text;
-  font-style: normal;
-  font-weight: 500;
-  font-size: 15px;
-  line-height: 20px;
-  text-align: center;
-  letter-spacing: -0.23px;
-  color: #1C2B33;
 }
 
 .download_button {
