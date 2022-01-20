@@ -36,6 +36,16 @@ function attachListeners() {
   );
   downloadTextList[0].style.cursor = 'pointer';
 
+  const learnMoreList = document.getElementsByClassName(
+    'anomaly_learn_more_button'
+  );
+  learnMoreList[0].addEventListener('click', () => {
+    chrome.tabs.create({
+      url: 'https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-validation-failure-warning',
+    });
+  });
+  learnMoreList[0].style.cursor = 'pointer';
+
   const reportBugButton = document.getElementsByClassName(
     'report_issue_button'
   );
