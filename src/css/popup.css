@@ -15,7 +15,24 @@
   flex-direction: column;
 }
 
-.anomaly_download_button, .report_issue_button {
+.anomaly_learn_more_button {
+  border: 1px solid #CBD2D9;
+  box-sizing: border-box;
+  border-radius: 4px;
+  height: 36px;
+  width: 230px;
+  background: #1C2B33;
+  font-family: SF Pro Text;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 20px;
+  text-align: center;
+  letter-spacing: -0.23px;
+  color: #FFFFFF;
+}
+
+.report_issue_button {
   border: 1px solid #CBD2D9;
   box-sizing: border-box;
   border-radius: 4px;
@@ -47,6 +64,13 @@
   text-align: center;
   letter-spacing: -0.23px;
   color: #1C2B33;
+}
+
+.error_body {
+  width: 262px;
+  height: 288px;
+  background: #FFFFFF;
+  margin: 0;
 }
 
 header {
@@ -203,7 +227,11 @@ header {
   text-align: center;
   letter-spacing: -0.08px;
   color: #63788A;
-  margin: 0 30px;
+  margin: 0 36px;
+}
+
+.status_message_highlight {
+  color: #1C2B33;
 }
 
 .valid_body {
@@ -219,7 +247,7 @@ header {
   width: 158px;
 }
 
-.warning_body, .error_body {
+.warning_body {
   width: 256px;
   height: 245px;
   background: #FFFFFF;
