@@ -121,6 +121,10 @@ header {
   margin: 0px 16px;
 }
 
+.menu_title > p {
+  width: 138px;
+}
+
 .menu_title > button {
   border: none;
   cursor: pointer;
