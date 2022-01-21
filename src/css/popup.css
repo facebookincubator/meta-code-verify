@@ -49,6 +49,24 @@
   color: #1C2B33;
 }
 
+.download_header {
+  display: flex;
+}
+
+.download_title {
+  font-family: Optimistic Display;
+  font-style: normal;
+  font-weight: bold;
+  font-size: 17px;
+  line-height: 22px;
+  letter-spacing: 0.24px;
+  color: #000000;
+  height: 22px;
+  width: 84px;
+  margin: 0px 0px 0px 12px;
+  padding-bottom: 21px;
+}
+
 .error_body {
   width: 262px;
   height: 288px;
