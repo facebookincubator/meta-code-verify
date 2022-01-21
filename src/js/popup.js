@@ -24,7 +24,8 @@ function attachListeners() {
 
   const menuRowList = document.getElementsByClassName('menu_row');
   menuRowList[0].style.cursor = 'not-allowed';
-  menuRowList[1].style.cursor = 'not-allowed';
+  menuRowList[1].addEventListener('click', () => updateDisplay('download'));
+  menuRowList[1].style.cursor = 'pointer';
   menuRowList[2].addEventListener('click', () => updateDisplay('debug'));
   menuRowList[2].style.cursor = 'pointer';
 
