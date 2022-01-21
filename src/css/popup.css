@@ -70,10 +70,7 @@ header {
 .menu_body {
   height: 227px;
   width: 256px;
-}
-
-.menu_footer {
-  margin: 15px 24px 15px 16px;
+  margin: 0px;
 }
 
 .menu_right_sidebar {
@@ -81,6 +78,7 @@ header {
   flex-direction: column;
   background: #F1F4F7;
   box-shadow: 0px 0px 16px rgba(52, 72, 84, 0.05);
+  height: 227px;
   width: 209px;
 }
 
@@ -88,7 +86,7 @@ header {
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding-bottom: 8px;
+  padding: 8px 16px;
 }
 
 .menu_row > p {
@@ -103,6 +101,8 @@ header {
   order: 1;
   flex-grow: 1;
   margin: 0px 12px;
+  height: 40px;
+  width: 113px;
 }
 
 .menu_title {
@@ -136,7 +136,7 @@ header {
 }
 
 .menu_top_level > .badge {
-  margin: 16px 16px 0 16px;
+  margin: 13px 12px 0 15px;
 }
 
 .loading_body {
@@ -173,7 +173,6 @@ header {
   flex: none;
   order: 0;
   flex-grow: 0;
-  margin: 0 0 0 12px;
 }
 
 .row_nav {
