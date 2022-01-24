@@ -444,7 +444,7 @@ export const processFoundJS = (origin, version) => {
             if (pendingScriptCount == 0 && currentState == ICON_STATE.VALID) {
               chrome.runtime.sendMessage({
                 type: MESSAGE_TYPE.UPDATE_ICON,
-                icon: ICON_STATE.VALID,
+                icon: ICON_STATE.WARNING_RISK,
               });
             }
           } else {
@@ -477,7 +477,7 @@ export const processFoundJS = (origin, version) => {
             if (pendingScriptCount == 0 && currentState == ICON_STATE.VALID) {
               chrome.runtime.sendMessage({
                 type: MESSAGE_TYPE.UPDATE_ICON,
-                icon: ICON_STATE.VALID,
+                icon: ICON_STATE.WARNING_RISK,
               });
             }
           } else {

@@ -10,7 +10,10 @@ export const ICON_STATE = {
   },
   PROCESSING: { badge: 'icon-badge.svg', popup: 'popup.html?state=loading' },
   VALID: { badge: 'validated-badge.svg', popup: 'popup.html?state=valid' },
-  WARNING: { badge: 'warning-badge.svg', popup: 'popup.html?state=warning' },
+  WARNING_RISK: {
+    badge: 'warning-badge.svg',
+    popup: 'popup.html?state=warning_risk',
+  },
 };
 
 export const MESSAGE_TYPE = {
