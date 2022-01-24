@@ -1,7 +1,7 @@
 .action_bar {
   flex-direction: row;
   justify-content: space-between;
-  margin: 34px 13px 0 13px;
+  margin: 24px 13px 0 13px;
 }
 
 .badge {
@@ -251,8 +251,8 @@ header {
 }
 
 .warning_risk_body {
-  width: 256px;
-  height: 245px;
+  width: 262px;
+  height: 270px;
   background: #FFFFFF;
   margin: 0;
 }
