@@ -47,6 +47,16 @@ function attachListeners() {
   });
   learnMoreList[0].style.cursor = 'pointer';
 
+  const riskLearnMoreList = document.getElementsByClassName(
+    'risk_learn_more_button'
+  );
+  riskLearnMoreList[0].addEventListener('click', () => {
+    chrome.tabs.create({
+      url: 'https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-nonmatching-source-warning',
+    });
+  });
+  riskLearnMoreList[0].style.cursor = 'pointer';
+
   const reportBugButton = document.getElementsByClassName(
     'report_issue_button'
   );

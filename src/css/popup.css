@@ -32,7 +32,7 @@
   color: #FFFFFF;
 }
 
-.download_button {
+.download_button, .risk_learn_more_button {
   border: 1px solid #CBD2D9;
   box-sizing: border-box;
   border-radius: 4px;
