@@ -57,6 +57,14 @@ function attachListeners() {
   });
   riskLearnMoreList[0].style.cursor = 'pointer';
 
+  const retryButtonList = document.getElementsByClassName('retry_button');
+  Array.from(retryButtonList).forEach(retryButton => {
+    retryButton.addEventListener('click', () => {
+      chrome.tabs.reload();
+    });
+    retryButton.style.cursor = 'pointer';
+  });
+
   const reportBugButton = document.getElementsByClassName(
     'report_issue_button'
   );
