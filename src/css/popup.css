@@ -32,7 +32,9 @@
   color: #FFFFFF;
 }
 
-.download_button, .risk_learn_more_button {
+.download_button,
+.risk_learn_more_button,
+.timeout_learn_more_button {
   border: 1px solid #CBD2D9;
   box-sizing: border-box;
   border-radius: 4px;
@@ -161,8 +163,8 @@ header {
 }
 
 .loading_body {
-  width: 256px;
-  height: 163px;
+  width: 257px;
+  height: 154px;
   background: #FFFFFF;
   margin: 0;
 }
@@ -253,6 +255,13 @@ header {
 .warning_risk_body {
   width: 262px;
   height: 270px;
+  background: #FFFFFF;
+  margin: 0;
+}
+
+.warning_timeout_body {
+  width: 262px;
+  height: 216px;
   background: #FFFFFF;
   margin: 0;
 }

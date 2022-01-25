@@ -14,6 +14,10 @@ export const ICON_STATE = {
     badge: 'warning-badge.svg',
     popup: 'popup.html?state=warning_risk',
   },
+  WARNING_TIMEOUT: {
+    badge: 'warning-badge.svg',
+    popup: 'popup.html?state=warning_timeout',
+  },
 };
 
 export const MESSAGE_TYPE = {
