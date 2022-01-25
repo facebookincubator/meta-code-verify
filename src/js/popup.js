@@ -65,6 +65,16 @@ function attachListeners() {
     retryButton.style.cursor = 'pointer';
   });
 
+  const timeoutLearnMoreList = document.getElementsByClassName(
+    'timeout_learn_more_button'
+  );
+  timeoutLearnMoreList[0].addEventListener('click', () => {
+    chrome.tabs.create({
+      url: 'https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-network-timeout-error',
+    });
+  });
+  timeoutLearnMoreList[0].style.cursor = 'pointer';
+
   const reportBugButton = document.getElementsByClassName(
     'report_issue_button'
   );
