@@ -278,7 +278,8 @@ export function handleMessages(message, sender, sendResponse) {
         'Warning: User installed extension inserted script ' + message.src
       );
       sendResponse({
-        valid: true,
+        valid: false,
+        type: 'EXTENSION',
         reason: 'User installed extension has inserted script',
       });
       return;

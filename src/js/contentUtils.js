@@ -448,11 +448,19 @@ export const processFoundJS = (origin, version) => {
               });
             }
           } else {
-            currentState = ICON_STATE.INVALID_SOFT;
-            chrome.runtime.sendMessage({
-              type: MESSAGE_TYPE.UPDATE_ICON,
-              icon: ICON_STATE.INVALID_SOFT,
-            });
+            if (response.type === 'EXTENSION') {
+              currentState = ICON_STATE.WARNING_RISK;
+              chrome.runtime.sendMessage({
+                type: MESSAGE_TYPE.UPDATE_ICON,
+                icon: ICON_STATE.WARNING_RISK,
+              });
+            } else {
+              currentState = ICON_STATE.INVALID_SOFT;
+              chrome.runtime.sendMessage({
+                type: MESSAGE_TYPE.UPDATE_ICON,
+                icon: ICON_STATE.INVALID_SOFT,
+              });
+            }
           }
           chrome.runtime.sendMessage({
             type: MESSAGE_TYPE.DEBUG,
