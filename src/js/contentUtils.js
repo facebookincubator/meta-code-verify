@@ -256,6 +256,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
         otherHashes: otherHashes,
         otherType: otherType,
         rootHash: roothash,
+        workaround: scriptNodeMaybe.innerHTML,
         version: version,
       },
       response => {
