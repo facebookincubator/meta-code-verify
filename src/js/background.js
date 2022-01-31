@@ -1,4 +1,9 @@
-import { MESSAGE_TYPE, ORIGIN_TIMEOUT, ORIGIN_TYPE } from './config.js';
+import {
+  MESSAGE_TYPE,
+  ORIGIN_HOST,
+  ORIGIN_TIMEOUT,
+  ORIGIN_TYPE,
+} from './config.js';
 const manifestCache = new Map();
 const debugCache = new Map();
 
@@ -34,8 +39,46 @@ const fromHexString = hexString =>
 const toHexString = bytes =>
   bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
 
-async function validateManifest(rootHash, leaves) {
-  console.log('initial leaves are ', leaves);
+async function validateManifest(rootHash, leaves, host, version, workaround) {
+  // does rootHash match what was published?
+  const cfResponse = await fetch(
+    'https://staging-api.privacy-auditability.cloudflare.com/v1/hash/' +
+      host +
+      '/' +
+      version,
+    { method: 'GET' }
+  );
+  const cfPayload = await cfResponse.json();
+  const cfRootHash = cfPayload.root_hash;
+  // validate
+  if (rootHash !== cfRootHash) {
+    console.log('hash mismatch with CF ', rootHash, cfRootHash);
+
+    // secondary hash to mitigate accidental build issue.
+    const encoder = new TextEncoder();
+    // const cleanedString = workaround.replace(/\s+/g, ' ');
+    // console.log('cleaned string is ', cleanedString);
+    const backupHashEncoded = encoder.encode(
+      // JSON.stringify(JSON.parse(workaround), null, 2)
+      // cleanedString
+      workaround
+    );
+    const backupHashArray = Array.from(
+      new Uint8Array(await crypto.subtle.digest('SHA-256', backupHashEncoded))
+    );
+    const backupHash = backupHashArray
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    console.log(
+      'secondary hashing of CF value fails too ',
+      rootHash,
+      backupHash
+    );
+    if (backupHash !== cfRootHash) {
+      return false;
+    }
+  }
+
   let oldhashes = leaves.map(
     leaf => fromHexString(leaf.replace('0x', '')).buffer
   );
@@ -120,9 +163,8 @@ async function validateMetaCompanyManifest(rootHash, otherHashes, leaves) {
 }
 
 async function processJSWithSrc(message, manifest, tabId) {
-  console.log('in processJSWithSrc');
   try {
-    const sourceResponse = await fetch(message.src, { METHOD: 'GET' });
+    const sourceResponse = await fetch(message.src, { method: 'GET' });
     let sourceText = await sourceResponse.text();
     if (sourceText.indexOf('if (self.CavalryLogger) {') === 0) {
       sourceText = sourceText.slice(66);
@@ -236,7 +278,13 @@ export function handleMessages(message, sender, sendResponse) {
       const slicedLeaves = message.leaves.map(leaf => {
         return leaf.slice(2);
       });
-      validateManifest(slicedHash, slicedLeaves).then(valid => {
+      validateManifest(
+        slicedHash,
+        slicedLeaves,
+        ORIGIN_HOST[message.origin],
+        message.version,
+        message.workaround
+      ).then(valid => {
         if (valid) {
           // store manifest to subsequently validate JS
           let origin = manifestCache.get(message.origin);
