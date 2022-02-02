@@ -49,20 +49,17 @@ async function validateManifest(rootHash, leaves, host, version, workaround) {
     { method: 'GET' }
   );
   const cfPayload = await cfResponse.json();
-  const cfRootHash = cfPayload.root_hash;
+  let cfRootHash = cfPayload.root_hash;
+  if (cfPayload.root_hash.startsWith('0x')) {
+    cfRootHash = cfPayload.root_hash.slice(2);
+  }
   // validate
   if (rootHash !== cfRootHash) {
     console.log('hash mismatch with CF ', rootHash, cfRootHash);
 
     // secondary hash to mitigate accidental build issue.
     const encoder = new TextEncoder();
-    // const cleanedString = workaround.replace(/\s+/g, ' ');
-    // console.log('cleaned string is ', cleanedString);
-    const backupHashEncoded = encoder.encode(
-      // JSON.stringify(JSON.parse(workaround), null, 2)
-      // cleanedString
-      workaround
-    );
+    const backupHashEncoded = encoder.encode(workaround);
     const backupHashArray = Array.from(
       new Uint8Array(await crypto.subtle.digest('SHA-256', backupHashEncoded))
     );

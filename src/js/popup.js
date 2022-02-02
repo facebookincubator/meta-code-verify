@@ -23,7 +23,12 @@ function attachListeners() {
   closeMenuButton.addEventListener('click', () => window.close());
 
   const menuRowList = document.getElementsByClassName('menu_row');
-  menuRowList[0].style.cursor = 'not-allowed';
+  menuRowList[0].addEventListener('click', () => {
+    chrome.tabs.create({
+      url: 'https://docs.google.com/document/d/1nYC2rtPRXTDh03l6knmAqA7upxo9p9tQ-FkZGDGeoLI/#heading=h.4qiamz32q45d',
+    });
+  });
+  menuRowList[0].style.cursor = 'pointer';
   menuRowList[1].addEventListener('click', () => updateDisplay('download'));
   menuRowList[1].style.cursor = 'pointer';
   menuRowList[2].addEventListener('click', () => updateDisplay('debug'));
@@ -42,7 +47,7 @@ function attachListeners() {
   );
   learnMoreList[0].addEventListener('click', () => {
     chrome.tabs.create({
-      url: 'https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-validation-failure-warning',
+      url: 'https://docs.google.com/document/d/1nYC2rtPRXTDh03l6knmAqA7upxo9p9tQ-FkZGDGeoLI/#heading=h.9t1b1fhjtcnp',
     });
   });
   learnMoreList[0].style.cursor = 'pointer';
@@ -52,7 +57,7 @@ function attachListeners() {
   );
   riskLearnMoreList[0].addEventListener('click', () => {
     chrome.tabs.create({
-      url: 'https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-nonmatching-source-warning',
+      url: 'https://docs.google.com/document/d/1nYC2rtPRXTDh03l6knmAqA7upxo9p9tQ-FkZGDGeoLI/#heading=h.vppt5dwgurxl',
     });
   });
   riskLearnMoreList[0].style.cursor = 'pointer';
@@ -70,7 +75,7 @@ function attachListeners() {
   );
   timeoutLearnMoreList[0].addEventListener('click', () => {
     chrome.tabs.create({
-      url: 'https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-network-timeout-error',
+      url: 'https://docs.google.com/document/d/1nYC2rtPRXTDh03l6knmAqA7upxo9p9tQ-FkZGDGeoLI/#heading=h.cvulcg9nroxx',
     });
   });
   timeoutLearnMoreList[0].style.cursor = 'pointer';
