@@ -24,11 +24,6 @@
     },
     "content_scripts": [
         {
-            "matches": ["*://*.facebook.com/*"],
-            "js": ["contentFB.js"],
-            "run_at": "document_start"
-        },
-        {
             "matches": ["*://*.whatsapp.com/*"],
             "exclude_matches": ["*://www.whatsapp.com/", "*://*.whatsapp.com/bt-manifest/*"],
             "js": ["contentWA.js"],
