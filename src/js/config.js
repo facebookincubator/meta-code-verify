@@ -20,6 +20,11 @@ export const ICON_STATE = {
   },
 };
 
+export const KNOWN_EXTENSION_HASHES = [
+  '', // Chrome: StopAll Ads
+  '727bfede71f473991faeb7f4b65632c93e7f7d17189f1b3d952cd990cd150808', // Chrome: Avast Online Security & Privacy
+];
+
 export const MESSAGE_TYPE = {
   DEBUG: 'DEBUG',
   GET_DEBUG: 'GET_DEBUG',

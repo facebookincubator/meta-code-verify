@@ -409,6 +409,7 @@ export function handleMessages(message, sender, sendResponse) {
         );
         sendResponse({
           valid: false,
+          hash: jsHash,
           reason:
             'Error: hash does not match ' +
             message.origin +
