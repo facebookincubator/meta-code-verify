@@ -1,4 +1,9 @@
-import { ICON_STATE, MESSAGE_TYPE, ORIGIN_TYPE } from './config.js';
+import {
+  ICON_STATE,
+  KNOWN_EXTENSION_HASHES,
+  MESSAGE_TYPE,
+  ORIGIN_TYPE,
+} from './config.js';
 
 const DOM_EVENTS = [
   'onabort',
@@ -490,16 +495,26 @@ export const processFoundJS = (origin, version) => {
               });
             }
           } else {
-            currentState = ICON_STATE.INVALID_SOFT;
-            chrome.runtime.sendMessage({
-              type: MESSAGE_TYPE.UPDATE_ICON,
-              icon: ICON_STATE.INVALID_SOFT,
-            });
+            if (KNOWN_EXTENSION_HASHES.includes(response.hash)) {
+              currentState = ICON_STATE.WARNING_RISK;
+              chrome.runtime.sendMessage({
+                type: MESSAGE_TYPE.UPDATE_ICON,
+                icon: ICON_STATE.WARNING_RISK,
+              });
+            } else {
+              currentState = ICON_STATE.INVALID_SOFT;
+              chrome.runtime.sendMessage({
+                type: MESSAGE_TYPE.UPDATE_ICON,
+                icon: ICON_STATE.INVALID_SOFT,
+              });
+            }
           }
           chrome.runtime.sendMessage({
             type: MESSAGE_TYPE.DEBUG,
             log:
               'processed the RAW_JS, response is ' +
+              response.hash +
+              ' ' +
               JSON.stringify(response).substring(0, 500),
           });
         }
