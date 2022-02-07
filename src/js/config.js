@@ -21,8 +21,14 @@ export const ICON_STATE = {
 };
 
 export const KNOWN_EXTENSION_HASHES = [
-  '', // Chrome: StopAll Ads
+  '', // Chrome - Dynamic: StopAll Ads
   '727bfede71f473991faeb7f4b65632c93e7f7d17189f1b3d952cd990cd150808', // Chrome: Avast Online Security & Privacy
+  '6089301cd61dee5bc1af777e27319c73ae2710496488c68fa41a52da8ba531f7', // FF: Total Adblock-Ad Blocker
+  '', // FF: Adblock Plus-free ad blocker
+  'c924b9ed122066e5420b125a1accb787c3856c4a422fe9bde47d1f40660271a6', // FF: Smart Blocker
+  '', // FF: Popup Blocker(strict)
+  '', // FF - Dynamic: Privacy Tweaks
+  '', // FF: Privacy Possum
 ];
 
 export const MESSAGE_TYPE = {
