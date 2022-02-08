@@ -1,0 +1,29 @@
+{
+  "name": "fb-code-verify",
+  "version": "0.1.0",
+  "description": "Browser extensions to verify FB code running in the browser against a published manifest",
+  "main": "none",
+  "repository": "git@github.com:facebookincubator/fb-code-verify.git",
+  "author": "Richard Hansen <rrh@fb.com>",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build-local-dev": "yarn clean && yarn lint && yarn copyStaticFilesAndConfig && yarn makeBundle",
+    "clean": "rm -rf dist/chrome/* dist/edge/* dist/firefox/*",
+    "lint": "yarn makePrettier && yarn run eslint src/js/**",
+    "copyChromeFilesAndConfig": "cp config/* dist/chrome && cp images/* dist/chrome && cp src/html/* dist/chrome && cp src/css/* dist/chrome",
+    "copyEdgeFilesAndConfig": "cp config/* dist/edge && cp images/* dist/edge && cp src/html/* dist/edge && cp src/css/* dist/edge",
+    "copyFirefoxFilesAndConfig": "cp config/* dist/firefox && cp images/* dist/firefox && cp src/html/* dist/firefox && cp src/css/* dist/firefox",
+    "copyStaticFilesAndConfig": "yarn copyChromeFilesAndConfig && yarn copyEdgeFilesAndConfig && yarn copyFirefoxFilesAndConfig",
+    "makeBundle": "yarn run rollup -c",
+    "makePrettier": "yarn run prettier --write \"src/**/*.js\"",
+    "test": "yarn lint && node --experimental-vm-modules --no-warnings node_modules/jest/bin/jest.js"
+  },
+  "devDependencies": {
+    "eslint": "^7.32.0",
+    "jest": "^27.1.0",
+    "prettier": "^2.3.2",
+    "rollup": "^2.56.3"
+  }
+}
