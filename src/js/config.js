@@ -8,21 +8,45 @@
 export const ICON_STATE = {
   DEFAULT: { badge: 'icon-badge.svg', popup: 'popup.html?state=loading' },
   INVALID_HARD: {
-    badge: 'error-badge.svg',
+    // badge: 'error-badge.svg',
+    badge: {
+      32: 'failure_32.png',
+    },
     popup: 'popup.html?state=error',
   },
   INVALID_SOFT: {
-    badge: 'error-badge.svg',
+    // badge: 'error-badge.svg',
+    badge: {
+      32: 'failure_32.png',
+    },
     popup: 'popup.html?state=error',
   },
-  PROCESSING: { badge: 'icon-badge.svg', popup: 'popup.html?state=loading' },
-  VALID: { badge: 'validated-badge.svg', popup: 'popup.html?state=valid' },
+  PROCESSING: {
+    // badge: 'icon-badge.svg',
+    badge: {
+      32: 'default_32.png',
+    },
+    popup: 'popup.html?state=loading',
+  },
+  VALID: {
+    // badge: 'validated-badge.svg',
+    badge: {
+      32: 'validated_32.png',
+    },
+    popup: 'popup.html?state=valid',
+  },
   WARNING_RISK: {
-    badge: 'warning-badge.svg',
+    // badge: 'warning-badge.svg',
+    badge: {
+      32: 'risk_32.png',
+    },
     popup: 'popup.html?state=warning_risk',
   },
   WARNING_TIMEOUT: {
-    badge: 'warning-badge.svg',
+    // badge: 'warning-badge.svg',
+    badge: {
+      32: 'risk_32.png',
+    },
     popup: 'popup.html?state=warning_timeout',
   },
 };

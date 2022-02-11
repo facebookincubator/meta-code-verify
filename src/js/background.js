@@ -14,8 +14,23 @@ import {
 const manifestCache = new Map();
 const debugCache = new Map();
 
-function updateIcon(message, sender) {
-  console.log('background messages are ', message);
+function updateIconV3(message, sender) {
+  chrome.action.setIcon({ tabId: sender.tab.id, path: message.icon.badge });
+  const popupMessage = {
+    tabId: sender.tab.id,
+    popup: message.icon.popup,
+  };
+  chrome.action.setPopup(popupMessage);
+  const messageForPopup = {
+    popup: message.icon.popup,
+    senderUrl: sender.tab.url,
+    tabId: sender.tab.id,
+  };
+  chrome.runtime.sendMessage(messageForPopup);
+  chrome.action.enable(sender.tab.id);
+}
+
+function updateIconV2(message, sender) {
   chrome.pageAction.setIcon({ tabId: sender.tab.id, path: message.icon.badge });
   const popupMessage = {
     tabId: sender.tab.id,
@@ -29,6 +44,15 @@ function updateIcon(message, sender) {
   };
   chrome.runtime.sendMessage(messageForPopup);
   chrome.pageAction.show(sender.tab.id);
+}
+
+function updateIcon(message, sender) {
+  console.log('background messages are ', message);
+  if (chrome.pageAction) {
+    updateIconV2(message, sender);
+  } else {
+    updateIconV3(message, sender);
+  }
 }
 
 function addDebugLog(tabId, debugMessage) {
@@ -54,7 +78,9 @@ async function validateManifest(rootHash, leaves, host, version, workaround) {
       '/' +
       version,
     { method: 'GET' }
-  );
+  ).catch(cfError => {
+    console.log('error fetching hash from CF', cfError);
+  });
   const cfPayload = await cfResponse.json();
   let cfRootHash = cfPayload.root_hash;
   if (cfPayload.root_hash.startsWith('0x')) {

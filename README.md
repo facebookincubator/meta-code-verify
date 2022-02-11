@@ -1,4 +1,4 @@
-# fb-code-verify &middot; [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](/LICENSE.md)
+# meta-code-verify &middot; [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](/LICENSE.md)
 
 Code Verify is an extension for verifying the integrity of a web page.
 
@@ -10,7 +10,7 @@ You can install Code Verify from the extension store of Chrome, Firefox, or Edge
 
 ### [Code of Conduct](https://code.fb.com/codeofconduct)
 
-Facebook has adopted a Code of Conduct that we expect project participants to adhere to. Please read [the full text](https://code.fb.com/codeofconduct) so that you can understand what actions will and will not be tolerated.
+Meta has adopted a Code of Conduct that we expect project participants to adhere to. Please read [the full text](https://code.fb.com/codeofconduct) so that you can understand what actions will and will not be tolerated.
 
 ### License
 
