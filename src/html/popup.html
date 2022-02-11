@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="popup.css"/>
+  </head>
+  <body class="valid_body">
+    <div class="state_boundary" id="valid">
+      <header>
+        <img class="badge" src="default_32.png" />
+        <img class="menu" src="menu-badge.svg" />
+      </header>
+      <div class="content_body">
+        <img class="validated_body_image" src="validated-header.svg" />
+        <div class="status_header">Validated</div>
+        <div class="status_message">Web page code verified.</div>
+      </div>
+    </div>
+    <div class="state_boundary" id="loading">
+      <header>
+        <img class="badge" src="default_32.png" />
+        <img class="menu" src="menu-badge.svg" />
+      </header>
+      <div class="content_body">
+        <img class="loading_body_image" src="loading-header.svg" />
+        <div class="status_header">Checking...</div>
+      </div>
+    </div>
+    <div class="state_boundary" id="warning_risk">
+      <header>
+        <img class="badge" src="default_32.png" />
+        <img class="menu" src="menu-badge.svg" />
+      </header>
+      <div class="content_body">
+        <img class="warning_body_image" src="warning-header.svg" />
+        <div class="status_header">Possible Risk Detected</div>
+        <div class="status_message">Cannot validate the page due to another browser extension. Consider pausing the other extension(s) and re-trying.</div>
+        <div class="action_bar">
+          <button class="risk_learn_more_button" type="button">Learn More</button>
+          <button class="retry_button" type="button">Retry</button>
+        </div>
+      </div>
+    </div>
+    <div class="state_boundary" id="warning_timeout">
+      <header>
+        <img class="badge" src="default_32.png" />
+        <img class="menu" src="menu-badge.svg" />
+      </header>
+      <div class="content_body">
+        <img class="warning_body_image" src="warning-header.svg" />
+        <div class="status_header">Network Timed Out</div>
+        <div class="status_message">Unable to validate this page.</div>
+        <div class="action_bar">
+          <button class="timeout_learn_more_button" type="button">Learn More</button>
+          <button class="retry_button" type="button">Retry</button>
+        </div>
+      </div>
+    </div>
+    <div class="state_boundary" id="error">
+      <header>
+        <img class="badge" src="default_32.png" />
+        <img class="menu" src="menu-badge.svg" />
+      </header>
+      <div class="content_body">
+        <img class="error_body_image" src="error-header.svg" />
+        <div class="status_header">Validation Failure</div>
+        <div class="status_message">The source code on this page doesn't match what was sent to other users. <span class="status_message_highlight">Download the source code</span> to examine why the page was not validated.</div>
+        <div class="action_bar">
+          <button class="anomaly_learn_more_button" type="button">Learn more</button>
+        </div>
+      </div>
+    </div>
+    <div class="state_boundary" id="menu">
+      <div class="menu_top_level">
+        <img class="badge" src="default_32.png" />
+        <div class="menu_right_sidebar">
+          <div class="menu_title">
+            <p>Meta Code Verify</p>
+            <button id="close_menu">
+              <img class="close_button" src="x.svg" />
+            </button>
+          </div>
+          <div class="menu_row">
+            <img class="row_image" src="circle-info.svg" />
+            <p>Learn More</p>
+            <img class="row_nav" src="chevron-right.svg" />
+          </div>
+          <div class="menu_row">
+            <img class="row_image" src="circle-download-cta.svg" />
+            <p>Download Source Code</p>
+            <img class="row_nav" src="chevron-right.svg" />
+          </div>
+          <div class="menu_row">
+            <img class="row_image" src="circle-exclamation-mark.svg" />
+            <p>Report Bug</p>
+            <img class="row_nav" src="chevron-right.svg" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="state_boundary" id="debug">
+      <header>
+        <img class="badge" src="default_32.png" />
+        <img class="menu" src="menu-badge.svg" />
+      </header>
+      <div class="content_body">
+        <div class="status_header">Report a Bug</div>
+        <div class="status_message">Having a problem? Click below to report the bug.</div>
+        <div class="action_bar">
+          <button class="report_issue_button" type="button">Report Bug</button>
+        </div>
+      </div>
+    </div>
+    <div class="state_boundary" id="download">
+      <header>
+        <span class="download_header">
+          <img class="badge" src="default_32.png" />
+          <p class="download_title">Download</p>
+        </span>
+        <img class="menu" src="menu-badge.svg" />
+      </header>
+      <div class="content_body">
+        <div class="status_message">Download a .zip file containing all running JavaScript on the page.</div>
+        <div class="action_bar">
+          <button class="report_issue_button" type="button">Not Working Yet</button>
+        </div>
+      </div>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>
