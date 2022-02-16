@@ -30,8 +30,6 @@ function attachListeners() {
   menuRowList[0].style.cursor = 'pointer';
   menuRowList[1].addEventListener('click', () => updateDisplay('download'));
   menuRowList[1].style.cursor = 'pointer';
-  menuRowList[2].addEventListener('click', () => updateDisplay('debug'));
-  menuRowList[2].style.cursor = 'pointer';
 
   const downloadTextList = document.getElementsByClassName(
     'status_message_highlight'
