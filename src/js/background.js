@@ -23,7 +23,6 @@ function updateIconV3(message, sender) {
   chrome.action.setPopup(popupMessage);
   const messageForPopup = {
     popup: message.icon.popup,
-    senderUrl: sender.tab.url,
     tabId: sender.tab.id,
   };
   chrome.runtime.sendMessage(messageForPopup);
@@ -39,7 +38,6 @@ function updateIconV2(message, sender) {
   chrome.pageAction.setPopup(popupMessage);
   const messageForPopup = {
     popup: message.icon.popup,
-    senderUrl: sender.tab.url,
     tabId: sender.tab.id,
   };
   chrome.runtime.sendMessage(messageForPopup);
