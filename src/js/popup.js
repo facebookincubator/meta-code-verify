@@ -24,7 +24,7 @@ function attachListeners() {
   const menuRowList = document.getElementsByClassName('menu_row');
   menuRowList[0].addEventListener('click', () => {
     chrome.tabs.create({
-      url: 'https://docs.google.com/document/d/1nYC2rtPRXTDh03l6knmAqA7upxo9p9tQ-FkZGDGeoLI/#heading=h.4qiamz32q45d',
+      url: 'https://faq.whatsapp.com/web/security-and-privacy/about-code-verify',
     });
   });
   menuRowList[0].style.cursor = 'pointer';
@@ -46,7 +46,7 @@ function attachListeners() {
   );
   learnMoreList[0].addEventListener('click', () => {
     chrome.tabs.create({
-      url: 'https://docs.google.com/document/d/1nYC2rtPRXTDh03l6knmAqA7upxo9p9tQ-FkZGDGeoLI/#heading=h.9t1b1fhjtcnp',
+      url: 'https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-validation-failure-warning',
     });
   });
   learnMoreList[0].style.cursor = 'pointer';
@@ -56,7 +56,7 @@ function attachListeners() {
   );
   riskLearnMoreList[0].addEventListener('click', () => {
     chrome.tabs.create({
-      url: 'https://docs.google.com/document/d/1nYC2rtPRXTDh03l6knmAqA7upxo9p9tQ-FkZGDGeoLI/#heading=h.vppt5dwgurxl',
+      url: 'https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-possible-risk-detected-warning',
     });
   });
   riskLearnMoreList[0].style.cursor = 'pointer';
@@ -74,7 +74,7 @@ function attachListeners() {
   );
   timeoutLearnMoreList[0].addEventListener('click', () => {
     chrome.tabs.create({
-      url: 'https://docs.google.com/document/d/1nYC2rtPRXTDh03l6knmAqA7upxo9p9tQ-FkZGDGeoLI/#heading=h.cvulcg9nroxx',
+      url: 'https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-network-timeout-error',
     });
   });
   timeoutLearnMoreList[0].style.cursor = 'pointer';
