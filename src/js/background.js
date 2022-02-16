@@ -197,7 +197,7 @@ async function processJSWithSrc(message, manifest, tabId) {
     const sourceResponse = await fetch(message.src, { method: 'GET' });
     let sourceText = await sourceResponse.text();
     if (sourceText.indexOf('if (self.CavalryLogger) {') === 0) {
-      sourceText = sourceText.slice(66);
+      sourceText = sourceText.slice(82).trim();
     }
     // if ([ORIGIN_TYPE.FACEBOOK].includes(message.origin)) {
     //   sourceText = unescape(sourceText);
