@@ -195,7 +195,6 @@ async function validateMetaCompanyManifest(rootHash, otherHashes, leaves) {
   return combinedHash === rootHash;
 }
 
-
 async function processJSWithSrc(message, manifest, tabId) {
   try {
     const sourceResponse = await fetch(message.src, { method: 'GET' });
@@ -233,8 +232,7 @@ async function processJSWithSrc(message, manifest, tabId) {
         'manifest is ',
         manifest.leaves.length,
         manifest.leaves.includes(packageHash),
-        packageHash,
-        packages[i]
+        packageHash
       );
       if (!manifest.leaves.includes(packageHash)) {
         return false;
