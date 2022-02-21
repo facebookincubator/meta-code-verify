@@ -14,6 +14,11 @@ import {
 const manifestCache = new Map();
 const debugCache = new Map();
 
+// Emulate PageActions
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.action.disable();
+});
+
 function updateIconV3(message, sender) {
   chrome.action.setIcon({ tabId: sender.tab.id, path: message.icon.badge });
   const popupMessage = {
