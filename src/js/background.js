@@ -190,12 +190,20 @@ async function validateMetaCompanyManifest(rootHash, otherHashes, leaves) {
   return combinedHash === rootHash;
 }
 
+
 async function processJSWithSrc(message, manifest, tabId) {
   try {
     const sourceResponse = await fetch(message.src, { method: 'GET' });
     let sourceText = await sourceResponse.text();
+
     if (sourceText.indexOf('if (self.CavalryLogger) {') === 0) {
       sourceText = sourceText.slice(82).trim();
+    }
+    // we want to slice out the source URL from the source
+    const sourceURLIndex = sourceText.indexOf('sourceURL');
+    if (sourceURLIndex >= 0) {
+      // the end of the source is followed by the string " //# sourceURL", so we slice out 5 more characters before sourceURLIndex
+      sourceText = sourceText.slice(0, sourceURLIndex - 5);
     }
     // if ([ORIGIN_TYPE.FACEBOOK].includes(message.origin)) {
     //   sourceText = unescape(sourceText);
@@ -220,7 +228,8 @@ async function processJSWithSrc(message, manifest, tabId) {
         'manifest is ',
         manifest.leaves.length,
         manifest.leaves.includes(packageHash),
-        packageHash
+        packageHash,
+        packages[i]
       );
       if (!manifest.leaves.includes(packageHash)) {
         return false;
