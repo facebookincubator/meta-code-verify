@@ -197,10 +197,8 @@ async function validateMetaCompanyManifest(rootHash, otherHashes, leaves) {
 
 async function processJSWithSrc(message, manifest, tabId) {
   try {
-    const src = await message.src;
     const sourceResponse = await fetch(message.src, { method: 'GET' });
     let sourceText = await sourceResponse.text();
-
     if (sourceText.indexOf('if (self.CavalryLogger) {') === 0) {
       sourceText = sourceText.slice(82).trim();
     }
