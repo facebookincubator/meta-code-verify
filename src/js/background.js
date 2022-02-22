@@ -197,6 +197,7 @@ async function validateMetaCompanyManifest(rootHash, otherHashes, leaves) {
 
 async function processJSWithSrc(message, manifest, tabId) {
   try {
+    const src = await message.src;
     const sourceResponse = await fetch(message.src, { method: 'GET' });
     let sourceText = await sourceResponse.text();
 
@@ -204,17 +205,17 @@ async function processJSWithSrc(message, manifest, tabId) {
       sourceText = sourceText.slice(82).trim();
     }
     // we want to slice out the source URL from the source
-    const sourceURLIndex = sourceText.indexOf('sourceURL');
+    const sourceURLIndex = sourceText.indexOf('//# sourceURL');
     if (sourceURLIndex >= 0) {
-      // the end of the source is followed by the string " //# sourceURL", so we slice out 5 more characters before sourceURLIndex
-      sourceText = sourceText.slice(0, sourceURLIndex - 5);
+      // doing minus 1 because there's usually either a space or new line
+      sourceText = sourceText.slice(0, sourceURLIndex - 1);
     }
     // if ([ORIGIN_TYPE.FACEBOOK].includes(message.origin)) {
     //   sourceText = unescape(sourceText);
     // }
     // strip i18n delimiters
     // eslint-disable-next-line no-useless-escape
-    const i18nRegexp = /\/\*FBT_CALL\*\/[^\/]*\/\*FBT_CALL\*\//g;
+    const i18nRegexp = /\/\*FBT_CALL\*\/.*?\/\*FBT_CALL\*\//g;
     const i18nStripped = sourceText.replace(i18nRegexp, '');
     // split package up if necessary
     const packages = i18nStripped.split('/*FB_PKG_DELIM*/\n');
@@ -232,7 +233,11 @@ async function processJSWithSrc(message, manifest, tabId) {
         'manifest is ',
         manifest.leaves.length,
         manifest.leaves.includes(packageHash),
-        packageHash
+        packageHash,
+        src,
+        packages.length,
+        sourceURLIndex,
+        packages[i]
       );
       if (!manifest.leaves.includes(packageHash)) {
         return false;
