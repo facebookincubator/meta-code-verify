@@ -233,11 +233,7 @@ async function processJSWithSrc(message, manifest, tabId) {
         'manifest is ',
         manifest.leaves.length,
         manifest.leaves.includes(packageHash),
-        packageHash,
-        src,
-        packages.length,
-        sourceURLIndex,
-        packages[i]
+        packageHash
       );
       if (!manifest.leaves.includes(packageHash)) {
         return false;
