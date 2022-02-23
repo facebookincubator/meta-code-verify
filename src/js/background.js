@@ -202,12 +202,18 @@ async function processJSWithSrc(message, manifest, tabId) {
     if (sourceText.indexOf('if (self.CavalryLogger) {') === 0) {
       sourceText = sourceText.slice(82).trim();
     }
+    // we want to slice out the source URL from the source
+    const sourceURLIndex = sourceText.indexOf('//# sourceURL');
+    if (sourceURLIndex >= 0) {
+      // doing minus 1 because there's usually either a space or new line
+      sourceText = sourceText.slice(0, sourceURLIndex - 1);
+    }
     // if ([ORIGIN_TYPE.FACEBOOK].includes(message.origin)) {
     //   sourceText = unescape(sourceText);
     // }
     // strip i18n delimiters
     // eslint-disable-next-line no-useless-escape
-    const i18nRegexp = /\/\*FBT_CALL\*\/[^\/]*\/\*FBT_CALL\*\//g;
+    const i18nRegexp = /\/\*FBT_CALL\*\/.*?\/\*FBT_CALL\*\//g;
     const i18nStripped = sourceText.replace(i18nRegexp, '');
     // split package up if necessary
     const packages = i18nStripped.split('/*FB_PKG_DELIM*/\n');
