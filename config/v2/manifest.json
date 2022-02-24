@@ -31,9 +31,6 @@
         }
     ],
     "permissions": [
-        "*://*.whatsapp.com/bt-manifest",
-        "https://*.whatsapp.com/",
-        "https://*.privacy-auditability.cloudflare.com/",
-        "tabs"
+        "https://*.privacy-auditability.cloudflare.com/"
     ]
 }

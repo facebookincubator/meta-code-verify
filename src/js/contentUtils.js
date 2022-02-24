@@ -283,7 +283,24 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
         if (response.valid) {
           window.setTimeout(() => processFoundJS(currentOrigin, version), 0);
         } else {
+          if (
+            ['ENDPOINT_FAILURE', 'UNKNOWN_ENDPOINT_ISSUE'].includes(
+              response.reason
+            )
+          ) {
+            currentState = ICON_STATE.WARNING_TIMEOUT;
+            chrome.runtime.sendMessage({
+              type: MESSAGE_TYPE.UPDATE_ICON,
+              icon: ICON_STATE.WARNING_TIMEOUT,
+            });
+            return;
+          }
           // TODO add Error state here, manifest didn't validate
+          currentState = ICON_STATE.INVALID_SOFT;
+          chrome.runtime.sendMessage({
+            type: MESSAGE_TYPE.UPDATE_ICON,
+            icon: ICON_STATE.INVALID_SOFT,
+          });
         }
       }
     );
