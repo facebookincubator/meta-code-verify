@@ -83,7 +83,18 @@ async function validateManifest(rootHash, leaves, host, version, workaround) {
     { method: 'GET' }
   ).catch(cfError => {
     console.log('error fetching hash from CF', cfError);
+    return {
+      valid: false,
+      reason: 'ENDPOINT_FAILURE',
+      error: cfError,
+    };
   });
+  if (cfResponse == null || cfResponse.json == null) {
+    return {
+      valid: false,
+      reason: 'UNKNOWN_ENDPOINT_ISSUE',
+    };
+  }
   const cfPayload = await cfResponse.json();
   let cfRootHash = cfPayload.root_hash;
   if (cfPayload.root_hash.startsWith('0x')) {
@@ -108,7 +119,10 @@ async function validateManifest(rootHash, leaves, host, version, workaround) {
       backupHash
     );
     if (backupHash !== cfRootHash) {
-      return false;
+      return {
+        valid: false,
+        reason: 'ROOT_HASH_VERFIY_FAIL_3RD_PARTY',
+      };
     }
   }
 
@@ -158,7 +172,15 @@ async function validateManifest(rootHash, leaves, host, version, workaround) {
   }
   const lastHash = toHexString(new Uint8Array(oldhashes[0]));
   console.log('before return comparison', rootHash, lastHash);
-  return lastHash === rootHash;
+  if (lastHash === rootHash) {
+    return {
+      value: true,
+    };
+  }
+  return {
+    valid: false,
+    reason: 'ROOT_HASH_VERFIY_FAIL_IN_PAGE',
+  };
 }
 
 async function validateMetaCompanyManifest(rootHash, otherHashes, leaves) {
@@ -323,8 +345,8 @@ export function handleMessages(message, sender, sendResponse) {
         ORIGIN_HOST[message.origin],
         message.version,
         message.workaround
-      ).then(valid => {
-        if (valid) {
+      ).then(validationResult => {
+        if (validationResult.valid) {
           // store manifest to subsequently validate JS
           let origin = manifestCache.get(message.origin);
           if (origin == null) {
@@ -339,7 +361,7 @@ export function handleMessages(message, sender, sendResponse) {
               }
             }
           }
-          console.log('result is ', valid);
+          console.log('result is ', validationResult.valid);
           origin.set(message.version, {
             leaves: slicedLeaves,
             root: slicedHash,
@@ -347,7 +369,7 @@ export function handleMessages(message, sender, sendResponse) {
           });
           sendResponse({ valid: true });
         } else {
-          sendResponse({ valid: false });
+          sendResponse(validationResult);
         }
       });
     }
