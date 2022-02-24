@@ -10,6 +10,7 @@
 import { jest } from '@jest/globals';
 import { ICON_STATE, MESSAGE_TYPE, ORIGIN_TYPE } from '../config.js';
 import {
+  hasViolatingAnchorTag,
   hasInvalidAttributes,
   hasInvalidScripts,
   processFoundJS,
@@ -111,7 +112,22 @@ describe('contentUtils', () => {
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
   });
-
+  describe('hasViolatingAnchorTag', () => {
+    it('should check for violating anchor tags with javascript urls', () => {
+      const anchorTagElement = {
+        nodeName: 'A',
+        href: "javascript:alert('test')",
+      };
+      hasViolatingAnchorTag(anchorTagElement);
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toEqual(2);
+      expect(window.chrome.runtime.sendMessage.mock.calls[1][0].type).toEqual(
+        MESSAGE_TYPE.UPDATE_ICON
+      );
+      expect(window.chrome.runtime.sendMessage.mock.calls[1][0].icon).toEqual(
+        ICON_STATE.INVALID_SOFT
+      );
+    });
+  });
   describe('hasInvalidScripts', () => {
     it('should not check for non-HTMLElements', () => {
       const fakeElement = {
