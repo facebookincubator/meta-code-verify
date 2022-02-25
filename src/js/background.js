@@ -174,7 +174,7 @@ async function validateManifest(rootHash, leaves, host, version, workaround) {
   console.log('before return comparison', rootHash, lastHash);
   if (lastHash === rootHash) {
     return {
-      value: true,
+      valid: true,
     };
   }
   return {
