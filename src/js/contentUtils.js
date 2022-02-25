@@ -341,6 +341,30 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
   }
 }
 
+export function hasViolatingAnchorTag(htmlElement) {
+  if (htmlElement.nodeName === 'A' && htmlElement.href !== '') {
+    let checkURL = htmlElement.href;
+    // make sure anchor tags don't have javascript urls
+    if (checkURL.indexOf('javascript:') == 0) {
+      chrome.runtime.sendMessage({
+        type: MESSAGE_TYPE.DEBUG,
+        log: 'violating attribute: javascript url in anchor tag',
+      });
+      currentState = ICON_STATE.INVALID_SOFT;
+      chrome.runtime.sendMessage({
+        type: MESSAGE_TYPE.UPDATE_ICON,
+        icon: ICON_STATE.INVALID_SOFT,
+      });
+    }
+
+    if (typeof htmlElement.childNodes !== 'undefined') {
+      htmlElement.childNodes.forEach(element => {
+        hasViolatingAnchorTag(element);
+      });
+    }
+  }
+}
+
 export function hasInvalidAttributes(htmlElement) {
   if (
     typeof htmlElement.hasAttributes === 'function' &&
@@ -372,7 +396,6 @@ export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
   if (scriptNodeMaybe.nodeType !== 1) {
     return false;
   }
-
   hasInvalidAttributes(scriptNodeMaybe);
 
   if (scriptNodeMaybe.nodeName === 'SCRIPT') {
@@ -383,7 +406,7 @@ export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
       if (childNode.nodeType !== 1) {
         return;
       }
-
+      hasViolatingAnchorTag(childNode);
       hasInvalidAttributes(childNode);
 
       if (childNode.nodeName === 'SCRIPT') {
@@ -407,6 +430,8 @@ export const scanForScripts = () => {
 
   Array.from(allElements).forEach(allElement => {
     console.log('found existing scripts');
+
+    hasViolatingAnchorTag(allElement);
     hasInvalidAttributes(allElement);
     // next check for existing script elements and if they're violating
     if (allElement.nodeName === 'SCRIPT') {
