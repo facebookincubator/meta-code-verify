@@ -356,6 +356,12 @@ export function hasViolatingAnchorTag(htmlElement) {
         icon: ICON_STATE.INVALID_SOFT,
       });
     }
+
+    if (typeof htmlElement.childNodes !== 'undefined') {
+      htmlElement.childNodes.forEach(element => {
+        hasViolatingAnchorTag(element);
+      });
+    }
   }
 }
 

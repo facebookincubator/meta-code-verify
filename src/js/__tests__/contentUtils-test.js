@@ -118,6 +118,27 @@ describe('contentUtils', () => {
         nodeName: 'A',
         href: "javascript:alert('test')",
       };
+
+      hasViolatingAnchorTag(anchorTagElement);
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toEqual(2);
+      expect(window.chrome.runtime.sendMessage.mock.calls[1][0].type).toEqual(
+        MESSAGE_TYPE.UPDATE_ICON
+      );
+      expect(window.chrome.runtime.sendMessage.mock.calls[1][0].icon).toEqual(
+        ICON_STATE.INVALID_SOFT
+      );
+    });
+    it('should check for violating anchor tags with javascript urls in node children', () => {
+      const childAnchorTagElement = {
+        nodeName: 'A',
+        href: "javascript:alert('test')",
+      };
+      const anchorTagElement = {
+        nodeName: 'A',
+        href: 'test.com',
+        childNodes: [childAnchorTagElement],
+      };
+
       hasViolatingAnchorTag(anchorTagElement);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toEqual(2);
       expect(window.chrome.runtime.sendMessage.mock.calls[1][0].type).toEqual(
