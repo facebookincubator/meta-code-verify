@@ -73,22 +73,36 @@ const fromHexString = hexString =>
 const toHexString = bytes =>
   bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
 
+function getCFHashWorkaroundFunction(host, version) {
+  return new Promise((resolve, reject) => {
+    fetch(
+      'https://staging-api.privacy-auditability.cloudflare.com/v1/hash/' +
+        host +
+        '/' +
+        version,
+      { method: 'GET' }
+    )
+      .then(response => {
+        resolve(response);
+      })
+      .catch(response => {
+        reject(response);
+      });
+  });
+}
+
 async function validateManifest(rootHash, leaves, host, version, workaround) {
   // does rootHash match what was published?
-  const cfResponse = await fetch(
-    'https://staging-api.privacy-auditability.cloudflare.com/v1/hash/' +
-      host +
-      '/' +
-      version,
-    { method: 'GET' }
-  ).catch(cfError => {
-    console.log('error fetching hash from CF', cfError);
-    return {
-      valid: false,
-      reason: 'ENDPOINT_FAILURE',
-      error: cfError,
-    };
-  });
+  const cfResponse = await getCFHashWorkaroundFunction(host, version).catch(
+    cfError => {
+      console.log('error fetching hash from CF', cfError);
+      return {
+        valid: false,
+        reason: 'ENDPOINT_FAILURE',
+        error: cfError,
+      };
+    }
+  );
   if (cfResponse == null || cfResponse.json == null) {
     return {
       valid: false,

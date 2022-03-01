@@ -306,7 +306,12 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     );
     // TODO: start timeout to check if manifest hasn't loaded?
   }
-  if (scriptNodeMaybe.getAttribute('type') === 'application/json') {
+  if (
+    scriptNodeMaybe.getAttribute('type') === 'application/json' ||
+    (scriptNodeMaybe.src != null &&
+      scriptNodeMaybe.src !== '' &&
+      scriptNodeMaybe.src.indexOf('blob:') === 0)
+  ) {
     // ignore innocuous data.
     return;
   }
@@ -520,7 +525,9 @@ export const processFoundJS = (origin, version) => {
           chrome.runtime.sendMessage({
             type: MESSAGE_TYPE.DEBUG,
             log:
-              'processed JS with SRC, response is ' +
+              'processed JS with SRC, ' +
+              script.src +
+              ',response is ' +
               JSON.stringify(response).substring(0, 500),
           });
         }
