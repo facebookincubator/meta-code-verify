@@ -426,6 +426,29 @@ export function handleMessages(message, sender, sendResponse) {
 
   if (message.type == MESSAGE_TYPE.RAW_JS) {
     const origin = manifestCache.get(message.origin);
+    //TODO: remove allowlist of inline scripts
+    // array of inline script elements to look for that we'll allow automatically for now
+    const allowList = [
+      'requireLazy',
+      'var hc=navigator',
+      'window.__onSSRPayload',
+      'window.__logSSRQPL',
+      '$RX',
+      '$RC',
+      '$RS',
+      'window.pldmp',
+      'qpl_inl',
+    ];
+    let inAllowList = false;
+    allowList.forEach(element => {
+      // ignore these inline scripts for now
+      if (message.rawjs.indexOf(element) >= 0) {
+        inAllowList = true;
+      }
+    });
+    if (inAllowList) {
+      return true;
+    }
     if (!origin) {
       addDebugLog(
         sender.tab.id,
@@ -462,6 +485,7 @@ export function handleMessages(message, sender, sendResponse) {
       if (manifestObj.leaves.includes(jsHash)) {
         sendResponse({ valid: true });
       } else {
+        console.log(`raw js invalid: ${message.rawjs}`);
         addDebugLog(
           sender.tab.id,
           'Error: hash does not match ' +
