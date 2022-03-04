@@ -452,6 +452,7 @@ export function handleMessages(message, sender, sendResponse) {
       '$RS',
       'window.pldmp',
       'qpl_inl',
+      'SSRInit',
     ];
     let inAllowList = false;
     allowList.forEach(element => {
