@@ -318,7 +318,6 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
   // need to get the src of the JS
   if (scriptNodeMaybe.src != null && scriptNodeMaybe.src !== '') {
     if (scriptList.size === 1) {
-      console.log('SRC SCRIPT ADDED TO QUEUE');
       scriptList.get(scriptList.keys().next().value).push({
         type: MESSAGE_TYPE.JS_WITH_SRC,
         src: scriptNodeMaybe.src,
@@ -331,7 +330,6 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
       scriptNodeMaybe.attributes['data-binary-transparency-hash-key'];
     const hashLookupKey = hashLookupAttribute && hashLookupAttribute.value;
     if (scriptList.size === 1) {
-      console.log('INLINE SCRIPT ADDED TO QUEUE');
       scriptList.get(scriptList.keys().next().value).push({
         type: MESSAGE_TYPE.RAW_JS,
         rawjs: scriptNodeMaybe.innerHTML,
@@ -507,7 +505,6 @@ export const processFoundJS = (origin, version) => {
   let pendingScriptCount = scripts.length;
   scripts.forEach(script => {
     if (script.src) {
-      console.log('SOURCE SENT TO BACKGROUND');
       chrome.runtime.sendMessage(
         {
           type: script.type,
@@ -550,7 +547,6 @@ export const processFoundJS = (origin, version) => {
         }
       );
     } else {
-      console.log('INLINE SCRIPT - SENDING TO BACKGROUND');
       chrome.runtime.sendMessage(
         {
           type: script.type,
