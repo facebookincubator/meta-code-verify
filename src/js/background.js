@@ -500,7 +500,6 @@ export function handleMessages(message, sender, sendResponse) {
       if (manifestObj.leaves.includes(jsHash)) {
         sendResponse({ valid: true });
       } else {
-        console.log(`raw js invalid: ${message.rawjs}`);
         addDebugLog(
           sender.tab.id,
           'Error: hash does not match ' +
