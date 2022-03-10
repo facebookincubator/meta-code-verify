@@ -1,0 +1,280 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+.action_bar {
+  flex-direction: row;
+  justify-content: space-between;
+  margin: 24px 13px 0 13px;
+}
+
+.badge {
+  height: 20px;
+}
+
+.content_body {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.anomaly_learn_more_button, .report_issue_button {
+  border: 1px solid #CBD2D9;
+  box-sizing: border-box;
+  border-radius: 4px;
+  height: 36px;
+  width: 230px;
+  background: #1C2B33;
+  font-family: SF Pro Text;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 20px;
+  text-align: center;
+  letter-spacing: -0.23px;
+  color: #FFFFFF;
+}
+
+.download_button,
+.risk_learn_more_button,
+.timeout_learn_more_button {
+  border: 1px solid #CBD2D9;
+  box-sizing: border-box;
+  border-radius: 4px;
+  height: 36px;
+  width: 111px;
+  background: #FFFFFF;
+  font-family: SF Pro Text;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 20px;
+  text-align: center;
+  letter-spacing: -0.23px;
+  color: #1C2B33;
+}
+
+.download_header {
+  display: flex;
+}
+
+.download_title {
+  font-family: Optimistic Display;
+  font-style: normal;
+  font-weight: bold;
+  font-size: 17px;
+  line-height: 22px;
+  letter-spacing: 0.24px;
+  color: #000000;
+  height: 22px;
+  width: 84px;
+  margin: 0px 0px 0px 12px;
+  padding-bottom: 21px;
+}
+
+.error_body {
+  width: 262px;
+  height: 288px;
+  background: #FFFFFF;
+  margin: 0;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 16px 0 16px;
+}
+
+.menu {
+  cursor: pointer;
+  height: 20px;
+}
+
+.menu_body {
+  height: 227px;
+  width: 256px;
+  margin: 0px;
+}
+
+.menu_right_sidebar {
+  display: flex;
+  flex-direction: column;
+  background: #F1F4F7;
+  box-shadow: 0px 0px 16px rgba(52, 72, 84, 0.05);
+  height: 227px;
+  width: 209px;
+}
+
+.menu_row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 8px 16px;
+}
+
+.menu_row > p {
+  font-family: SF Pro Text;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 20px;
+  letter-spacing: -0.23px;
+  color: #1C2B33;
+  flex: none;
+  order: 1;
+  flex-grow: 1;
+  margin: 0px 12px;
+  width: 113px;
+}
+
+.menu_title {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  font-family: Optimistic Display;
+  font-style: normal;
+  font-weight: bold;
+  font-size: 17px;
+  line-height: 22px;
+  letter-spacing: 0.24px;
+  color: #000000;
+  flex: none;
+  order: 0;
+  flex-grow: 0;
+  margin: 0px 16px;
+}
+
+.menu_title > p {
+  width: 138px;
+}
+
+.menu_title > button {
+  border: none;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  margin: 16px 0 0;
+}
+
+.menu_top_level {
+  display: flex;
+  flex-direction: row;
+}
+
+.menu_top_level > .badge {
+  margin: 13px 12px 0 15px;
+}
+
+.loading_body {
+  width: 257px;
+  height: 154px;
+  background: #FFFFFF;
+  margin: 0;
+}
+
+.loading_body_image {
+  height: 32px;
+  margin-top: 24px;
+  width: 158px;
+}
+
+.retry_button {
+  border: 1px solid #CBD2D9;
+  box-sizing: border-box;
+  border-radius: 4px;
+  height: 36px;
+  width: 111px;
+  background: #1C2B33;
+  font-family: SF Pro Text;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 20px;
+  text-align: center;
+  letter-spacing: -0.23px;
+  color: #FFFFFF;
+}
+
+.row_image {
+  flex: none;
+  order: 0;
+  flex-grow: 0;
+}
+
+.row_nav {
+  flex: none;
+  order: 2;
+  flex-grow: 0;
+  margin: 0px 12px;
+}
+
+.state_boundary {
+  flex-direction: column;
+}
+
+.status_header {
+  font-family: SF Pro Text;
+  font-style: normal;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 18px;
+
+  text-align: center;
+  letter-spacing: -0.08px;
+
+  color: #1C2B33;
+  margin-top: 12px;
+}
+
+.status_message {
+  font-family: SF Pro Text;
+  font-style: normal;
+  font-weight: normal;
+  font-size: 13px;
+  line-height: 18px;
+  text-align: center;
+  letter-spacing: -0.08px;
+  color: #63788A;
+  margin: 0 36px;
+}
+
+.status_message_highlight {
+  color: #1C2B33;
+}
+
+.valid_body {
+  width: 262px;
+  height: 164px;
+  background: #FFFFFF;
+  margin: 0;
+}
+
+.validated_body_image {
+  height: 32px;
+  margin-top: 24px;
+  width: 158px;
+}
+
+.warning_risk_body {
+  width: 262px;
+  height: 270px;
+  background: #FFFFFF;
+  margin: 0;
+}
+
+.warning_timeout_body {
+  width: 262px;
+  height: 216px;
+  background: #FFFFFF;
+  margin: 0;
+}
+
+.warning_body_image {
+  height: 32px;
+  margin-top: 24px;
+  width: 158px;
+}
