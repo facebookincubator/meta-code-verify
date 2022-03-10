@@ -225,6 +225,7 @@ foundScripts.set('', []);
 let currentState = ICON_STATE.VALID;
 let currentOrigin = '';
 let currentFilterType = '';
+let manifestTimeoutID = '';
 
 export function storeFoundJS(scriptNodeMaybe, scriptList) {
   // check if it's the manifest node
@@ -232,6 +233,10 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     scriptNodeMaybe.id === 'binary-transparency-manifest' ||
     scriptNodeMaybe.getAttribute('name') === 'binary-transparency-manifest'
   ) {
+    if (manifestTimeoutID !== '') {
+      clearTimeout(manifestTimeoutID);
+      manifestTimeoutID = '';
+    }
     const rawManifest = JSON.parse(scriptNodeMaybe.innerHTML);
 
     let leaves = rawManifest.leaves;
@@ -446,7 +451,6 @@ export const scanForScripts = () => {
 
   // track any new scripts that get loaded in
   const scriptMutationObserver = new MutationObserver(mutationsList => {
-    console.log('mutation. observer. is. observing.');
     mutationsList.forEach(mutation => {
       if (mutation.type === 'childList') {
         Array.from(mutation.addedNodes).forEach(checkScript => {
@@ -583,6 +587,14 @@ export const processFoundJS = (origin, version) => {
 export function startFor(origin) {
   currentOrigin = origin;
   scanForScripts();
+  manifestTimeoutID = setTimeout(() => {
+    // Manifest failed to load, flag a warning to the user.
+    currentState = ICON_STATE.WARNING_TIMEOUT;
+    chrome.runtime.sendMessage({
+      type: MESSAGE_TYPE.UPDATE_ICON,
+      icon: ICON_STATE.WARNING_TIMEOUT,
+    });
+  }, 45000);
 }
 
 chrome.runtime.sendMessage({
