@@ -34,6 +34,31 @@ function attachListeners() {
   const downloadTextList = document.getElementsByClassName(
     'status_message_highlight'
   );
+  downloadTextList[0].addEventListener('click', () => {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      chrome.tabs.sendMessage(
+        tabs[0].id,
+        { greeting: 'downloadSource' },
+        () => {}
+      );
+    });
+  });
+  downloadTextList[0].style.cursor = 'pointer';
+
+  const downloadSrcButton = document.getElementById('download_source');
+
+  downloadSrcButton.onclick = () => {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      chrome.tabs.sendMessage(
+        tabs[0].id,
+        { greeting: 'downloadSource' },
+        () => {}
+      );
+    });
+  };
+
+  downloadSrcButton.style.cursor = 'pointer';
+
   downloadTextList[0].addEventListener('click', () =>
     updateDisplay('download')
   );
