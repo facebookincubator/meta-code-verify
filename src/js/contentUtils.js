@@ -406,6 +406,7 @@ export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
   if (scriptNodeMaybe.nodeType !== 1) {
     return false;
   }
+  hasViolatingAnchorTag(scriptNodeMaybe);
   hasInvalidAttributes(scriptNodeMaybe);
 
   if (scriptNodeMaybe.nodeName === 'SCRIPT') {
