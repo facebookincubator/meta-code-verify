@@ -353,7 +353,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
 
 export function hasViolatingAnchorTag(htmlElement) {
   if (htmlElement.nodeName === 'A' && htmlElement.href !== '') {
-    let checkURL = htmlElement.href;
+    let checkURL = htmlElement.href.toLowerCase();
     // make sure anchor tags don't have javascript urls
     if (checkURL.indexOf('javascript:') == 0) {
       chrome.runtime.sendMessage({
