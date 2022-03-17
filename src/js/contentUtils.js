@@ -472,7 +472,7 @@ export const scanForScripts = () => {
     hasViolatingJavaScriptURI(allElement);
     hasInvalidAttributes(allElement);
     // next check for existing script elements and if they're violating
-    if (allElement.nodeName.toLowerCase().toLowerCase() === 'script') {
+    if (allElement.nodeName.toLowerCase() === 'script') {
       storeFoundJS(allElement, foundScripts);
     }
   });
