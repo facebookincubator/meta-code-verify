@@ -377,8 +377,8 @@ export function hasViolatingAnchorTag(htmlElement) {
 
 export function hasInvalidAttributes(htmlElement) {
   if (
-    typeof htmlElement.hasAttributes === 'function' &&
-    htmlElement.hasAttributes()
+    typeof htmlElement.attributes === 'object' &&
+    Object.keys(htmlElement.attributes).length >= 1
   ) {
     Array.from(htmlElement.attributes).forEach(elementAttribute => {
       // check first for violating attributes
