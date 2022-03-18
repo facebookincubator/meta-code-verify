@@ -248,7 +248,17 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
       clearTimeout(manifestTimeoutID);
       manifestTimeoutID = '';
     }
-    const rawManifest = JSON.parse(scriptNodeMaybe.innerHTML);
+    let rawManifest = '';
+    try {
+      rawManifest = JSON.parse(scriptNodeMaybe.innerHTML);
+    } catch (manfiestParseError) {
+      currentState = ICON_STATE.INVALID_SOFT;
+      chrome.runtime.sendMessage({
+        type: MESSAGE_TYPE.UPDATE_ICON,
+        icon: ICON_STATE.INVALID_SOFT,
+      });
+      return;
+    }
 
     let leaves = rawManifest.leaves;
     let otherHashes = '';
@@ -311,7 +321,6 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
             });
             return;
           }
-          // TODO add Error state here, manifest didn't validate
           currentState = ICON_STATE.INVALID_SOFT;
           chrome.runtime.sendMessage({
             type: MESSAGE_TYPE.UPDATE_ICON,
@@ -363,7 +372,6 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
 }
 
 export function hasViolatingJavaScriptURI(htmlElement) {
-  console.log('node name is ', htmlElement.nodeName.toLowerCase());
   let checkURL = '';
   if (htmlElement.nodeName.toLowerCase() === 'a' && htmlElement.href !== '') {
     checkURL = checkURL = htmlElement.href.toLowerCase();
