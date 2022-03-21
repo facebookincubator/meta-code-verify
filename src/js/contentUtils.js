@@ -363,15 +363,21 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
 }
 
 export function hasViolatingJavaScriptURI(htmlElement) {
-  console.log('node name is ', htmlElement.nodeName);
+  console.log('node name is ', htmlElement.nodeName.toLowerCase());
   let checkURL = '';
-  if (htmlElement.nodeName === 'A' && htmlElement.href !== '') {
+  if (htmlElement.nodeName.toLowerCase() === 'a' && htmlElement.href !== '') {
     checkURL = checkURL = htmlElement.href.toLowerCase();
   }
-  if (htmlElement.nodeName === 'IFRAME' && htmlElement.src != '') {
+  if (
+    htmlElement.nodeName.toLowerCase() === 'iframe' &&
+    htmlElement.src != ''
+  ) {
     checkURL = checkURL = htmlElement.src.toLowerCase();
   }
-  if (htmlElement.nodeName === 'FORM' && htmlElement.action != '') {
+  if (
+    htmlElement.nodeName.toLowerCase() === 'form' &&
+    htmlElement.action != ''
+  ) {
     checkURL = checkURL = htmlElement.action.toLowerCase();
   }
   if (checkURL !== '') {
@@ -430,7 +436,7 @@ export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
   hasViolatingJavaScriptURI(scriptNodeMaybe);
   hasInvalidAttributes(scriptNodeMaybe);
 
-  if (scriptNodeMaybe.nodeName === 'SCRIPT') {
+  if (scriptNodeMaybe.nodeName.toLowerCase() === 'script') {
     return storeFoundJS(scriptNodeMaybe, scriptList);
   } else if (scriptNodeMaybe.childNodes.length > 0) {
     scriptNodeMaybe.childNodes.forEach(childNode => {
@@ -441,7 +447,7 @@ export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
       hasViolatingJavaScriptURI(childNode);
       hasInvalidAttributes(childNode);
 
-      if (childNode.nodeName === 'SCRIPT') {
+      if (childNode.nodeName.toLowerCase() === 'script') {
         storeFoundJS(childNode, scriptList);
         return;
       }
@@ -466,7 +472,7 @@ export const scanForScripts = () => {
     hasViolatingJavaScriptURI(allElement);
     hasInvalidAttributes(allElement);
     // next check for existing script elements and if they're violating
-    if (allElement.nodeName === 'SCRIPT') {
+    if (allElement.nodeName.toLowerCase() === 'script') {
       storeFoundJS(allElement, foundScripts);
     }
   });
