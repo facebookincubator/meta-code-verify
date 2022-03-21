@@ -50,6 +50,9 @@
 	"i18nstatusValidationFailureMessage": {
 		"message": "The source code on this page doesn't match what was sent to other users. Download the source code to examine why the page was not validated."
 	},
+	"i18nstatusValidationFailureMessageSpan": {
+		"message": "Download the source code"
+	},
 	"i18nbuttonAnomalyLearnMore": {
 		"message": "Learn More"
 	},
