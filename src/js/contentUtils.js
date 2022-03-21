@@ -19,12 +19,14 @@ const DOM_EVENTS = [
   'onafterprint',
   'onafterscriptexecute',
   'onafterupdate',
+  'onanimationcancel',
   'onanimationend',
   'onanimationiteration',
   'onanimationstart',
   'onariarequest',
   'onautocomplete',
   'onautocompleteerror',
+  'onauxclick',
   'onbeforeactivate',
   'onbeforecopy',
   'onbeforecut',
@@ -98,6 +100,7 @@ const DOM_EVENTS = [
   'onload',
   'onloadeddata',
   'onloadedmetadata',
+  'onloadend',
   'onloadstart',
   'onlosecapture',
   'onlostpointercapture',
@@ -161,6 +164,7 @@ const DOM_EVENTS = [
   'onpointermove',
   'onpointerout',
   'onpointerover',
+  'onpointerrawupdate',
   'onpointerup',
   'onpopstate',
   'onprogress',
@@ -203,9 +207,16 @@ const DOM_EVENTS = [
   'onsynchrestored',
   'ontimeerror',
   'ontimeupdate',
-  'ontrackchange',
-  'ontransitionend',
   'ontoggle',
+  'ontouchend',
+  'ontouchmove',
+  'ontouchstart',
+  'ontrackchange',
+  'ontransitioncancel',
+  'ontransitionend',
+  'ontransitionrun',
+  'ontransitionstart',
+  'onunhandledrejection',
   'onunload',
   'onurlflip',
   'onuserproximity',
@@ -241,7 +252,17 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
       clearTimeout(manifestTimeoutID);
       manifestTimeoutID = '';
     }
-    const rawManifest = JSON.parse(scriptNodeMaybe.innerHTML);
+    let rawManifest = '';
+    try {
+      rawManifest = JSON.parse(scriptNodeMaybe.innerHTML);
+    } catch (manfiestParseError) {
+      currentState = ICON_STATE.INVALID_SOFT;
+      chrome.runtime.sendMessage({
+        type: MESSAGE_TYPE.UPDATE_ICON,
+        icon: ICON_STATE.INVALID_SOFT,
+      });
+      return;
+    }
 
     let leaves = rawManifest.leaves;
     let otherHashes = '';
@@ -304,7 +325,6 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
             });
             return;
           }
-          // TODO add Error state here, manifest didn't validate
           currentState = ICON_STATE.INVALID_SOFT;
           chrome.runtime.sendMessage({
             type: MESSAGE_TYPE.UPDATE_ICON,
@@ -355,9 +375,24 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
   }
 }
 
-export function hasViolatingAnchorTag(htmlElement) {
-  if (htmlElement.nodeName === 'A' && htmlElement.href !== '') {
-    let checkURL = htmlElement.href;
+export function hasViolatingJavaScriptURI(htmlElement) {
+  let checkURL = '';
+  if (htmlElement.nodeName.toLowerCase() === 'a' && htmlElement.href !== '') {
+    checkURL = checkURL = htmlElement.href.toLowerCase();
+  }
+  if (
+    htmlElement.nodeName.toLowerCase() === 'iframe' &&
+    htmlElement.src != ''
+  ) {
+    checkURL = checkURL = htmlElement.src.toLowerCase();
+  }
+  if (
+    htmlElement.nodeName.toLowerCase() === 'form' &&
+    htmlElement.action != ''
+  ) {
+    checkURL = checkURL = htmlElement.action.toLowerCase();
+  }
+  if (checkURL !== '') {
     // make sure anchor tags don't have javascript urls
     if (checkURL.indexOf('javascript:') == 0) {
       chrome.runtime.sendMessage({
@@ -370,19 +405,19 @@ export function hasViolatingAnchorTag(htmlElement) {
         icon: ICON_STATE.INVALID_SOFT,
       });
     }
+  }
 
-    if (typeof htmlElement.childNodes !== 'undefined') {
-      htmlElement.childNodes.forEach(element => {
-        hasViolatingAnchorTag(element);
-      });
-    }
+  if (typeof htmlElement.childNodes !== 'undefined') {
+    htmlElement.childNodes.forEach(element => {
+      hasViolatingJavaScriptURI(element);
+    });
   }
 }
 
 export function hasInvalidAttributes(htmlElement) {
   if (
-    typeof htmlElement.hasAttributes === 'function' &&
-    htmlElement.hasAttributes()
+    typeof htmlElement.attributes === 'object' &&
+    Object.keys(htmlElement.attributes).length >= 1
   ) {
     Array.from(htmlElement.attributes).forEach(elementAttribute => {
       // check first for violating attributes
@@ -410,9 +445,10 @@ export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
   if (scriptNodeMaybe.nodeType !== 1) {
     return false;
   }
+  hasViolatingJavaScriptURI(scriptNodeMaybe);
   hasInvalidAttributes(scriptNodeMaybe);
 
-  if (scriptNodeMaybe.nodeName === 'SCRIPT') {
+  if (scriptNodeMaybe.nodeName.toLowerCase() === 'script') {
     return storeFoundJS(scriptNodeMaybe, scriptList);
   } else if (scriptNodeMaybe.childNodes.length > 0) {
     scriptNodeMaybe.childNodes.forEach(childNode => {
@@ -420,10 +456,10 @@ export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
       if (childNode.nodeType !== 1) {
         return;
       }
-      hasViolatingAnchorTag(childNode);
+      hasViolatingJavaScriptURI(childNode);
       hasInvalidAttributes(childNode);
 
-      if (childNode.nodeName === 'SCRIPT') {
+      if (childNode.nodeName.toLowerCase() === 'script') {
         storeFoundJS(childNode, scriptList);
         return;
       }
@@ -445,10 +481,10 @@ export const scanForScripts = () => {
   Array.from(allElements).forEach(allElement => {
     console.log('found existing scripts');
 
-    hasViolatingAnchorTag(allElement);
+    hasViolatingJavaScriptURI(allElement);
     hasInvalidAttributes(allElement);
     // next check for existing script elements and if they're violating
-    if (allElement.nodeName === 'SCRIPT') {
+    if (allElement.nodeName.toLowerCase() === 'script') {
       storeFoundJS(allElement, foundScripts);
     }
   });
