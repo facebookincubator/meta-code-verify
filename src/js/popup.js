@@ -24,7 +24,7 @@ function attachListeners() {
   const menuRowList = document.getElementsByClassName('menu_row');
   menuRowList[0].addEventListener('click', () => {
     chrome.tabs.create({
-      url: 'https://faq.whatsapp.com/web/security-and-privacy/about-code-verify',
+      url: chrome.i18n.getMessage('about_code_verify_faq_url'),
     });
   });
   menuRowList[0].style.cursor = 'pointer';
@@ -69,7 +69,7 @@ function attachListeners() {
   );
   learnMoreList[0].addEventListener('click', () => {
     chrome.tabs.create({
-      url: 'https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-validation-failure-warning',
+      url: chrome.i18n.getMessage('validation_failure_faq_url'),
     });
   });
   learnMoreList[0].style.cursor = 'pointer';
@@ -79,7 +79,7 @@ function attachListeners() {
   );
   riskLearnMoreList[0].addEventListener('click', () => {
     chrome.tabs.create({
-      url: 'https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-possible-risk-detected-warning',
+      url: chrome.i18n.getMessage('possible_risk_detected_faq_url'),
     });
   });
   riskLearnMoreList[0].style.cursor = 'pointer';
@@ -97,7 +97,7 @@ function attachListeners() {
   );
   timeoutLearnMoreList[0].addEventListener('click', () => {
     chrome.tabs.create({
-      url: 'https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-network-timeout-error',
+      url: chrome.i18n.getMessage('network_timeout_faq_url'),
     });
   });
   timeoutLearnMoreList[0].style.cursor = 'pointer';

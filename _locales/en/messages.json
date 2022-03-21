@@ -1,0 +1,15 @@
+{
+	"about_code_verify_faq_url": {
+		"message": "https://faq.whatsapp.com/web/security-and-privacy/about-code-verify"
+	},
+	"validation_failure_faq_url": {
+		"message": "https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-validation-failure-warning"
+	},
+	"possible_risk_detected_faq_url": {
+		"message": "https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-possible-risk-detected-warning"
+	},
+	"network_timeout_faq_url": {
+		"message": "https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-network-timeout-error"
+	}
+
+}
