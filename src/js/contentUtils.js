@@ -362,9 +362,19 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
   }
 }
 
-export function hasViolatingAnchorTag(htmlElement) {
+export function hasViolatingJavaScriptURI(htmlElement) {
+  console.log('node name is ', htmlElement.nodeName);
+  let checkURL = '';
   if (htmlElement.nodeName === 'A' && htmlElement.href !== '') {
-    let checkURL = htmlElement.href.toLowerCase();
+    checkURL = checkURL = htmlElement.href.toLowerCase();
+  }
+  if (htmlElement.nodeName === 'IFRAME' && htmlElement.src != '') {
+    checkURL = checkURL = htmlElement.src.toLowerCase();
+  }
+  if (htmlElement.nodeName === 'FORM' && htmlElement.action != '') {
+    checkURL = checkURL = htmlElement.action.toLowerCase();
+  }
+  if (checkURL !== '') {
     // make sure anchor tags don't have javascript urls
     if (checkURL.indexOf('javascript:') == 0) {
       chrome.runtime.sendMessage({
@@ -377,12 +387,12 @@ export function hasViolatingAnchorTag(htmlElement) {
         icon: ICON_STATE.INVALID_SOFT,
       });
     }
+  }
 
-    if (typeof htmlElement.childNodes !== 'undefined') {
-      htmlElement.childNodes.forEach(element => {
-        hasViolatingAnchorTag(element);
-      });
-    }
+  if (typeof htmlElement.childNodes !== 'undefined') {
+    htmlElement.childNodes.forEach(element => {
+      hasViolatingJavaScriptURI(element);
+    });
   }
 }
 
@@ -417,7 +427,7 @@ export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
   if (scriptNodeMaybe.nodeType !== 1) {
     return false;
   }
-  hasViolatingAnchorTag(scriptNodeMaybe);
+  hasViolatingJavaScriptURI(scriptNodeMaybe);
   hasInvalidAttributes(scriptNodeMaybe);
 
   if (scriptNodeMaybe.nodeName === 'SCRIPT') {
@@ -428,7 +438,7 @@ export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
       if (childNode.nodeType !== 1) {
         return;
       }
-      hasViolatingAnchorTag(childNode);
+      hasViolatingJavaScriptURI(childNode);
       hasInvalidAttributes(childNode);
 
       if (childNode.nodeName === 'SCRIPT') {
@@ -453,7 +463,7 @@ export const scanForScripts = () => {
   Array.from(allElements).forEach(allElement => {
     console.log('found existing scripts');
 
-    hasViolatingAnchorTag(allElement);
+    hasViolatingJavaScriptURI(allElement);
     hasInvalidAttributes(allElement);
     // next check for existing script elements and if they're violating
     if (allElement.nodeName === 'SCRIPT') {
