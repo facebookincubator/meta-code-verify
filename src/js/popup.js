@@ -12,6 +12,14 @@ chrome.runtime.onMessage.addListener(message => {
   }
 });
 
+// doing this so we can add support for i18n using messages.json
+function attachTextToHtml() {
+  const i18nElements = document.querySelectorAll(`[id^="i18n"]`);
+  Array.from(i18nElements).forEach(element => {
+    element.innerHTML = chrome.i18n.getMessage(element.id);
+  });
+}
+
 function attachListeners() {
   const menuButtonList = document.getElementsByClassName('menu');
   Array.from(menuButtonList).forEach(menuButton => {
@@ -120,6 +128,7 @@ function loadUp() {
   const params = new URL(document.location).searchParams;
   const state = params.get('state');
   updateDisplay(state);
+  attachTextToHtml();
   attachListeners();
 }
 
