@@ -81,6 +81,6 @@
 		"message": "Download a .zip file containing all running JavaScript on the page."
 	},
 	"i18nbuttonDownloadSource": {
-		"message": "Not Working Yet"
+		"message": "Download"
 	}
 }
