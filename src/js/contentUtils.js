@@ -244,10 +244,6 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     scriptNodeMaybe.id === 'binary-transparency-manifest' ||
     scriptNodeMaybe.getAttribute('name') === 'binary-transparency-manifest'
   ) {
-    if (manifestTimeoutID !== '') {
-      clearTimeout(manifestTimeoutID);
-      manifestTimeoutID = '';
-    }
     let rawManifest = '';
     try {
       rawManifest = JSON.parse(scriptNodeMaybe.innerHTML);
@@ -307,6 +303,10 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
         });
         // then start processing of it's JS
         if (response.valid) {
+          if (manifestTimeoutID !== '') {
+            clearTimeout(manifestTimeoutID);
+            manifestTimeoutID = '';
+          }
           window.setTimeout(() => processFoundJS(currentOrigin, version), 0);
         } else {
           if (
