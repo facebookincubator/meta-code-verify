@@ -231,10 +231,6 @@ const DOM_EVENTS = [
   'onwheel',
 ];
 
-// store script urls as we find them so we can fetch them later if user wants to download JS src
-const scriptUrls = [];
-// store inline scripts and their hashes as we find them
-const inlineScripts = [];
 const foundScripts = new Map();
 foundScripts.set('', []);
 let currentState = ICON_STATE.VALID;
@@ -535,7 +531,6 @@ export const processFoundJS = (origin, version) => {
   let pendingScriptCount = scripts.length;
   scripts.forEach(script => {
     if (script.src) {
-      scriptUrls.push(script.src);
       chrome.runtime.sendMessage(
         {
           type: script.type,
@@ -588,10 +583,7 @@ export const processFoundJS = (origin, version) => {
         },
         response => {
           pendingScriptCount--;
-          let inlineScriptMap = new Map();
           if (response.valid) {
-            inlineScriptMap.set(response.hash, script.rawjs);
-            inlineScripts.push(inlineScriptMap);
             if (pendingScriptCount == 0 && currentState == ICON_STATE.VALID) {
               chrome.runtime.sendMessage({
                 type: MESSAGE_TYPE.UPDATE_ICON,
@@ -599,8 +591,6 @@ export const processFoundJS = (origin, version) => {
               });
             }
           } else {
-            inlineScriptMap.set('hash not in manifest', script.rawjs);
-            inlineScripts.push(inlineScriptMap);
             if (KNOWN_EXTENSION_HASHES.includes(response.hash)) {
               currentState = ICON_STATE.WARNING_RISK;
               chrome.runtime.sendMessage({
@@ -629,73 +619,6 @@ export const processFoundJS = (origin, version) => {
   });
   window.setTimeout(() => processFoundJS(origin, version), 3000);
 };
-
-async function fetchJSSources(sourceStreams) {
-  for (const url of scriptUrls) {
-    let streamMap = new Map();
-    const fileNameArr = url.split('/');
-    const fileName = fileNameArr[fileNameArr.length - 1].split('?')[0];
-    const response = await fetch(url);
-    streamMap.set(
-      fileName,
-      response.body.pipeThrough(new window.CompressionStream('gzip'))
-    );
-    sourceStreams.push(streamMap);
-  }
-}
-
-//TODO: include filename in delimiter, remove other console.log statements, handle inline scripts
-
-async function downloadJSToZip() {
-  const fileHandle = await window.showSaveFilePicker({
-    suggestedName: 'meta_source_files.gz',
-  });
-  const sourceStreams = [];
-  await fetchJSSources(sourceStreams);
-
-  const writableStream = await fileHandle.createWritable();
-  // delimiter between files
-  const delimPrefix = '\n********** new file: ';
-  const delimSuffix = ' **********\n';
-  const enc = new TextEncoder();
-
-  for (const compressedStreamMap of sourceStreams) {
-    let fileName = compressedStreamMap.keys().next().value;
-    let compressedStream = compressedStreamMap.values().next().value;
-    let delim = delimPrefix + fileName + delimSuffix;
-    let encodedDelim = enc.encode(delim);
-    let delimStream = new window.CompressionStream('gzip');
-    let writer = delimStream.writable.getWriter();
-    writer.write(encodedDelim);
-    writer.close();
-    await delimStream.readable.pipeTo(writableStream, { preventClose: true });
-    await compressedStream.pipeTo(writableStream, { preventClose: true });
-  }
-
-  for (const inlineSrcMap of inlineScripts) {
-    let inlineHash = inlineSrcMap.keys().next().value;
-    let inlineSrc = inlineSrcMap.values().next().value;
-    let delim = delimPrefix + 'Inline Script ' + inlineHash + delimSuffix;
-    let encodedDelim = enc.encode(delim);
-    let delimStream = new window.CompressionStream('gzip');
-    let delimWriter = delimStream.writable.getWriter();
-    delimWriter.write(encodedDelim);
-    delimWriter.close();
-    await delimStream.readable.pipeTo(writableStream, { preventClose: true });
-    let inlineStream = new window.CompressionStream('gzip');
-    let writer = inlineStream.writable.getWriter();
-    writer.write(enc.encode(inlineSrc));
-    writer.close();
-    await inlineStream.readable.pipeTo(writableStream, { preventClose: true });
-  }
-  writableStream.close();
-}
-
-chrome.runtime.onMessage.addListener(function (request) {
-  if (request.greeting === 'downloadSource') {
-    downloadJSToZip();
-  }
-});
 
 export function startFor(origin) {
   currentOrigin = origin;
