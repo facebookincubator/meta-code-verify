@@ -380,23 +380,47 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
   }
 }
 
+function getAttributeValue(
+  nodeName,
+  checkNode,
+  htmlElement,
+  attributeName,
+  currentAttributeValue
+) {
+  if (
+    nodeName.toLowerCase() === checkNode &&
+    htmlElement.hasAttribute(attributeName)
+  ) {
+    return htmlElement.getAttribute(attributeName).toLowerCase();
+  }
+  return currentAttributeValue;
+}
+
+const AttributeCheckPairs = [
+  { nodeName: 'a', attributeName: 'href' },
+  { nodeName: 'iframe', attributeName: 'src' },
+  { nodeName: 'iframe', attributeName: 'srcdoc' },
+  { nodeName: 'form', attributeName: 'action' },
+  { nodeName: 'input', attributeName: 'formaction' },
+  { nodeName: 'button', attributeName: 'formaction' },
+  { nodeName: 'a', attributeName: 'xlink:href' },
+  { nodeName: 'ncc', attributeName: 'href' },
+  { nodeName: 'embed', attributeName: 'src' },
+];
+
 export function hasViolatingJavaScriptURI(htmlElement) {
   let checkURL = '';
-  if (htmlElement.nodeName.toLowerCase() === 'a' && htmlElement.href !== '') {
-    checkURL = checkURL = htmlElement.href.toLowerCase();
-  }
-  if (
-    htmlElement.nodeName.toLowerCase() === 'iframe' &&
-    htmlElement.src != ''
-  ) {
-    checkURL = checkURL = htmlElement.src.toLowerCase();
-  }
-  if (
-    htmlElement.nodeName.toLowerCase() === 'form' &&
-    htmlElement.action != ''
-  ) {
-    checkURL = checkURL = htmlElement.action.toLowerCase();
-  }
+  const lowerCaseNodeName = htmlElement.nodeName.toLowerCase();
+  console.log('lowerCaseNodeName', lowerCaseNodeName);
+  AttributeCheckPairs.forEach(checkPair => {
+    checkURL = getAttributeValue(
+      lowerCaseNodeName,
+      checkPair.nodeName,
+      htmlElement,
+      checkPair.attributeName,
+      checkURL
+    );
+  });
   if (checkURL !== '') {
     // make sure anchor tags don't have javascript urls
     if (checkURL.indexOf('javascript:') == 0) {
