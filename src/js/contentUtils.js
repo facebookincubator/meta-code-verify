@@ -518,34 +518,42 @@ export const scanForScripts = () => {
     }
   });
 
-  // track any new scripts that get loaded in
-  const scriptMutationObserver = new MutationObserver(mutationsList => {
-    mutationsList.forEach(mutation => {
-      if (mutation.type === 'childList') {
-        Array.from(mutation.addedNodes).forEach(checkScript => {
-          hasInvalidScripts(checkScript, foundScripts);
-        });
-      } else if (mutation.type === 'attributes') {
-        currentState = ICON_STATE.INVALID_SOFT;
-        chrome.runtime.sendMessage({
-          type: MESSAGE_TYPE.UPDATE_ICON,
-          icon: ICON_STATE.INVALID_SOFT,
-        });
-        chrome.runtime.sendMessage({
-          type: MESSAGE_TYPE.DEBUG,
-          log:
-            'Processed DOM mutation and invalid attribute added or changed ' +
-            mutation.target,
-        });
-      }
+  try {
+    // track any new scripts that get loaded in
+    const scriptMutationObserver = new MutationObserver(mutationsList => {
+      mutationsList.forEach(mutation => {
+        if (mutation.type === 'childList') {
+          Array.from(mutation.addedNodes).forEach(checkScript => {
+            hasInvalidScripts(checkScript, foundScripts);
+          });
+        } else if (mutation.type === 'attributes') {
+          currentState = ICON_STATE.INVALID_SOFT;
+          chrome.runtime.sendMessage({
+            type: MESSAGE_TYPE.UPDATE_ICON,
+            icon: ICON_STATE.INVALID_SOFT,
+          });
+          chrome.runtime.sendMessage({
+            type: MESSAGE_TYPE.DEBUG,
+            log:
+              'Processed DOM mutation and invalid attribute added or changed ' +
+              mutation.target,
+          });
+        }
+      });
     });
-  });
 
-  scriptMutationObserver.observe(document.getElementsByTagName('html')[0], {
-    attributeFilter: DOM_EVENTS,
-    childList: true,
-    subtree: true,
-  });
+    scriptMutationObserver.observe(document.getElementsByTagName('html')[0], {
+      attributeFilter: DOM_EVENTS,
+      childList: true,
+      subtree: true,
+    });
+  } catch (_UnknownError) {
+    currentState = ICON_STATE.INVALID_SOFT;
+    chrome.runtime.sendMessage({
+      type: MESSAGE_TYPE.UPDATE_ICON,
+      icon: ICON_STATE.INVALID_SOFT,
+    });
+  }
 };
 
 export const processFoundJS = (origin, version) => {
