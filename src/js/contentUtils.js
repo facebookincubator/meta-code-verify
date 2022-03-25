@@ -23,6 +23,7 @@ const DOM_EVENTS = [
   'onanimationend',
   'onanimationiteration',
   'onanimationstart',
+  'onappinstalled',
   'onariarequest',
   'onautocomplete',
   'onautocompleteerror',
@@ -32,11 +33,13 @@ const DOM_EVENTS = [
   'onbeforecut',
   'onbeforedeactivate',
   'onbeforeeditfocus',
+  'onbeforeinstallprompt',
   'onbeforepaste',
   'onbeforeprint',
   'onbeforescriptexecute',
   'onbeforeunload',
   'onbeforeupdate',
+  'onbeforexrselect',
   'onbegin',
   'onblur',
   'onbounce',
@@ -62,6 +65,7 @@ const DOM_EVENTS = [
   'ondevicelight',
   'ondevicemotion',
   'ondeviceorientation',
+  'ondeviceorientationabsolute',
   'ondeviceproximity',
   'ondrag',
   'ondragdrop',
@@ -84,6 +88,7 @@ const DOM_EVENTS = [
   'onfocusin',
   'onfocusout',
   'onformchange',
+  'onformdata',
   'onforminput',
   'onfullscreenchange',
   'onfullscreenerror',
@@ -107,6 +112,7 @@ const DOM_EVENTS = [
   'onmediacomplete',
   'onmediaerror',
   'onmessage',
+  'onmessageerror',
   'onmousedown',
   'onmouseenter',
   'onmouseleave',
@@ -172,6 +178,7 @@ const DOM_EVENTS = [
   'onratechange',
   'onreadystatechange',
   'onreceived',
+  'onrejectionhandled',
   'onrepeat',
   'onreset',
   'onresize',
@@ -189,12 +196,14 @@ const DOM_EVENTS = [
   'onrowsinserted',
   'onscroll',
   'onsearch',
+  'onsecuritypolicyviolation',
   'onseek',
   'onseeked',
   'onseeking',
   'onselect',
   'onselectionchange',
   'onselectstart',
+  'onslotchange',
   'onstalled',
   'onstorage',
   'onstoragecommit',
@@ -244,10 +253,6 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     scriptNodeMaybe.id === 'binary-transparency-manifest' ||
     scriptNodeMaybe.getAttribute('name') === 'binary-transparency-manifest'
   ) {
-    if (manifestTimeoutID !== '') {
-      clearTimeout(manifestTimeoutID);
-      manifestTimeoutID = '';
-    }
     let rawManifest = '';
     try {
       rawManifest = JSON.parse(scriptNodeMaybe.innerHTML);
@@ -307,6 +312,10 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
         });
         // then start processing of it's JS
         if (response.valid) {
+          if (manifestTimeoutID !== '') {
+            clearTimeout(manifestTimeoutID);
+            manifestTimeoutID = '';
+          }
           window.setTimeout(() => processFoundJS(currentOrigin, version), 0);
         } else {
           if (
@@ -378,7 +387,7 @@ export function hasViolatingJavaScriptURI(htmlElement) {
   }
   if (
     htmlElement.nodeName.toLowerCase() === 'iframe' &&
-    htmlElement.src != ''
+    (htmlElement.src != '' || htmlElement.srcdoc != '')
   ) {
     checkURL = checkURL = htmlElement.src.toLowerCase();
   }
