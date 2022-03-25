@@ -9,7 +9,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build-local-dev": "yarn clean && yarn lint && yarn copyStaticFilesAndConfig && yarn makeBundle
+    "build-local-dev": "yarn clean && yarn lint && yarn copyStaticFilesAndConfig && yarn makeBundle",
     "clean": "rm -rf dist/chrome/* dist/edge/* dist/firefox/*",
     "lint": "yarn makePrettier && yarn run eslint src/js/**",
     "copyChromeFilesAndConfig": "cp config/v3/* dist/chrome && cp images/* dist/chrome && cp src/html/* dist/chrome && cp src/css/* dist/chrome && cp -r _locales dist/chrome/",
