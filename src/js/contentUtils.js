@@ -386,8 +386,7 @@ export function hasViolatingJavaScriptURI(htmlElement) {
     checkURL = checkURL = htmlElement.href.toLowerCase();
   }
   if (
-    htmlElement.nodeName.toLowerCase() === 'iframe' &&
-    (htmlElement.src != '' || htmlElement.srcdoc != '')
+    htmlElement.nodeName.toLowerCase() === 'iframe' && htmlElement.src != ''
   ) {
     checkURL = checkURL = htmlElement.src.toLowerCase();
   }
