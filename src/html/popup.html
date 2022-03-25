@@ -11,8 +11,8 @@
       </header>
       <div class="content_body">
         <img class="validated_body_image" src="validated-header.svg" />
-        <div id="i18nstatusValidated" class="status_header"></div>
-        <div id="i18nstatusValidatedMessage" class="status_message"></div>
+        <div id="i18nValidatedStatusHeader" class="status_header"></div>
+        <div id="i18nValidatedStatusMessage" class="status_message"></div>
       </div>
     </div>
     <div class="state_boundary" id="loading">
@@ -22,7 +22,7 @@
       </header>
       <div class="content_body">
         <img class="loading_body_image" src="loading-header.svg" />
-        <div id="i18nstatusChecking" class="status_header"></div>
+        <div id="i18nCheckingStatusHeader" class="status_header"></div>
       </div>
     </div>
     <div class="state_boundary" id="warning_risk">
@@ -32,11 +32,11 @@
       </header>
       <div class="content_body">
         <img class="warning_body_image" src="warning-header.svg" />
-        <div id="i18nstatusRiskDetected" class="status_header"></div>
-        <div id="i18nstatusCannotValidate" class="status_message"></div>
+        <div id="i18nRiskDetectedStatusHeader" class="status_header"></div>
+        <div id="i18nRiskDetectedStatusMessage" class="status_message"></div>
         <div class="action_bar">
-          <button id="i18nbuttonRiskDetectedLearnMore" class="risk_learn_more_button" type="button"></button>
-          <button id="i18nbuttonRetryRiskDetected" class="retry_button" type="button"></button>
+          <button id="i18nRiskDetectedLearnMoreButton" class="risk_learn_more_button" type="button"></button>
+          <button id="i18nRiskDetectedRetryButton" class="retry_button" type="button"></button>
         </div>
       </div>
     </div>
@@ -47,11 +47,11 @@
       </header>
       <div class="content_body">
         <img class="warning_body_image" src="warning-header.svg" />
-        <div id="i18nstatusNetworkTimeout" class="status_header"></div>
-        <div id="i18nstatusNetworkTimeoutMessage" class="status_message"></div>
+        <div id="i18nNetworkTimeoutStatusHeader" class="status_header"></div>
+        <div id="i18nNetworkTimeoutStatusMessage" class="status_message"></div>
         <div class="action_bar">
-          <button id="i18nbuttonTimeoutLearnMore" class="timeout_learn_more_button" type="button"></button>
-          <button id="i18nbuttonRetryTimeout" class="retry_button" type="button"></button>
+          <button id="i18nTimeoutLearnMoreButton" class="timeout_learn_more_button" type="button"></button>
+          <button id="i18nTimeoutRetryButton" class="retry_button" type="button"></button>
         </div>
       </div>
     </div>
@@ -62,10 +62,10 @@
       </header>
       <div class="content_body">
         <img class="error_body_image" src="error-header.svg" />
-        <div id="i18nstatusValidationFailure" class="status_header"></div>
-        <div id="i18nstatusValidationFailureMessage" class="status_message"><span id="i18nstatusValidationFailureMessageSpan" class="status_message_highlight"></span></div>
+        <div id="i18nValidationFailureStatusHeader" class="status_header"></div>
+        <div id="i18nValidationFailureStatusMessage" class="status_message"><span id="i18nstatusValidationFailureMessageSpan" class="status_message_highlight"></span></div>
         <div class="action_bar">
-          <button id="i18nbuttonAnomalyLearnMore" class="anomaly_learn_more_button" type="button"></button>
+          <button id="i18nAnomalyLearnMoreButton" class="anomaly_learn_more_button" type="button"></button>
         </div>
       </div>
     </div>
@@ -74,14 +74,14 @@
         <img class="badge" src="default_32.png" />
         <div class="menu_right_sidebar">
           <div class="menu_title">
-            <p id="i18ntopLevel"></p>
+            <p id="i18nTopLevel"></p>
             <button id="close_menu">
               <img class="close_button" src="x.svg" />
             </button>
           </div>
           <div class="menu_row">
             <img class="row_image" src="circle-info.svg" />
-            <p id="i18ntopLevelLearnMore"></p>
+            <p id="i18nTopLevelLearnMore"></p>
             <img class="row_nav" src="chevron-right.svg" />
           </div>
           <div class="menu_row">
@@ -98,10 +98,10 @@
         <img class="menu" src="menu-badge.svg" />
       </header>
       <div class="content_body">
-        <div id="i18nstatusReportBug" class="status_header"></div>
-        <div id="i18nstatusReportBugMessage" class="status_message"></div>
+        <div id="i18nReportBugStatusHeader" class="status_header"></div>
+        <div id="i18nReportBugStatusMessage" class="status_message"></div>
         <div class="action_bar">
-          <button id="i18nbuttonReportBug" class="report_issue_button" type="button"></button>
+          <button id="i18nReportBugButton" class="report_issue_button" type="button"></button>
         </div>
       </div>
     </div>
@@ -109,14 +109,14 @@
       <header>
         <span class="download_header">
           <img class="badge" src="default_32.png" />
-          <p id="i18ndownloadPrompt" class="download_title"></p>
+          <p id="i18nDownloadPrompt" class="download_title"></p>
         </span>
         <img class="menu" src="menu-badge.svg" />
       </header>
       <div class="content_body">
         <div id="i18ndownloadSourceDescription" class="status_message"></div>
         <div class="action_bar">
-          <button id="i18nbuttonDownloadSource" class="report_issue_button" id="download_source" type="button"></button>
+          <button id="i18nDownloadSourceButton" class="report_issue_button" type="button"></button>
         </div>
       </div>
     </div>
