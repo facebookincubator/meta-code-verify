@@ -12,6 +12,14 @@ chrome.runtime.onMessage.addListener(message => {
   }
 });
 
+// doing this so we can add support for i18n using messages.json
+function attachTextToHtml() {
+  const i18nElements = document.querySelectorAll(`[id^="i18n"]`);
+  Array.from(i18nElements).forEach(element => {
+    element.innerHTML = chrome.i18n.getMessage(element.id);
+  });
+}
+
 function attachListeners() {
   const menuButtonList = document.getElementsByClassName('menu');
   Array.from(menuButtonList).forEach(menuButton => {
@@ -24,7 +32,7 @@ function attachListeners() {
   const menuRowList = document.getElementsByClassName('menu_row');
   menuRowList[0].addEventListener('click', () => {
     chrome.tabs.create({
-      url: 'https://faq.whatsapp.com/web/security-and-privacy/about-code-verify',
+      url: chrome.i18n.getMessage('about_code_verify_faq_url'),
     });
   });
   menuRowList[0].style.cursor = 'pointer';
@@ -34,6 +42,7 @@ function attachListeners() {
   const downloadTextList = document.getElementsByClassName(
     'status_message_highlight'
   );
+
   downloadTextList[0].addEventListener('click', () =>
     updateDisplay('download')
   );
@@ -44,7 +53,7 @@ function attachListeners() {
   );
   learnMoreList[0].addEventListener('click', () => {
     chrome.tabs.create({
-      url: 'https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-validation-failure-warning',
+      url: chrome.i18n.getMessage('validation_failure_faq_url'),
     });
   });
   learnMoreList[0].style.cursor = 'pointer';
@@ -54,7 +63,7 @@ function attachListeners() {
   );
   riskLearnMoreList[0].addEventListener('click', () => {
     chrome.tabs.create({
-      url: 'https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-possible-risk-detected-warning',
+      url: chrome.i18n.getMessage('possible_risk_detected_faq_url'),
     });
   });
   riskLearnMoreList[0].style.cursor = 'pointer';
@@ -72,7 +81,7 @@ function attachListeners() {
   );
   timeoutLearnMoreList[0].addEventListener('click', () => {
     chrome.tabs.create({
-      url: 'https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-network-timeout-error',
+      url: chrome.i18n.getMessage('network_timeout_faq_url'),
     });
   });
   timeoutLearnMoreList[0].style.cursor = 'pointer';
@@ -95,6 +104,7 @@ function loadUp() {
   const params = new URL(document.location).searchParams;
   const state = params.get('state');
   updateDisplay(state);
+  attachTextToHtml();
   attachListeners();
 }
 

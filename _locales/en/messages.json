@@ -1,0 +1,83 @@
+{
+	"about_code_verify_faq_url": {
+		"message": "https://faq.whatsapp.com/web/security-and-privacy/about-code-verify"
+	},
+	"validation_failure_faq_url": {
+		"message": "https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-validation-failure-warning"
+	},
+	"possible_risk_detected_faq_url": {
+		"message": "https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-possible-risk-detected-warning"
+	},
+	"network_timeout_faq_url": {
+		"message": "https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-network-timeout-error"
+	},
+	"i18nValidatedStatusHeader": {
+		"message": "Validated"
+	},
+	"i18nValidatedStatusMessage": {
+		"message": "Web page code verified."
+	},
+	"i18nCheckingStatusHeader": {
+		"message": "Checking..."
+	},
+	"i18nRiskDetectedStatusHeader": {
+		"message": "Possible Risk Detected"
+	},
+	"i18nRiskDetectedStatusMessage": {
+		"message": "Cannot validate the page due to another browser extension. Consider pausing the other extension(s) and re-trying."
+	},
+	"i18nRiskDetectedLearnMoreButton": {
+		"message": "Learn More"
+	},
+	"i18nRiskDetectedRetryButton": {
+		"message": "Retry"
+	},
+	"i18nNetworkTimeoutStatusHeader": {
+		"message": "Network Timed Out"
+	},
+	"i18nNetworkTimeoutStatusMessage": {
+		"message": "Unable to validate this page."
+	},
+	"i18nTimeoutLearnMoreButton": {
+		"message": "Learn More"
+	},
+	"i18nTimeoutRetryButton": {
+		"message": "Retry"
+	},
+	"i18nValidationFailureStatusHeader": {
+		"message": "Validation Failure"
+	},
+	"i18nValidationFailureStatusMessage": {
+		"message": "The source code on this page doesn't match what was sent to other users. Download the source code to examine why the page was not validated."
+	},
+	"i18nAnomalyLearnMoreButton": {
+		"message": "Learn More"
+	},
+	"i18nTopLevel": {
+		"message": "Meta Code Verify"
+	},
+	"i18nTopLevelLearnMore": {
+		"message": "Learn More"
+	},
+	"i18ndownloadSourcePrompt": {
+		"message": "Download Source Code"
+	},
+	"i18nReportBugStatusHeader": {
+		"message": "Report a Bug"
+	},
+	"i18nReportBugStatusMessage": {
+		"message": "Having a problem? Click below to report the bug."
+	},
+	"i18nReportBugButton": {
+		"message": "Report Bug"
+	},
+	"i18nDownloadPrompt": {
+		"message": "Download"
+	},
+	"i18ndownloadSourceDescription": {
+		"message": "Download a .zip file containing all running JavaScript on the page."
+	},
+	"i18nDownloadSourceButton": {
+		"message": "Download"
+	}
+}
