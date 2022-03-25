@@ -542,7 +542,7 @@ export const scanForScripts = () => {
       });
     });
 
-    scriptMutationObserver.observe(document.getElementsByTagName('html')[0], {
+    scriptMutationObserver.observe(document, {
       attributeFilter: DOM_EVENTS,
       childList: true,
       subtree: true,
