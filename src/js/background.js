@@ -77,9 +77,9 @@ function getCFHashWorkaroundFunction(host, version) {
   return new Promise((resolve, reject) => {
     fetch(
       'https://staging-api.privacy-auditability.cloudflare.com/v1/hash/' +
-        host +
+        encodeURIComponent(host) +
         '/' +
-        version,
+        encodeURIComponent(version),
       { method: 'GET' }
     )
       .then(response => {
