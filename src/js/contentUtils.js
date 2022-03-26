@@ -411,7 +411,6 @@ const AttributeCheckPairs = [
 export function hasViolatingJavaScriptURI(htmlElement) {
   let checkURL = '';
   const lowerCaseNodeName = htmlElement.nodeName.toLowerCase();
-  console.log('lowerCaseNodeName', lowerCaseNodeName);
   AttributeCheckPairs.forEach(checkPair => {
     checkURL = getAttributeValue(
       lowerCaseNodeName,
@@ -469,13 +468,17 @@ export function hasInvalidAttributes(htmlElement) {
   }
 }
 
+function checkNodesForViolations(element) {
+  hasViolatingJavaScriptURI(element);
+  hasInvalidAttributes(element);
+}
+
 export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
   // if not an HTMLElement ignore it!
   if (scriptNodeMaybe.nodeType !== 1) {
     return false;
   }
-  hasViolatingJavaScriptURI(scriptNodeMaybe);
-  hasInvalidAttributes(scriptNodeMaybe);
+  checkNodesForViolations(scriptNodeMaybe);
 
   if (scriptNodeMaybe.nodeName.toLowerCase() === 'script') {
     return storeFoundJS(scriptNodeMaybe, scriptList);
@@ -485,8 +488,7 @@ export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
       if (childNode.nodeType !== 1) {
         return;
       }
-      hasViolatingJavaScriptURI(childNode);
-      hasInvalidAttributes(childNode);
+      checkNodesForViolations(childNode);
 
       if (childNode.nodeName.toLowerCase() === 'script') {
         storeFoundJS(childNode, scriptList);
@@ -508,10 +510,7 @@ export const scanForScripts = () => {
   const allElements = document.getElementsByTagName('*');
 
   Array.from(allElements).forEach(allElement => {
-    console.log('found existing scripts');
-
-    hasViolatingJavaScriptURI(allElement);
-    hasInvalidAttributes(allElement);
+    checkNodesForViolations(allElement);
     // next check for existing script elements and if they're violating
     if (allElement.nodeName.toLowerCase() === 'script') {
       storeFoundJS(allElement, foundScripts);
