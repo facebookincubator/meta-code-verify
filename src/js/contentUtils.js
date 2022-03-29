@@ -571,6 +571,57 @@ export const scanForScripts = () => {
   }
 };
 
+async function processJSWithSrc(script, origin, version) {
+  // fetch the script from page context, not the extension context.
+  try {
+    const sourceResponse = await fetch(script.src, { method: 'GET' });
+    let sourceText = await sourceResponse.text();
+    if (sourceText.indexOf('if (self.CavalryLogger) {') === 0) {
+      sourceText = sourceText.slice(82).trim();
+    }
+    // we want to slice out the source URL from the source
+    const sourceURLIndex = sourceText.indexOf('//# sourceURL');
+    if (sourceURLIndex >= 0) {
+      // doing minus 1 because there's usually either a space or new line
+      sourceText = sourceText.slice(0, sourceURLIndex - 1);
+    }
+    // strip i18n delimiters
+    // eslint-disable-next-line no-useless-escape
+    const i18nRegexp = /\/\*FBT_CALL\*\/.*?\/\*FBT_CALL\*\//g;
+    const i18nStripped = sourceText.replace(i18nRegexp, '');
+    // split package up if necessary
+    const packages = i18nStripped.split('/*FB_PKG_DELIM*/\n');
+    const packagePromises = packages.map(jsPackage => {
+      return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(
+          {
+            type: MESSAGE_TYPE.RAW_JS,
+            rawjs: jsPackage,
+            origin: origin,
+            version: version,
+          },
+          response => {
+            if (response.valid) {
+              resolve();
+            } else {
+              reject(response.type);
+            }
+          }
+        );
+      });
+    });
+    await Promise.all(packagePromises);
+    return {
+      valid: true,
+    };
+  } catch (scriptProcessingError) {
+    return {
+      valid: false,
+      type: scriptProcessingError,
+    };
+  }
+}
+
 export const processFoundJS = (origin, version) => {
   // foundScripts
   const fullscripts = foundScripts.get(version).splice(0);
@@ -587,47 +638,39 @@ export const processFoundJS = (origin, version) => {
   let pendingScriptCount = scripts.length;
   scripts.forEach(script => {
     if (script.src) {
-      chrome.runtime.sendMessage(
-        {
-          type: script.type,
-          src: script.src,
-          origin: origin,
-          version: version,
-        },
-        response => {
-          pendingScriptCount--;
-          if (response.valid) {
-            if (pendingScriptCount == 0 && currentState == ICON_STATE.VALID) {
-              chrome.runtime.sendMessage({
-                type: MESSAGE_TYPE.UPDATE_ICON,
-                icon: ICON_STATE.VALID,
-              });
-            }
-          } else {
-            if (response.type === 'EXTENSION') {
-              currentState = ICON_STATE.WARNING_RISK;
-              chrome.runtime.sendMessage({
-                type: MESSAGE_TYPE.UPDATE_ICON,
-                icon: ICON_STATE.WARNING_RISK,
-              });
-            } else {
-              currentState = ICON_STATE.INVALID_SOFT;
-              chrome.runtime.sendMessage({
-                type: MESSAGE_TYPE.UPDATE_ICON,
-                icon: ICON_STATE.INVALID_SOFT,
-              });
-            }
+      processJSWithSrc(script, origin, version).then(response => {
+        pendingScriptCount--;
+        if (response.valid) {
+          if (pendingScriptCount == 0 && currentState == ICON_STATE.VALID) {
+            chrome.runtime.sendMessage({
+              type: MESSAGE_TYPE.UPDATE_ICON,
+              icon: ICON_STATE.VALID,
+            });
           }
-          chrome.runtime.sendMessage({
-            type: MESSAGE_TYPE.DEBUG,
-            log:
-              'processed JS with SRC, ' +
-              script.src +
-              ',response is ' +
-              JSON.stringify(response).substring(0, 500),
-          });
+        } else {
+          if (response.type === 'EXTENSION') {
+            currentState = ICON_STATE.WARNING_RISK;
+            chrome.runtime.sendMessage({
+              type: MESSAGE_TYPE.UPDATE_ICON,
+              icon: ICON_STATE.WARNING_RISK,
+            });
+          } else {
+            currentState = ICON_STATE.INVALID_SOFT;
+            chrome.runtime.sendMessage({
+              type: MESSAGE_TYPE.UPDATE_ICON,
+              icon: ICON_STATE.INVALID_SOFT,
+            });
+          }
         }
-      );
+        chrome.runtime.sendMessage({
+          type: MESSAGE_TYPE.DEBUG,
+          log:
+            'processed JS with SRC, ' +
+            script.src +
+            ',response is ' +
+            JSON.stringify(response).substring(0, 500),
+        });
+      });
     } else {
       chrome.runtime.sendMessage(
         {
