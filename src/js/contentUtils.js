@@ -338,15 +338,31 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
         }
       }
     );
-    // TODO: start timeout to check if manifest hasn't loaded?
+  }
+
+  if (scriptNodeMaybe.getAttribute('type') === 'application/json') {
+    try {
+      JSON.parse(scriptNodeMaybe.innerHTML);
+    } catch (parseError) {
+      currentState = ICON_STATE.INVALID_SOFT;
+      chrome.runtime.sendMessage({
+        type: MESSAGE_TYPE.UPDATE_ICON,
+        icon: ICON_STATE.INVALID_SOFT,
+      });
+    }
+    return;
   }
   if (
-    scriptNodeMaybe.getAttribute('type') === 'application/json' ||
-    (scriptNodeMaybe.src != null &&
-      scriptNodeMaybe.src !== '' &&
-      scriptNodeMaybe.src.indexOf('blob:') === 0)
+    scriptNodeMaybe.src != null &&
+    scriptNodeMaybe.src !== '' &&
+    scriptNodeMaybe.src.indexOf('blob:') === 0
   ) {
-    // ignore innocuous data.
+    // TODO: try to process the blob. For now, flag as warning.
+    currentState = ICON_STATE.INVALID_SOFT;
+    chrome.runtime.sendMessage({
+      type: MESSAGE_TYPE.UPDATE_ICON,
+      icon: ICON_STATE.INVALID_SOFT,
+    });
     return;
   }
   // need to get the src of the JS
