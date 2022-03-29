@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Code Verify",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "default_locale": "en",
     "description": "An extension to verify the code running in your browser matches what was published.",
     "action": {
