@@ -342,7 +342,9 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
 
   if (scriptNodeMaybe.getAttribute('type') === 'application/json') {
     try {
-      JSON.parse(scriptNodeMaybe.innerHTML);
+      if (![ORIGIN_TYPE.FACEBOOK].includes(currentOrigin)) {
+        JSON.parse(scriptNodeMaybe.innerHTML);
+      }
     } catch (parseError) {
       currentState = ICON_STATE.INVALID_SOFT;
       chrome.runtime.sendMessage({
@@ -576,7 +578,9 @@ async function processJSWithSrc(script, origin, version) {
   try {
     const sourceResponse = await fetch(script.src, { method: 'GET' });
     let sourceText = await sourceResponse.text();
-    if (sourceText.indexOf('if (self.CavalryLogger) {') === 0) {
+    let fbOrigin = [ORIGIN_TYPE.FACEBOOK].includes(origin);
+
+    if (fbOrigin && sourceText.indexOf('if (self.CavalryLogger) {') === 0) {
       sourceText = sourceText.slice(82).trim();
     }
     // we want to slice out the source URL from the source
@@ -588,7 +592,10 @@ async function processJSWithSrc(script, origin, version) {
     // strip i18n delimiters
     // eslint-disable-next-line no-useless-escape
     const i18nRegexp = /\/\*FBT_CALL\*\/.*?\/\*FBT_CALL\*\//g;
-    const i18nStripped = sourceText.replace(i18nRegexp, '');
+    let i18nStripped = sourceText;
+    if (fbOrigin) {
+      i18nStripped = sourceText.replace(i18nRegexp, '');
+    }
     // split package up if necessary
     const packages = i18nStripped.split('/*FB_PKG_DELIM*/\n');
     const packagePromises = packages.map(jsPackage => {
