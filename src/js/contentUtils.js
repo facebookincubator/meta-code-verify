@@ -256,7 +256,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     let rawManifest = '';
     try {
       rawManifest = JSON.parse(scriptNodeMaybe.innerHTML);
-    } catch (manfiestParseError) {
+    } catch (manifestParseError) {
       currentState = ICON_STATE.INVALID_SOFT;
       chrome.runtime.sendMessage({
         type: MESSAGE_TYPE.UPDATE_ICON,
