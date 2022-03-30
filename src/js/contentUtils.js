@@ -342,9 +342,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
 
   if (scriptNodeMaybe.getAttribute('type') === 'application/json') {
     try {
-      if (![ORIGIN_TYPE.FACEBOOK].includes(currentOrigin)) {
-        JSON.parse(scriptNodeMaybe.innerHTML);
-      }
+      JSON.parse(scriptNodeMaybe.textContent);
     } catch (parseError) {
       currentState = ICON_STATE.INVALID_SOFT;
       chrome.runtime.sendMessage({
