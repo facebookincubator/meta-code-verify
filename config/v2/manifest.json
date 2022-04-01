@@ -24,12 +24,6 @@
     },
     "content_scripts": [
         {
-            "matches": ["*://*.messenger.com/*"],
-            "all_frames": true,
-            "js": ["contentMSG.js"],
-            "run_at": "document_start"
-        },
-        {
             "matches": ["*://*.whatsapp.com/*"],
             "all_frames": true,
             "exclude_matches": ["*://www.whatsapp.com/", "*://*.whatsapp.com/bt-manifest/*"],
