@@ -13,6 +13,19 @@ export default [
         }]
     },
     {
+        input: 'src/js/detectMSGRMeta.js',
+        output: [{
+            file: 'dist/chrome/contentMSGR.js',
+            format: 'iife'
+        }, {
+            file: 'dist/edge/contentMSGR.js',
+            format: 'iife'
+        }, {
+            file: 'dist/firefox/contentMSGR.js',
+            format: 'iife'
+        }]
+    }, 
+    {
         input: 'src/js/detectFBMeta.js',
         output: [{
             file: 'dist/chrome/contentFB.js',

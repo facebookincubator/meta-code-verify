@@ -94,14 +94,17 @@ export const MESSAGE_TYPE = {
 export const ORIGIN_HOST = {
   FACEBOOK: 'facebook.com',
   WHATSAPP: 'whatsapp.com',
+  MESSENGER: 'messenger.com',
 };
 
 export const ORIGIN_TIMEOUT = {
   FACEBOOK: 176400000,
   WHATSAPP: 0,
+  MESSENGER: 0,
 };
 
 export const ORIGIN_TYPE = {
   FACEBOOK: 'FACEBOOK',
   WHATSAPP: 'WHATSAPP',
+  MESSENGER: 'MESSENGER',
 };
