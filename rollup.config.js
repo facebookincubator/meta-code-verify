@@ -13,6 +13,19 @@ export default [
         }]
     },
     {
+        input: 'src/js/detectMSGMeta.js',
+        output: [{
+            file: 'dist/chrome/contentMSG.js',
+            format: 'iife'
+        }, {
+            file: 'dist/edge/contentMSG.js',
+            format: 'iife'
+        }, {
+            file: 'dist/firefox/contentMSG.js',
+            format: 'iife'
+        }]
+    }, 
+    {
         input: 'src/js/detectFBMeta.js',
         output: [{
             file: 'dist/chrome/contentFB.js',
