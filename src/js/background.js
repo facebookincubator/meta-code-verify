@@ -307,10 +307,7 @@ export function handleMessages(message, sender, sendResponse) {
 
   if (message.type == MESSAGE_TYPE.LOAD_MANIFEST) {
     // validate manifest
-    if (
-      [ORIGIN_TYPE.FACEBOOK].includes(message.origin) ||
-      [ORIGIN_TYPE.MESSENGER].includes(message.origin)
-    ) {
+    if ([ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(message.origin)) {
       validateMetaCompanyManifest(
         message.rootHash,
         message.otherHashes,

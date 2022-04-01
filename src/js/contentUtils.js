@@ -272,10 +272,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     let roothash = rawManifest.root;
     let version = rawManifest.version;
 
-    if (
-      [ORIGIN_TYPE.FACEBOOK].includes(currentOrigin) ||
-      [ORIGIN_TYPE.MESSENGER].includes(currentOrigin)
-    ) {
+    if ([ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(currentOrigin)) {
       leaves = rawManifest.manifest;
       otherHashes = rawManifest.manifest_hashes;
       otherType = scriptNodeMaybe.getAttribute('data-manifest-type');
@@ -588,12 +585,8 @@ async function processJSWithSrc(script, origin, version) {
       fileName,
       sourceResponseClone.body.pipeThrough(new window.CompressionStream('gzip'))
     );
-    let fbOrigin = [ORIGIN_TYPE.FACEBOOK].includes(origin);
-    let msgOrigin = [ORIGIN_TYPE.MESSENGER].includes(origin);
-    if (
-      (msgOrigin || fbOrigin) &&
-      sourceText.indexOf('if (self.CavalryLogger) {') === 0
-    ) {
+    let fbOrigin = [ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(origin);
+    if (fbOrigin && sourceText.indexOf('if (self.CavalryLogger) {') === 0) {
       sourceText = sourceText.slice(82).trim();
     }
     // we want to slice out the source URL from the source
@@ -606,7 +599,7 @@ async function processJSWithSrc(script, origin, version) {
     // eslint-disable-next-line no-useless-escape
     const i18nRegexp = /\/\*FBT_CALL\*\/.*?\/\*FBT_CALL\*\//g;
     let i18nStripped = sourceText;
-    if (msgOrigin || fbOrigin) {
+    if (fbOrigin) {
       i18nStripped = sourceText.replace(i18nRegexp, '');
     }
     // split package up if necessary

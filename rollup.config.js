@@ -13,15 +13,15 @@ export default [
         }]
     },
     {
-        input: 'src/js/detectMSGMeta.js',
+        input: 'src/js/detectMSGRMeta.js',
         output: [{
-            file: 'dist/chrome/contentMSG.js',
+            file: 'dist/chrome/contentMSGR.js',
             format: 'iife'
         }, {
-            file: 'dist/edge/contentMSG.js',
+            file: 'dist/edge/contentMSGR.js',
             format: 'iife'
         }, {
-            file: 'dist/firefox/contentMSG.js',
+            file: 'dist/firefox/contentMSGR.js',
             format: 'iife'
         }]
     }, 
