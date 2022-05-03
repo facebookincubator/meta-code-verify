@@ -254,7 +254,6 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     scriptNodeMaybe.id === 'binary-transparency-manifest' ||
     scriptNodeMaybe.getAttribute('name') === 'binary-transparency-manifest'
   ) {
-    console.log('found manifest');
     let rawManifest = '';
     try {
       rawManifest = JSON.parse(scriptNodeMaybe.innerHTML);
@@ -657,7 +656,6 @@ export const processFoundJS = async (origin, version) => {
       await processJSWithSrc(script, origin, version).then(response => {
         pendingScriptCount--;
         if (response.valid) {
-          console.log('valid src script');
           if (pendingScriptCount == 0 && currentState == ICON_STATE.VALID) {
             chrome.runtime.sendMessage({
               type: MESSAGE_TYPE.UPDATE_ICON,
@@ -665,7 +663,6 @@ export const processFoundJS = async (origin, version) => {
             });
           }
         } else {
-          console.log(`invalid src script ${script.src}`);
           if (response.type === 'EXTENSION') {
             currentState = ICON_STATE.WARNING_RISK;
             chrome.runtime.sendMessage({
@@ -702,7 +699,6 @@ export const processFoundJS = async (origin, version) => {
           pendingScriptCount--;
           let inlineScriptMap = new Map();
           if (response.valid) {
-            console.log('valid inline script');
             inlineScriptMap.set(response.hash, script.rawjs);
             inlineScripts.push(inlineScriptMap);
             if (pendingScriptCount == 0 && currentState == ICON_STATE.VALID) {
@@ -712,7 +708,6 @@ export const processFoundJS = async (origin, version) => {
               });
             }
           } else {
-            console.log(`invalid inline script: ${script.rawjs}`);
             // using an array of maps, as we're using the same key for inline scripts - this will eventually be removed, once inline scripts are removed from the page load
             inlineScriptMap.set('hash not in manifest', script.rawjs);
             inlineScripts.push(inlineScriptMap);
