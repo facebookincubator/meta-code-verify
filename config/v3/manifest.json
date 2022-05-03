@@ -30,8 +30,10 @@
             "run_at": "document_start"
         }
     ],
-    "host_permissions": [
-        "https://*.privacy-auditability.cloudflare.com/",
+    "permissions": [
 	"webRequest"
+    ],
+    "host_permissions": [
+        "https://*.privacy-auditability.cloudflare.com/"
     ]
 }
