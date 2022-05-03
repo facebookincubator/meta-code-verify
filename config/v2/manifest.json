@@ -33,6 +33,7 @@
     ],
     "permissions": [
         "https://*.privacy-auditability.cloudflare.com/",
-        "https://web.whatsapp.com/"
+        "https://web.whatsapp.com/",
+	"webRequest"
     ]
 }

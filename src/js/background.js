@@ -307,7 +307,9 @@ export function handleMessages(message, sender, sendResponse) {
 
   if (message.type == MESSAGE_TYPE.LOAD_MANIFEST) {
     // validate manifest
-    if ([ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(message.origin)) {
+    if (
+      [ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(message.origin)
+    ) {
       validateMetaCompanyManifest(
         message.rootHash,
         message.otherHashes,
@@ -513,8 +515,33 @@ export function handleMessages(message, sender, sendResponse) {
     return;
   }
 }
-
 chrome.runtime.onMessage.addListener(handleMessages);
+const srcFilters = { urls: ['<all_urls>'] };
+chrome.webRequest.onSendHeaders.addListener(
+  src => {
+    for (const header of src.requestHeaders) {
+      if (header.name == 'Cache-Control' && header.value == 'no-cache') {
+        console.log('found a no cache header');
+        chrome.tabs.query(
+          { active: true, currentWindow: true },
+          function (tabs) {
+            chrome.tabs.sendMessage(
+              tabs[0].id,
+              { greeting: 'cachedHeaderFound' },
+              function (response) {
+                console.log(response.farewell);
+              }
+            );
+          }
+        );
+      } else {
+        console.log('nocache header not found');
+      }
+    }
+  },
+  srcFilters,
+  ['requestHeaders']
+);
 chrome.tabs.onRemoved.addListener(tabId => {
   if (debugCache.has(tabId)) {
     debugCache.delete(tabId);
