@@ -527,7 +527,7 @@ chrome.webRequest.onSendHeaders.addListener(
           function (tabs) {
             chrome.tabs.sendMessage(
               tabs[0].id,
-              { greeting: 'cachedHeaderFound' },
+              { greeting: 'nocacheHeaderFound' },
               function (response) {
                 console.log(response.farewell);
               }

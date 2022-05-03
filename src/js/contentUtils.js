@@ -789,7 +789,7 @@ async function downloadJSToZip() {
 chrome.runtime.onMessage.addListener(function (request) {
   if (request.greeting === 'downloadSource') {
     downloadJSToZip();
-  } else if (request.greeting === 'cachedHeaderFound') {
+  } else if (request.greeting === 'nocacheHeaderFound') {
     currentState = ICON_STATE.INVALID_SOFT;
     chrome.runtime.sendMessage({
       type: MESSAGE_TYPE.UPDATE_ICON,
