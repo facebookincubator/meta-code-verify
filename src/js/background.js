@@ -516,7 +516,7 @@ export function handleMessages(message, sender, sendResponse) {
   }
 }
 chrome.runtime.onMessage.addListener(handleMessages);
-const srcFilters = { urls: ['<all_urls>'] };
+const srcFilters = { urls: ["*://*.whatsapp.com/*", "*://static.xx.fbcdn.net/*"] };
 chrome.webRequest.onSendHeaders.addListener(
   src => {
     for (const header of src.requestHeaders) {
