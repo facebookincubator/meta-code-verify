@@ -585,7 +585,9 @@ async function processJSWithSrc(script, origin, version) {
       fileName,
       sourceResponseClone.body.pipeThrough(new window.CompressionStream('gzip'))
     );
-    let fbOrigin = [ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(origin);
+    let fbOrigin = [ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(
+      origin
+    );
     if (fbOrigin && sourceText.indexOf('if (self.CavalryLogger) {') === 0) {
       sourceText = sourceText.slice(82).trim();
     }
@@ -782,6 +784,12 @@ async function downloadJSToZip() {
 chrome.runtime.onMessage.addListener(function (request) {
   if (request.greeting === 'downloadSource') {
     downloadJSToZip();
+  } else if (request.greeting === 'nocacheHeaderFound') {
+    currentState = ICON_STATE.INVALID_SOFT;
+    chrome.runtime.sendMessage({
+      type: MESSAGE_TYPE.UPDATE_ICON,
+      icon: ICON_STATE.INVALID_SOFT,
+    });
   }
 });
 
