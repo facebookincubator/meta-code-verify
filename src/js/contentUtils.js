@@ -423,6 +423,7 @@ const AttributeCheckPairs = [
   { nodeName: 'a', attributeName: 'xlink:href' },
   { nodeName: 'ncc', attributeName: 'href' },
   { nodeName: 'embed', attributeName: 'src' },
+  { nodeName: 'object', attributeName: 'data'}
 ];
 
 export function hasViolatingJavaScriptURI(htmlElement) {
@@ -438,11 +439,11 @@ export function hasViolatingJavaScriptURI(htmlElement) {
     );
   });
   if (checkURL !== '') {
-    // make sure anchor tags don't have javascript urls
+    // make sure anchor tags and object tags don't have javascript urls
     if (checkURL.indexOf('javascript:') == 0) {
       chrome.runtime.sendMessage({
         type: MESSAGE_TYPE.DEBUG,
-        log: 'violating attribute: javascript url in anchor tag',
+        log: 'violating attribute: javascript url',
       });
       currentState = ICON_STATE.INVALID_SOFT;
       chrome.runtime.sendMessage({
@@ -593,7 +594,11 @@ async function processJSWithSrc(script, origin, version) {
     }
     // we want to slice out the source URL from the source
     const sourceURLIndex = sourceText.indexOf('//# sourceURL');
-    if (sourceURLIndex >= 0) {
+    // if //# sourceURL is at the beginning of the response, sourceText should be empty, otherwise slicing indices will be (0, -1) and sourceText will be unchanged
+    if(sourceURLIndex == 0) {
+      sourceText = '';
+    }
+    else if (sourceURLIndex > 0) {
       // doing minus 1 because there's usually either a space or new line
       sourceText = sourceText.slice(0, sourceURLIndex - 1);
     }

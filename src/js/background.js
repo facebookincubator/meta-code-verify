@@ -519,7 +519,7 @@ chrome.runtime.onMessage.addListener(handleMessages);
 const srcFilters = { urls: ['<all_urls>'] };
 chrome.webRequest.onResponseStarted.addListener(
   src => {
-    if (src.type === 'script'){
+    if (src.type === 'script') {
       for (const header of src.responseHeaders) {
         if (header.name == 'Cache-Control' && header.value == 'no-cache') {
           console.log('found a no cache header');
@@ -542,7 +542,7 @@ chrome.webRequest.onResponseStarted.addListener(
     }
   },
   srcFilters,
-  ["responseHeaders"]
+  ['responseHeaders']
 );
 chrome.tabs.onRemoved.addListener(tabId => {
   if (debugCache.has(tabId)) {
