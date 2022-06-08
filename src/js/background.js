@@ -520,18 +520,9 @@ const srcFilters = { urls: ['<all_urls>'] };
 chrome.webRequest.onResponseStarted.addListener(
   src => {
     if (src.type === 'script' && !src.fromCache) {
-      chrome.tabs.query(
-        { active: true, currentWindow: true },
-        function (tabs) {
-          chrome.tabs.sendMessage(
-            tabs[0].id,
-            { greeting: 'nocacheHeaderFound' },
-            function (response) {
-              console.log('fromCache set to false, triggering warning state');
-            }
-          );
-        }
-      );      
+      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, { greeting: 'nocacheHeaderFound' });
+      });
     }
   },
   srcFilters,

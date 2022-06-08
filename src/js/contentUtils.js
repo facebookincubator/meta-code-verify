@@ -423,7 +423,7 @@ const AttributeCheckPairs = [
   { nodeName: 'a', attributeName: 'xlink:href' },
   { nodeName: 'ncc', attributeName: 'href' },
   { nodeName: 'embed', attributeName: 'src' },
-  { nodeName: 'object', attributeName: 'data'}
+  { nodeName: 'object', attributeName: 'data' },
 ];
 
 export function hasViolatingJavaScriptURI(htmlElement) {
@@ -595,10 +595,9 @@ async function processJSWithSrc(script, origin, version) {
     // we want to slice out the source URL from the source
     const sourceURLIndex = sourceText.indexOf('//# sourceURL');
     // if //# sourceURL is at the beginning of the response, sourceText should be empty, otherwise slicing indices will be (0, -1) and sourceText will be unchanged
-    if(sourceURLIndex == 0) {
+    if (sourceURLIndex == 0) {
       sourceText = '';
-    }
-    else if (sourceURLIndex > 0) {
+    } else if (sourceURLIndex > 0) {
       // doing minus 1 because there's usually either a space or new line
       sourceText = sourceText.slice(0, sourceURLIndex - 1);
     }
