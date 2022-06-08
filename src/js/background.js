@@ -519,30 +519,23 @@ chrome.runtime.onMessage.addListener(handleMessages);
 const srcFilters = { urls: ['<all_urls>'] };
 chrome.webRequest.onResponseStarted.addListener(
   src => {
-    if (src.type === 'script') {
-      for (const header of src.responseHeaders) {
-        if (header.name == 'Cache-Control' && header.value == 'no-cache') {
-          console.log('found a no cache header');
-          chrome.tabs.query(
-            { active: true, currentWindow: true },
-            function (tabs) {
-              chrome.tabs.sendMessage(
-                tabs[0].id,
-                { greeting: 'nocacheHeaderFound' },
-                function (response) {
-                  console.log(response.farewell);
-                }
-              );
+    if (src.type === 'script' && !src.fromCache) {
+      chrome.tabs.query(
+        { active: true, currentWindow: true },
+        function (tabs) {
+          chrome.tabs.sendMessage(
+            tabs[0].id,
+            { greeting: 'nocacheHeaderFound' },
+            function (response) {
+              console.log('fromCache set to false, triggering warning state');
             }
           );
-        } else {
-          console.log('nocache header not found');
         }
-      }
+      );      
     }
   },
   srcFilters,
-  ['responseHeaders']
+  []
 );
 chrome.tabs.onRemoved.addListener(tabId => {
   if (debugCache.has(tabId)) {
