@@ -35,6 +35,7 @@
 	"webRequest"
     ],
     "host_permissions": [
-        "https://*.privacy-auditability.cloudflare.com/"
+        "https://*.privacy-auditability.cloudflare.com/",
+	"https://web.whatsapp.com/"
     ]
 }
