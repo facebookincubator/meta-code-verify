@@ -25,6 +25,7 @@
         {
             "matches": ["*://*.whatsapp.com/*"],
             "all_frames": true,
+	    "match_about_blank": true,
             "exclude_matches": ["*://www.whatsapp.com/", "*://*.whatsapp.com/bt-manifest/*"],
             "js": ["contentWA.js"],
             "run_at": "document_start"

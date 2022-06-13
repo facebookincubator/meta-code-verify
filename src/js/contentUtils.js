@@ -249,10 +249,20 @@ let currentFilterType = '';
 let manifestTimeoutID = '';
 
 export function storeFoundJS(scriptNodeMaybe, scriptList) {
+  if (window != window.top) {
+    // this means that content utils is running in an iframe - disable timer and call processFoundJS on manifest processed in top level frame
+    clearTimeout(manifestTimeoutID);
+    manifestTimeoutID = '';
+    window.setTimeout(
+      () => processFoundJS(currentOrigin, foundScripts.keys().next().value),
+      0
+    );
+  }
   // check if it's the manifest node
   if (
-    scriptNodeMaybe.id === 'binary-transparency-manifest' ||
-    scriptNodeMaybe.getAttribute('name') === 'binary-transparency-manifest'
+    window == window.top &&
+    (scriptNodeMaybe.id === 'binary-transparency-manifest' ||
+      scriptNodeMaybe.getAttribute('name') === 'binary-transparency-manifest')
   ) {
     let rawManifest = '';
     try {
@@ -285,6 +295,10 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
       if (currentFilterType === '') {
         currentFilterType = otherType;
       }
+    }
+    // for whatsapp
+    else {
+      currentFilterType = 'BOTH';
     }
     // now that we know the actual version of the scripts, transfer the ones we know about.
     if (foundScripts.has('')) {
@@ -423,7 +437,7 @@ const AttributeCheckPairs = [
   { nodeName: 'a', attributeName: 'xlink:href' },
   { nodeName: 'ncc', attributeName: 'href' },
   { nodeName: 'embed', attributeName: 'src' },
-  { nodeName: 'object', attributeName: 'data'}
+  { nodeName: 'object', attributeName: 'data' },
 ];
 
 export function hasViolatingJavaScriptURI(htmlElement) {
@@ -595,10 +609,9 @@ async function processJSWithSrc(script, origin, version) {
     // we want to slice out the source URL from the source
     const sourceURLIndex = sourceText.indexOf('//# sourceURL');
     // if //# sourceURL is at the beginning of the response, sourceText should be empty, otherwise slicing indices will be (0, -1) and sourceText will be unchanged
-    if(sourceURLIndex == 0) {
+    if (sourceURLIndex == 0) {
       sourceText = '';
-    }
-    else if (sourceURLIndex > 0) {
+    } else if (sourceURLIndex > 0) {
       // doing minus 1 because there's usually either a space or new line
       sourceText = sourceText.slice(0, sourceURLIndex - 1);
     }
