@@ -338,6 +338,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
               response.reason
             )
           ) {
+            console.log("endpoint failure or unknown endpoint issue");
             currentState = ICON_STATE.WARNING_TIMEOUT;
             chrome.runtime.sendMessage({
               type: MESSAGE_TYPE.UPDATE_ICON,
@@ -818,6 +819,7 @@ export function startFor(origin) {
   manifestTimeoutID = setTimeout(() => {
     // Manifest failed to load, flag a warning to the user.
     currentState = ICON_STATE.WARNING_TIMEOUT;
+    console.log("manifest timed out");
     chrome.runtime.sendMessage({
       type: MESSAGE_TYPE.UPDATE_ICON,
       icon: ICON_STATE.WARNING_TIMEOUT,

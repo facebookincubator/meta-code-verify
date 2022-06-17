@@ -1,0 +1,549 @@
+diff --git a/_locales/en/messages.json b/_locales/en/messages.json
+index 845f198..3b80fa2 100644
+--- a/_locales/en/messages.json
++++ b/_locales/en/messages.json
+@@ -85,5 +85,11 @@
+ 	},
+ 	"i18nDownloadSourceButton": {
+ 		"message": "Download"
++	},
++	"i18nKnownWarningStatusHeader": {
++		"message": "Warning: known inline scripts "
++	},
++	"i18nKnownWarningStatusMessage": {
++		"message": "Cannot validate - there are known inline scripts embedded in the page"
+ 	}
+ }
+diff --git a/config/v2/manifest.json b/config/v2/manifest.json
+index 711c69e..b653c21 100644
+--- a/config/v2/manifest.json
++++ b/config/v2/manifest.json
+@@ -23,6 +23,12 @@
+         "scripts": ["background.js"]
+     },
+     "content_scripts": [
++	{
++            "matches": ["*://*.facebook.com/*"],
++	    "all_frames": true,
++            "js": ["contentFB.js"],
++            "run_at": "document_start"
++        },
+         {
+             "matches": ["*://*.whatsapp.com/*"],
+             "all_frames": true,
+@@ -33,6 +39,7 @@
+     ],
+     "permissions": [
+         "https://*.privacy-auditability.cloudflare.com/",
+-        "https://web.whatsapp.com/"
++        "https://web.whatsapp.com/",
++        "https://static.xx.fbcdn.net/*"
+     ]
+ }
+diff --git a/config/v3/manifest.json b/config/v3/manifest.json
+index 94045a9..801c46f 100644
+--- a/config/v3/manifest.json
++++ b/config/v3/manifest.json
+@@ -22,6 +22,12 @@
+         "service_worker": "background.js"
+     },
+     "content_scripts": [
++        {
++            "matches": ["*://*.facebook.com/*"],
++            "all_frames": true,
++            "js": ["contentFB.js"],
++            "run_at": "document_start"
++        },
+         {
+             "matches": ["*://*.whatsapp.com/*"],
+             "all_frames": true,
+@@ -30,6 +36,9 @@
+             "run_at": "document_start"
+         }
+     ],
++    "permissions": [
++        "tabs"
++    ],
+     "host_permissions": [
+         "https://*.privacy-auditability.cloudflare.com/"
+     ]
+diff --git a/src/css/popup.css b/src/css/popup.css
+index cbba8cb..06f4551 100644
+--- a/src/css/popup.css
++++ b/src/css/popup.css
+@@ -273,6 +273,13 @@ header {
+   margin: 0;
+ }
+ 
++.known_warning_body {
++  width: 262px;
++  height: 216px;
++  background: #FFFFFF;
++  margin: 0;
++}
++
+ .warning_body_image {
+   height: 32px;
+   margin-top: 24px;
+diff --git a/src/html/popup.html b/src/html/popup.html
+index d77ddb8..0174c1c 100644
+--- a/src/html/popup.html
++++ b/src/html/popup.html
+@@ -40,6 +40,17 @@
+         </div>
+       </div>
+     </div>
++    <div class="state_boundary" id="known_warning">
++      <header>
++        <img class="badge" src="default_32.png" />
++        <img class="menu" src="menu-badge.svg" />
++      </header>
++      <div class="content_body">
++        <img class="warning_body_image" src="warning-header.svg" />
++        <div id="i18nKnownWarningStatusHeader" class="status_header"></div>
++        <div id="i18nKnownWarningStatusMessage" class="status_message"></div>
++      </div>
++    </div>
+     <div class="state_boundary" id="warning_timeout">
+       <header>
+         <img class="badge" src="default_32.png" />
+diff --git a/src/js/background.js b/src/js/background.js
+index dd2a416..3b50c89 100644
+--- a/src/js/background.js
++++ b/src/js/background.js
+@@ -270,6 +270,7 @@ async function processJSWithSrc(message, manifest, tabId) {
+         packageHash
+       );
+       if (!manifest.leaves.includes(packageHash)) {
++        console.log("leaves don't contain hash");
+         return false;
+       }
+     }
+@@ -307,7 +308,9 @@ export function handleMessages(message, sender, sendResponse) {
+ 
+   if (message.type == MESSAGE_TYPE.LOAD_MANIFEST) {
+     // validate manifest
+-    if ([ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(message.origin)) {
++    if (
++      [ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(message.origin)
++    ) {
+       validateMetaCompanyManifest(
+         message.rootHash,
+         message.otherHashes,
+@@ -345,7 +348,10 @@ export function handleMessages(message, sender, sendResponse) {
+           });
+           sendResponse({ valid: true });
+         } else {
+-          sendResponse({ valid: false });
++          sendResponse({
++            valid: false,
++            reason: 'validate meta company manifest',
++          });
+         }
+       });
+     } else {
+@@ -432,7 +438,6 @@ export function handleMessages(message, sender, sendResponse) {
+     }
+     // fetch and process the src
+     processJSWithSrc(message, manifestObj, sender.tab.id).then(valid => {
+-      console.log('sending processJSWithSrc response ', valid);
+       sendResponse({ valid: valid });
+     });
+     return true;
+@@ -440,6 +445,33 @@ export function handleMessages(message, sender, sendResponse) {
+ 
+   if (message.type == MESSAGE_TYPE.RAW_JS) {
+     const origin = manifestCache.get(message.origin);
++    const allowList = [
++      'requireLazy',
++      'var hc=navigator',
++      'window.__onSSRPayload',
++      'window.__logSSRQPL',
++      '$RX',
++      '$RC',
++      '$RS',
++      'window.pldmp',
++      'qpl_inl',
++      'qpl_tag',
++      'SSRInit',
++      'Adblock Plus',
++      'Chrome will not run content scripts inside of frames',
++      'adp_',
++    ];
++    let inAllowList = false;
++    allowList.forEach(element => {
++      // ignore these inline scripts for now
++      if (message.rawjs.indexOf(element) >= 0) {
++        inAllowList = true;
++      }
++    });
++    if (inAllowList && message.inline) {
++      sendResponse({ valid: false, reason: 'inline scripts in allowlist' });
++      return;
++    }
+     if (!origin) {
+       addDebugLog(
+         sender.tab.id,
+@@ -475,7 +507,6 @@ export function handleMessages(message, sender, sendResponse) {
+       if (manifestObj.leaves.includes(jsHash)) {
+         sendResponse({ valid: true });
+       } else {
+-        console.log('generate hash is ', jsHash);
+         addDebugLog(
+           sender.tab.id,
+           'Error: hash does not match ' +
+diff --git a/src/js/config.js b/src/js/config.js
+index b9b0e24..b3a7fcb 100644
+--- a/src/js/config.js
++++ b/src/js/config.js
+@@ -49,6 +49,13 @@ export const ICON_STATE = {
+     },
+     popup: 'popup.html?state=warning_timeout',
+   },
++  KNOWN_WARNING: {
++    // badge: 'warning-badge.svg',
++    badge: {
++      32: 'risk_32.png',
++    },
++    popup: 'popup.html?state=known_warning',
++  },
+ };
+ 
+ export const KNOWN_EXTENSION_HASHES = [
+diff --git a/src/js/contentUtils.js b/src/js/contentUtils.js
+index c809371..c979507 100644
+--- a/src/js/contentUtils.js
++++ b/src/js/contentUtils.js
+@@ -239,6 +239,8 @@ const DOM_EVENTS = [
+   'onwebkittransitionend',
+   'onwheel',
+ ];
++
++let downloadFeature = true;
+ const sourceScripts = new Map();
+ const inlineScripts = [];
+ const foundScripts = new Map();
+@@ -342,15 +344,17 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
+   }
+ 
+   if (scriptNodeMaybe.getAttribute('type') === 'application/json') {
+-    try {
+-      JSON.parse(scriptNodeMaybe.textContent);
+-    } catch (parseError) {
+-      currentState = ICON_STATE.INVALID_SOFT;
+-      chrome.runtime.sendMessage({
+-        type: MESSAGE_TYPE.UPDATE_ICON,
+-        icon: ICON_STATE.INVALID_SOFT,
+-      });
+-    }
++    requestIdleCallback(() => {
++      try {
++        JSON.parse(scriptNodeMaybe.textContent);
++      } catch (parseError) {
++        currentState = ICON_STATE.INVALID_SOFT;
++        chrome.runtime.sendMessage({
++          type: MESSAGE_TYPE.UPDATE_ICON,
++          icon: ICON_STATE.INVALID_SOFT,
++        });
++      }
++    });
+     return;
+   }
+   if (
+@@ -466,7 +470,22 @@ export function hasInvalidAttributes(htmlElement) {
+   ) {
+     Array.from(htmlElement.attributes).forEach(elementAttribute => {
+       // check first for violating attributes
++      let invalidAttribute = false;
++      let flaggedAttribute = false;
+       if (DOM_EVENTS.indexOf(elementAttribute.localName) >= 0) {
++        flaggedAttribute = true;
++        if (
++          elementAttribute.localName == 'onerror' ||
++          elementAttribute.localName == 'onload'
++        ) {
++          if (elementAttribute.value.indexOf('_btldr') < 0) {
++            invalidAttribute = true;
++          }
++        } else {
++          invalidAttribute = true;
++        }
++      }
++      if (invalidAttribute) {
+         chrome.runtime.sendMessage({
+           type: MESSAGE_TYPE.DEBUG,
+           log:
+@@ -481,6 +500,14 @@ export function hasInvalidAttributes(htmlElement) {
+           icon: ICON_STATE.INVALID_SOFT,
+         });
+       }
++      // we found an btldr onload or onerror element
++      else if (flaggedAttribute && currentState == ICON_STATE.VALID) {
++        currentState = ICON_STATE.KNOWN_WARNING;
++        chrome.runtime.sendMessage({
++          type: MESSAGE_TYPE.UPDATE_ICON,
++          icon: ICON_STATE.KNOWN_WARNING,
++        });
++      }
+     });
+   }
+ }
+@@ -498,7 +525,9 @@ export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
+   checkNodesForViolations(scriptNodeMaybe);
+ 
+   if (scriptNodeMaybe.nodeName.toLowerCase() === 'script') {
+-    return storeFoundJS(scriptNodeMaybe, scriptList);
++    requestIdleCallback(() => {
++      storeFoundJS(scriptNodeMaybe, scriptList);
++    });
+   } else if (scriptNodeMaybe.childNodes.length > 0) {
+     scriptNodeMaybe.childNodes.forEach(childNode => {
+       // if not an HTMLElement ignore it!
+@@ -508,13 +537,17 @@ export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
+       checkNodesForViolations(childNode);
+ 
+       if (childNode.nodeName.toLowerCase() === 'script') {
+-        storeFoundJS(childNode, scriptList);
++        requestIdleCallback(() => {
++          storeFoundJS(childNode, scriptList);
++        });
+         return;
+       }
+ 
+       Array.from(childNode.getElementsByTagName('script')).forEach(
+         childScript => {
+-          storeFoundJS(childScript, scriptList);
++          requestIdleCallback(() => {
++            storeFoundJS(childScript, scriptList);
++          });
+         }
+       );
+     });
+@@ -530,7 +563,9 @@ export const scanForScripts = () => {
+     checkNodesForViolations(allElement);
+     // next check for existing script elements and if they're violating
+     if (allElement.nodeName.toLowerCase() === 'script') {
+-      storeFoundJS(allElement, foundScripts);
++      requestIdleCallback(() => {
++        storeFoundJS(allElement, foundScripts);
++      });
+     }
+   });
+ 
+@@ -577,15 +612,21 @@ async function processJSWithSrc(script, origin, version) {
+   try {
+     const sourceResponse = await fetch(script.src, { method: 'GET' });
+     // we want to clone the stream before reading it
+-    const sourceResponseClone = sourceResponse.clone();
+-    const fileNameArr = script.src.split('/');
+-    const fileName = fileNameArr[fileNameArr.length - 1].split('?')[0];
++    if (downloadFeature) {
++      const sourceResponseClone = sourceResponse.clone();
++      const fileNameArr = script.src.split('/');
++      const fileName = fileNameArr[fileNameArr.length - 1].split('?')[0];
++      sourceScripts.set(
++        fileName,
++        sourceResponseClone.body.pipeThrough(
++          new window.CompressionStream('gzip')
++        )
++      );
++    }
+     let sourceText = await sourceResponse.text();
+-    sourceScripts.set(
+-      fileName,
+-      sourceResponseClone.body.pipeThrough(new window.CompressionStream('gzip'))
++    let fbOrigin = [ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(
++      origin
+     );
+-    let fbOrigin = [ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(origin);
+     if (fbOrigin && sourceText.indexOf('if (self.CavalryLogger) {') === 0) {
+       sourceText = sourceText.slice(82).trim();
+     }
+@@ -604,26 +645,30 @@ async function processJSWithSrc(script, origin, version) {
+     }
+     // split package up if necessary
+     const packages = i18nStripped.split('/*FB_PKG_DELIM*/\n');
++    if (packages[0] === '') {
++      packages.shift();
++    }
+     const packagePromises = packages.map(jsPackage => {
+       return new Promise((resolve, reject) => {
+         chrome.runtime.sendMessage(
+           {
+             type: MESSAGE_TYPE.RAW_JS,
+-            rawjs: jsPackage,
++            rawjs: jsPackage.trim(),
+             origin: origin,
+             version: version,
++            inline: false,
+           },
+           response => {
+             if (response.valid) {
+               resolve();
+             } else {
+-              reject(response.type);
++              reject();
+             }
+           }
+         );
+       });
+     });
+-    await Promise.all(packagePromises);
++    await Promise.allSettled(packagePromises);
+     return {
+       valid: true,
+     };
+@@ -639,10 +684,7 @@ export const processFoundJS = async (origin, version) => {
+   // foundScripts
+   const fullscripts = foundScripts.get(version).splice(0);
+   const scripts = fullscripts.filter(script => {
+-    if (
+-      script.otherType === currentFilterType ||
+-      ['BOTH', ''].includes(currentFilterType)
+-    ) {
++    if (currentFilterType != '') {
+       return true;
+     } else {
+       foundScripts.get(version).push(script);
+@@ -692,6 +734,7 @@ export const processFoundJS = async (origin, version) => {
+           lookupKey: script.lookupKey,
+           origin: origin,
+           version: version,
++          inline: true,
+         },
+         response => {
+           pendingScriptCount--;
+@@ -715,6 +758,14 @@ export const processFoundJS = async (origin, version) => {
+                 type: MESSAGE_TYPE.UPDATE_ICON,
+                 icon: ICON_STATE.WARNING_RISK,
+               });
++            } else if (response.reason === 'inline scripts in allowlist') {
++              if (currentState == ICON_STATE.VALID) {
++                currentState = ICON_STATE.KNOWN_WARNING;
++                chrome.runtime.sendMessage({
++                  type: MESSAGE_TYPE.UPDATE_ICON,
++                  icon: ICON_STATE.KNOWN_WARNING,
++                });
++              }
+             } else {
+               currentState = ICON_STATE.INVALID_SOFT;
+               chrome.runtime.sendMessage({
+@@ -739,44 +790,48 @@ export const processFoundJS = async (origin, version) => {
+ };
+ 
+ async function downloadJSToZip() {
+-  const fileHandle = await window.showSaveFilePicker({
+-    suggestedName: 'meta_source_files.gz',
+-  });
++  if (downloadFeature) {
++    const fileHandle = await window.showSaveFilePicker({
++      suggestedName: 'meta_source_files.gz',
++    });
+ 
+-  const writableStream = await fileHandle.createWritable();
+-  // delimiter between files
+-  const delimPrefix = '\n********** new file: ';
+-  const delimSuffix = ' **********\n';
+-  const enc = new TextEncoder();
+-
+-  for (const [fileName, compressedStream] of sourceScripts.entries()) {
+-    let delim = delimPrefix + fileName + delimSuffix;
+-    let encodedDelim = enc.encode(delim);
+-    let delimStream = new window.CompressionStream('gzip');
+-    let writer = delimStream.writable.getWriter();
+-    writer.write(encodedDelim);
+-    writer.close();
+-    await delimStream.readable.pipeTo(writableStream, { preventClose: true });
+-    await compressedStream.pipeTo(writableStream, { preventClose: true });
+-  }
++    const writableStream = await fileHandle.createWritable();
++    // delimiter between files
++    const delimPrefix = '\n********** new file: ';
++    const delimSuffix = ' **********\n';
++    const enc = new TextEncoder();
++
++    for (const [fileName, compressedStream] of sourceScripts.entries()) {
++      let delim = delimPrefix + fileName + delimSuffix;
++      let encodedDelim = enc.encode(delim);
++      let delimStream = new window.CompressionStream('gzip');
++      let writer = delimStream.writable.getWriter();
++      writer.write(encodedDelim);
++      writer.close();
++      await delimStream.readable.pipeTo(writableStream, { preventClose: true });
++      await compressedStream.pipeTo(writableStream, { preventClose: true });
++    }
+ 
+-  for (const inlineSrcMap of inlineScripts) {
+-    let inlineHash = inlineSrcMap.keys().next().value;
+-    let inlineSrc = inlineSrcMap.values().next().value;
+-    let delim = delimPrefix + 'Inline Script ' + inlineHash + delimSuffix;
+-    let encodedDelim = enc.encode(delim);
+-    let delimStream = new window.CompressionStream('gzip');
+-    let delimWriter = delimStream.writable.getWriter();
+-    delimWriter.write(encodedDelim);
+-    delimWriter.close();
+-    await delimStream.readable.pipeTo(writableStream, { preventClose: true });
+-    let inlineStream = new window.CompressionStream('gzip');
+-    let writer = inlineStream.writable.getWriter();
+-    writer.write(enc.encode(inlineSrc));
+-    writer.close();
+-    await inlineStream.readable.pipeTo(writableStream, { preventClose: true });
++    for (const inlineSrcMap of inlineScripts) {
++      let inlineHash = inlineSrcMap.keys().next().value;
++      let inlineSrc = inlineSrcMap.values().next().value;
++      let delim = delimPrefix + 'Inline Script ' + inlineHash + delimSuffix;
++      let encodedDelim = enc.encode(delim);
++      let delimStream = new window.CompressionStream('gzip');
++      let delimWriter = delimStream.writable.getWriter();
++      delimWriter.write(encodedDelim);
++      delimWriter.close();
++      await delimStream.readable.pipeTo(writableStream, { preventClose: true });
++      let inlineStream = new window.CompressionStream('gzip');
++      let writer = inlineStream.writable.getWriter();
++      writer.write(enc.encode(inlineSrc));
++      writer.close();
++      await inlineStream.readable.pipeTo(writableStream, {
++        preventClose: true,
++      });
++    }
++    writableStream.close();
+   }
+-  writableStream.close();
+ }
+ 
+ chrome.runtime.onMessage.addListener(function (request) {
+@@ -787,6 +842,11 @@ chrome.runtime.onMessage.addListener(function (request) {
+ 
+ export function startFor(origin) {
+   currentOrigin = origin;
++  try {
++    new window.CompressionStream('gzip');
++  } catch (streamError) {
++    downloadFeature = false;
++  }
+   scanForScripts();
+   manifestTimeoutID = setTimeout(() => {
+     // Manifest failed to load, flag a warning to the user.
+diff --git a/src/js/popup.js b/src/js/popup.js
+index 34c4eee..4d76e2e 100644
+--- a/src/js/popup.js
++++ b/src/js/popup.js
+@@ -42,6 +42,10 @@ function attachListeners() {
+   const downloadTextList = document.getElementsByClassName(
+     'status_message_highlight'
+   );
++
++  downloadTextList[0].addEventListener('click', () =>
++    updateDisplay('download')
++  );
+   downloadTextList[0].addEventListener('click', () => {
+     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+       chrome.tabs.sendMessage(
+@@ -71,7 +75,6 @@ function attachListeners() {
+     updateDisplay('download')
+   );
+   downloadTextList[0].style.cursor = 'pointer';
+-
+   const learnMoreList = document.getElementsByClassName(
+     'anomaly_learn_more_button'
+   );
