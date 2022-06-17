@@ -438,6 +438,8 @@ const AttributeCheckPairs = [
   { nodeName: 'ncc', attributeName: 'href' },
   { nodeName: 'embed', attributeName: 'src' },
   { nodeName: 'object', attributeName: 'data' },
+  { nodeName: 'animate', attributeName: 'xlink:href' },
+  { nodeName: 'script', attributeName: 'xlink:href' },
 ];
 
 export function hasViolatingJavaScriptURI(htmlElement) {
@@ -454,7 +456,7 @@ export function hasViolatingJavaScriptURI(htmlElement) {
   });
   if (checkURL !== '') {
     // make sure anchor tags and object tags don't have javascript urls
-    if (checkURL.indexOf('javascript:') == 0) {
+    if (checkURL.indexOf('javascript') >= 0) {
       chrome.runtime.sendMessage({
         type: MESSAGE_TYPE.DEBUG,
         log: 'violating attribute: javascript url',
@@ -521,7 +523,6 @@ export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
         return;
       }
       checkNodesForViolations(childNode);
-
       if (childNode.nodeName.toLowerCase() === 'script') {
         storeFoundJS(childNode, scriptList);
         return;
