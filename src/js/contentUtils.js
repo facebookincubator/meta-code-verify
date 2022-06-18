@@ -248,6 +248,41 @@ let currentOrigin = '';
 let currentFilterType = '';
 let manifestTimeoutID = '';
 
+function updateIcon(newState) {
+  currentState = newState;
+  chrome.runtime.sendMessage({
+    type: MESSAGE_TYPE.UPDATE_ICON,
+    icon: newState,
+  });
+}
+
+function updateCurrentState(newState) {
+  if (
+    newState === ICON_STATE.VALID &&
+    (currentState === ICON_STATE.VALID ||
+      currentState === ICON_STATE.PROCESSING)
+  ) {
+    updateIcon(newState);
+  } else if (
+    newState === ICON_STATE.PROCESSING &&
+    currentState === ICON_STATE.VALID
+  ) {
+    updateIcon(newState);
+  } else if (
+    newState === ICON_STATE.WARNING_RISK ||
+    newState === ICON_STATE.WARNING_TIMEOUT
+  ) {
+    if (
+      currentState === ICON_STATE.VALID ||
+      currentState === ICON_STATE.PROCESSING
+    ) {
+      updateIcon(newState);
+    }
+  } else if (newState === ICON_STATE.INVALID_SOFT) {
+    updateIcon(newState);
+  }
+}
+
 export function storeFoundJS(scriptNodeMaybe, scriptList) {
   if (window != window.top) {
     // this means that content utils is running in an iframe - disable timer and call processFoundJS on manifest processed in top level frame
@@ -268,11 +303,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     try {
       rawManifest = JSON.parse(scriptNodeMaybe.innerHTML);
     } catch (manifestParseError) {
-      currentState = ICON_STATE.INVALID_SOFT;
-      chrome.runtime.sendMessage({
-        type: MESSAGE_TYPE.UPDATE_ICON,
-        icon: ICON_STATE.INVALID_SOFT,
-      });
+      updateCurrentState(ICON_STATE.INVALID_SOFT);
       return;
     }
 
@@ -338,19 +369,10 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
               response.reason
             )
           ) {
-            console.log("endpoint failure or unknown endpoint issue");
-            currentState = ICON_STATE.WARNING_TIMEOUT;
-            chrome.runtime.sendMessage({
-              type: MESSAGE_TYPE.UPDATE_ICON,
-              icon: ICON_STATE.WARNING_TIMEOUT,
-            });
+            updateCurrentState(ICON_STATE.WARNING_TIMEOUT);
             return;
           }
-          currentState = ICON_STATE.INVALID_SOFT;
-          chrome.runtime.sendMessage({
-            type: MESSAGE_TYPE.UPDATE_ICON,
-            icon: ICON_STATE.INVALID_SOFT,
-          });
+          updateCurrentState(ICON_STATE.INVALID_SOFT);
         }
       }
     );
@@ -360,11 +382,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     try {
       JSON.parse(scriptNodeMaybe.textContent);
     } catch (parseError) {
-      currentState = ICON_STATE.INVALID_SOFT;
-      chrome.runtime.sendMessage({
-        type: MESSAGE_TYPE.UPDATE_ICON,
-        icon: ICON_STATE.INVALID_SOFT,
-      });
+      updateCurrentState(ICON_STATE.INVALID_SOFT);
     }
     return;
   }
@@ -374,11 +392,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     scriptNodeMaybe.src.indexOf('blob:') === 0
   ) {
     // TODO: try to process the blob. For now, flag as warning.
-    currentState = ICON_STATE.INVALID_SOFT;
-    chrome.runtime.sendMessage({
-      type: MESSAGE_TYPE.UPDATE_ICON,
-      icon: ICON_STATE.INVALID_SOFT,
-    });
+    updateCurrentState(ICON_STATE.INVALID_SOFT);
     return;
   }
   // need to get the src of the JS
@@ -404,12 +418,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
       });
     }
   }
-  if (currentState == ICON_STATE.VALID) {
-    chrome.runtime.sendMessage({
-      type: MESSAGE_TYPE.UPDATE_ICON,
-      icon: ICON_STATE.PROCESSING,
-    });
-  }
+  updateCurrentState(ICON_STATE.PROCESSING);
 }
 
 function getAttributeValue(
@@ -462,11 +471,7 @@ export function hasViolatingJavaScriptURI(htmlElement) {
         type: MESSAGE_TYPE.DEBUG,
         log: 'violating attribute: javascript url',
       });
-      currentState = ICON_STATE.INVALID_SOFT;
-      chrome.runtime.sendMessage({
-        type: MESSAGE_TYPE.UPDATE_ICON,
-        icon: ICON_STATE.INVALID_SOFT,
-      });
+      updateCurrentState(ICON_STATE.INVALID_SOFT);
     }
   }
 
@@ -492,12 +497,8 @@ export function hasInvalidAttributes(htmlElement) {
             elementAttribute.localName +
             ' from element ' +
             htmlElement.outerHTML,
-        });
-        currentState = ICON_STATE.INVALID_SOFT;
-        chrome.runtime.sendMessage({
-          type: MESSAGE_TYPE.UPDATE_ICON,
-          icon: ICON_STATE.INVALID_SOFT,
-        });
+        });     
+        updateCurrentState(ICON_STATE.INVALID_SOFT);
       }
     });
   }
@@ -560,11 +561,7 @@ export const scanForScripts = () => {
             hasInvalidScripts(checkScript, foundScripts);
           });
         } else if (mutation.type === 'attributes') {
-          currentState = ICON_STATE.INVALID_SOFT;
-          chrome.runtime.sendMessage({
-            type: MESSAGE_TYPE.UPDATE_ICON,
-            icon: ICON_STATE.INVALID_SOFT,
-          });
+          updateCurrentState(ICON_STATE.INVALID_SOFT);
           chrome.runtime.sendMessage({
             type: MESSAGE_TYPE.DEBUG,
             log:
@@ -581,11 +578,7 @@ export const scanForScripts = () => {
       subtree: true,
     });
   } catch (_UnknownError) {
-    currentState = ICON_STATE.INVALID_SOFT;
-    chrome.runtime.sendMessage({
-      type: MESSAGE_TYPE.UPDATE_ICON,
-      icon: ICON_STATE.INVALID_SOFT,
-    });
+    updateCurrentState(ICON_STATE.INVALID_SOFT);
   }
 };
 
@@ -676,25 +669,14 @@ export const processFoundJS = async (origin, version) => {
       await processJSWithSrc(script, origin, version).then(response => {
         pendingScriptCount--;
         if (response.valid) {
-          if (pendingScriptCount == 0 && currentState == ICON_STATE.VALID) {
-            chrome.runtime.sendMessage({
-              type: MESSAGE_TYPE.UPDATE_ICON,
-              icon: ICON_STATE.VALID,
-            });
+          if (pendingScriptCount == 0) {
+            updateCurrentState(ICON_STATE.VALID);
           }
         } else {
           if (response.type === 'EXTENSION') {
-            currentState = ICON_STATE.WARNING_RISK;
-            chrome.runtime.sendMessage({
-              type: MESSAGE_TYPE.UPDATE_ICON,
-              icon: ICON_STATE.WARNING_RISK,
-            });
+            updateCurrentState(ICON_STATE.WARNING_RISK);
           } else {
-            currentState = ICON_STATE.INVALID_SOFT;
-            chrome.runtime.sendMessage({
-              type: MESSAGE_TYPE.UPDATE_ICON,
-              icon: ICON_STATE.INVALID_SOFT,
-            });
+            updateCurrentState(ICON_STATE.INVALID_SOFT);
           }
         }
         chrome.runtime.sendMessage({
@@ -721,28 +703,17 @@ export const processFoundJS = async (origin, version) => {
           if (response.valid) {
             inlineScriptMap.set(response.hash, script.rawjs);
             inlineScripts.push(inlineScriptMap);
-            if (pendingScriptCount == 0 && currentState == ICON_STATE.VALID) {
-              chrome.runtime.sendMessage({
-                type: MESSAGE_TYPE.UPDATE_ICON,
-                icon: ICON_STATE.VALID,
-              });
+            if (pendingScriptCount == 0) {
+              updateCurrentState(ICON_STATE.VALID);
             }
           } else {
             // using an array of maps, as we're using the same key for inline scripts - this will eventually be removed, once inline scripts are removed from the page load
             inlineScriptMap.set('hash not in manifest', script.rawjs);
             inlineScripts.push(inlineScriptMap);
             if (KNOWN_EXTENSION_HASHES.includes(response.hash)) {
-              currentState = ICON_STATE.WARNING_RISK;
-              chrome.runtime.sendMessage({
-                type: MESSAGE_TYPE.UPDATE_ICON,
-                icon: ICON_STATE.WARNING_RISK,
-              });
+              updateCurrentState(ICON_STATE.WARNING_RISK);
             } else {
-              currentState = ICON_STATE.INVALID_SOFT;
-              chrome.runtime.sendMessage({
-                type: MESSAGE_TYPE.UPDATE_ICON,
-                icon: ICON_STATE.INVALID_SOFT,
-              });
+              updateCurrentState(ICON_STATE.INVALID_SOFT);
             }
           }
           chrome.runtime.sendMessage({
@@ -805,29 +776,20 @@ chrome.runtime.onMessage.addListener(function (request) {
   if (request.greeting === 'downloadSource') {
     downloadJSToZip();
   } else if (request.greeting === 'nocacheHeaderFound') {
-    currentState = ICON_STATE.INVALID_SOFT;
-    chrome.runtime.sendMessage({
-      type: MESSAGE_TYPE.UPDATE_ICON,
-      icon: ICON_STATE.INVALID_SOFT,
-    });
+    updateCurrentState(ICON_STATE.INVALID_SOFT);
   }
 });
 
 export function startFor(origin) {
   currentOrigin = origin;
   scanForScripts();
-  manifestTimeoutID = setTimeout(() => {
-    // Manifest failed to load, flag a warning to the user.
-    currentState = ICON_STATE.WARNING_TIMEOUT;
-    console.log("manifest timed out");
-    chrome.runtime.sendMessage({
-      type: MESSAGE_TYPE.UPDATE_ICON,
-      icon: ICON_STATE.WARNING_TIMEOUT,
-    });
-  }, 45000);
+  // set the timeout once, in case there's an iframe and contentUtils sets another manifest timer
+  if (manifestTimeoutID === '') {
+    manifestTimeoutID = setTimeout(() => {
+      // Manifest failed to load, flag a warning to the user.
+      updateCurrentState(ICON_STATE.WARNING_TIMEOUT);
+    }, 45000);
+  }
 }
 
-chrome.runtime.sendMessage({
-  type: MESSAGE_TYPE.UPDATE_ICON,
-  icon: ICON_STATE.PROCESSING,
-});
+updateCurrentState(ICON_STATE.PROCESSING);
