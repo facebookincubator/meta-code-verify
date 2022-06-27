@@ -239,6 +239,7 @@ const DOM_EVENTS = [
   'onwebkittransitionend',
   'onwheel',
 ];
+
 const sourceScripts = new Map();
 const inlineScripts = [];
 const foundScripts = new Map();
@@ -303,7 +304,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     try {
       rawManifest = JSON.parse(scriptNodeMaybe.innerHTML);
     } catch (manifestParseError) {
-      updateCurrentState(ICON_STATE.INVALID_SOFT);
+      setTimeout(() => parseFailedJson(scriptNodeMaybe.innerHTML), 20)
       return;
     }
 
@@ -382,7 +383,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     try {
       JSON.parse(scriptNodeMaybe.textContent);
     } catch (parseError) {
-      updateCurrentState(ICON_STATE.INVALID_SOFT);
+      setTimeout(() => parseFailedJson(scriptNodeMaybe.innerHTML), 20)
     }
     return;
   }
@@ -779,6 +780,15 @@ chrome.runtime.onMessage.addListener(function (request) {
     updateCurrentState(ICON_STATE.INVALID_SOFT);
   }
 });
+
+function parseFailedJson(queuedJsonToParse){
+  try {
+    JSON.parse(queuedJsonToParse);
+  }
+  catch (parseError) {
+    updateCurrentState(ICON_STATE.INVALID_SOFT);
+  }
+}
 
 export function startFor(origin) {
   currentOrigin = origin;
