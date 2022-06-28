@@ -503,6 +503,14 @@ export function hasInvalidAttributes(htmlElement) {
       }
     });
   }
+  // check child nodes as well, since a malicious attacker could try to inject an invalid attribute via an image node in a svg tag
+  if (htmlElement.childNodes.length > 0) {
+    htmlElement.childNodes.forEach(childNode => {
+      if (childNode.nodeType === 1){
+        hasInvalidAttributes(childNode);
+      }
+    })
+  }
 }
 
 function checkNodesForViolations(element) {
