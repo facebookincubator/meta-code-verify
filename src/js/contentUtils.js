@@ -801,11 +801,10 @@ export function startFor(origin) {
   let isUserLoggedIn = false;
   if ([ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(origin)) {
     const cookies = document.cookie.split(';');
-    console.log(`cookies ${cookies}`);
     cookies.forEach(cookie => {
       let pair = cookie.split('=');
       // c_user contains the user id of the user logged in
-      if (pair[0] === 'c_user') {
+      if (pair[0].indexOf('c_user') >= 0) {
         isUserLoggedIn = true;
       }
     });
