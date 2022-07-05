@@ -239,6 +239,7 @@ const DOM_EVENTS = [
   'onwebkittransitionend',
   'onwheel',
 ];
+
 const sourceScripts = new Map();
 const inlineScripts = [];
 const foundScripts = new Map();
@@ -303,7 +304,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     try {
       rawManifest = JSON.parse(scriptNodeMaybe.innerHTML);
     } catch (manifestParseError) {
-      updateCurrentState(ICON_STATE.INVALID_SOFT);
+      setTimeout(() => parseFailedJson(scriptNodeMaybe.innerHTML), 20);
       return;
     }
 
@@ -382,7 +383,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     try {
       JSON.parse(scriptNodeMaybe.textContent);
     } catch (parseError) {
-      updateCurrentState(ICON_STATE.INVALID_SOFT);
+      setTimeout(() => parseFailedJson(scriptNodeMaybe.innerHTML), 20);
     }
     return;
   }
@@ -497,8 +498,16 @@ export function hasInvalidAttributes(htmlElement) {
             elementAttribute.localName +
             ' from element ' +
             htmlElement.outerHTML,
-        });     
+        });
         updateCurrentState(ICON_STATE.INVALID_SOFT);
+      }
+    });
+  }
+  // check child nodes as well, since a malicious attacker could try to inject an invalid attribute via an image node in a svg tag
+  if (htmlElement.childNodes.length > 0) {
+    htmlElement.childNodes.forEach(childNode => {
+      if (childNode.nodeType === 1) {
+        hasInvalidAttributes(childNode);
       }
     });
   }
@@ -780,16 +789,39 @@ chrome.runtime.onMessage.addListener(function (request) {
   }
 });
 
-export function startFor(origin) {
-  currentOrigin = origin;
-  scanForScripts();
-  // set the timeout once, in case there's an iframe and contentUtils sets another manifest timer
-  if (manifestTimeoutID === '') {
-    manifestTimeoutID = setTimeout(() => {
-      // Manifest failed to load, flag a warning to the user.
-      updateCurrentState(ICON_STATE.WARNING_TIMEOUT);
-    }, 45000);
+function parseFailedJson(queuedJsonToParse) {
+  try {
+    JSON.parse(queuedJsonToParse);
+  } catch (parseError) {
+    updateCurrentState(ICON_STATE.INVALID_SOFT);
   }
 }
 
-updateCurrentState(ICON_STATE.PROCESSING);
+export function startFor(origin) {
+  let isUserLoggedIn = false;
+  if ([ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(origin)) {
+    const cookies = document.cookie.split(';');
+    cookies.forEach(cookie => {
+      let pair = cookie.split('=');
+      // c_user contains the user id of the user logged in
+      if (pair[0].indexOf('c_user') >= 0) {
+        isUserLoggedIn = true;
+      }
+    });
+  } else {
+    // only doing this check for FB and MSGR
+    isUserLoggedIn = true;
+  }
+  if (isUserLoggedIn) {
+    updateCurrentState(ICON_STATE.PROCESSING);
+    currentOrigin = origin;
+    scanForScripts();
+    // set the timeout once, in case there's an iframe and contentUtils sets another manifest timer
+    if (manifestTimeoutID === '') {
+      manifestTimeoutID = setTimeout(() => {
+        // Manifest failed to load, flag a warning to the user.
+        updateCurrentState(ICON_STATE.WARNING_TIMEOUT);
+      }, 45000);
+    }
+  }
+}
