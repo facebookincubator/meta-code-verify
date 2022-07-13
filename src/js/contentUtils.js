@@ -565,8 +565,10 @@ export const scanForScripts = () => {
     // track any new scripts that get loaded in
     const scriptMutationObserver = new MutationObserver(mutationsList => {
       mutationsList.forEach(mutation => {
+        console.log(`FOUND MUTATION: ${mutation.type}`);
         if (mutation.type === 'childList') {
           Array.from(mutation.addedNodes).forEach(checkScript => {
+            console.log(`new node ${checkScript}`);
             hasInvalidScripts(checkScript, foundScripts);
           });
         } else if (mutation.type === 'attributes') {
