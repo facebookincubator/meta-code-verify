@@ -565,20 +565,12 @@ export const scanForScripts = () => {
     // track any new scripts that get loaded in
     const scriptMutationObserver = new MutationObserver(mutationsList => {
       mutationsList.forEach(mutation => {
-        if (mutation.type === 'characterData')
-          console.log(
-            `CHARACTER DATA ${mutation.target.id} ${mutation.target.textContent}`
-          );
         if (mutation.type === 'childList') {
           Array.from(mutation.addedNodes).forEach(checkScript => {
-            if (checkScript.type !== 'application/json') {
-              hasInvalidScripts(checkScript, foundScripts);
-            }
             hasInvalidScripts(checkScript, foundScripts);
           });
         } else if (mutation.type === 'attributes') {
-          console.log('FOUND ATTRIBUTE MUTATION');
-          //updateCurrentState(ICON_STATE.INVALID_SOFT);
+          updateCurrentState(ICON_STATE.INVALID_SOFT);
           chrome.runtime.sendMessage({
             type: MESSAGE_TYPE.DEBUG,
             log:
@@ -592,7 +584,6 @@ export const scanForScripts = () => {
     scriptMutationObserver.observe(document, {
       attributeFilter: DOM_EVENTS,
       childList: true,
-      characterData: true,
       subtree: true,
     });
   } catch (_UnknownError) {
