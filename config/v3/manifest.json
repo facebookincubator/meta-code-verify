@@ -23,6 +23,13 @@
     },
     "content_scripts": [
         {
+            "matches": ["*://*.facebook.com/*"],
+            "all_frames": true,
+            "match_about_blank": true,
+            "js": ["contentFB.js"],
+            "run_at": "document_start"
+        },
+        {
             "matches": ["*://*.whatsapp.com/*"],
             "all_frames": true,
 	        "match_about_blank": true,

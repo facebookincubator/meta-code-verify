@@ -619,15 +619,8 @@ async function processJSWithSrc(script, origin, version) {
       // doing minus 1 because there's usually either a space or new line
       sourceText = sourceText.slice(0, sourceURLIndex - 1);
     }
-    // strip i18n delimiters
-    // eslint-disable-next-line no-useless-escape
-    const i18nRegexp = /\/\*FBT_CALL\*\/.*?\/\*FBT_CALL\*\//g;
-    let i18nStripped = sourceText;
-    if (fbOrigin) {
-      i18nStripped = sourceText.replace(i18nRegexp, '');
-    }
     // split package up if necessary
-    const packages = i18nStripped.split('/*FB_PKG_DELIM*/\n');
+    const packages = sourceText.split('/*FB_PKG_DELIM*/\n');
     const packagePromises = packages.map(jsPackage => {
       return new Promise((resolve, reject) => {
         chrome.runtime.sendMessage(
