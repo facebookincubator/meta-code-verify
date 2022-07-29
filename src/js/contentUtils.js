@@ -304,7 +304,10 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     try {
       rawManifest = JSON.parse(scriptNodeMaybe.innerHTML);
     } catch (manifestParseError) {
-      setTimeout(() => parseFailedJson(scriptNodeMaybe.innerHTML), 20);
+      setTimeout(
+        () => parseFailedJson({ node: scriptNodeMaybe, retry: 1500 }),
+        20
+      );
       return;
     }
 
@@ -383,7 +386,10 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     try {
       JSON.parse(scriptNodeMaybe.textContent);
     } catch (parseError) {
-      setTimeout(() => parseFailedJson(scriptNodeMaybe.innerHTML), 20);
+      setTimeout(
+        () => parseFailedJson({ node: scriptNodeMaybe, retry: 1500 }),
+        20
+      );
     }
     return;
   }
@@ -784,9 +790,14 @@ chrome.runtime.onMessage.addListener(function (request) {
 
 function parseFailedJson(queuedJsonToParse) {
   try {
-    JSON.parse(queuedJsonToParse);
+    JSON.parse(queuedJsonToParse.node.textContent);
   } catch (parseError) {
-    updateCurrentState(ICON_STATE.INVALID_SOFT);
+    if (queuedJsonToParse.retry > 0) {
+      queuedJsonToParse.retry--;
+      setTimeout(() => parseFailedJson(queuedJsonToParse), 20);
+    } else {
+      updateCurrentState(ICON_STATE.INVALID_SOFT);
+    }
   }
 }
 
