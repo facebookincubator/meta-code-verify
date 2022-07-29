@@ -302,10 +302,10 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
   ) {
     let rawManifest = '';
     try {
-      rawManifest = JSON.parse(scriptNodeMaybe.innerHTML);
+      rawManifest = JSON.parse(scriptNodeMaybe.textContent);
     } catch (manifestParseError) {
       setTimeout(
-        () => parseFailedJson({ node: scriptNodeMaybe, retry: 1500 }),
+        () => parseFailedJson({ node: scriptNodeMaybe, retry: 5000 }),
         20
       );
       return;
