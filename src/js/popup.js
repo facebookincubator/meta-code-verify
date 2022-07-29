@@ -30,9 +30,11 @@ function attachListeners() {
   closeMenuButton.addEventListener('click', () => window.close());
 
   const menuRowList = document.getElementsByClassName('menu_row');
+
   menuRowList[0].addEventListener('click', () => {
-    chrome.tabs.create({
-      url: chrome.i18n.getMessage('about_code_verify_faq_url'),
+    chrome.runtime.sendMessage({
+      popup_help_wa: chrome.i18n.getMessage('about_code_verify_faq_url_wa'),
+      popup_help_msgr: chrome.i18n.getMessage('about_code_verify_faq_url_msgr'),
     });
   });
   menuRowList[0].style.cursor = 'pointer';
@@ -76,8 +78,11 @@ function attachListeners() {
     'anomaly_learn_more_button'
   );
   learnMoreList[0].addEventListener('click', () => {
-    chrome.tabs.create({
-      url: chrome.i18n.getMessage('validation_failure_faq_url'),
+    chrome.runtime.sendMessage({
+      popup_help_wa: chrome.i18n.getMessage('validation_failure_faq_url_wa'),
+      popup_help_msgr: chrome.i18n.getMessage(
+        'validation_failure_faq_url_msgr'
+      ),
     });
   });
   learnMoreList[0].style.cursor = 'pointer';
@@ -86,8 +91,13 @@ function attachListeners() {
     'risk_learn_more_button'
   );
   riskLearnMoreList[0].addEventListener('click', () => {
-    chrome.tabs.create({
-      url: chrome.i18n.getMessage('possible_risk_detected_faq_url'),
+    chrome.runtime.sendMessage({
+      popup_help_wa: chrome.i18n.getMessage(
+        'possible_risk_detected_faq_url_wa'
+      ),
+      popup_help_msgr: chrome.i18n.getMessage(
+        'possible_risk_detected_faq_url_msgr'
+      ),
     });
   });
   riskLearnMoreList[0].style.cursor = 'pointer';
@@ -104,8 +114,9 @@ function attachListeners() {
     'timeout_learn_more_button'
   );
   timeoutLearnMoreList[0].addEventListener('click', () => {
-    chrome.tabs.create({
-      url: chrome.i18n.getMessage('network_timeout_faq_url'),
+    chrome.runtime.sendMessage({
+      popup_help_wa: chrome.i18n.getMessage('network_timeout_faq_url_wa'),
+      popup_help_msgr: chrome.i18n.getMessage('network_timeout_faq_url_msgr'),
     });
   });
   timeoutLearnMoreList[0].style.cursor = 'pointer';

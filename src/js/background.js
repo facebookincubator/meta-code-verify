@@ -11,8 +11,10 @@ import {
   ORIGIN_TIMEOUT,
   ORIGIN_TYPE,
 } from './config.js';
+
 const manifestCache = new Map();
 const debugCache = new Map();
+const originStore = [];
 
 // Emulate PageActions
 chrome.runtime.onInstalled.addListener(() => {
@@ -300,6 +302,30 @@ function getDebugLog(tabId) {
 
 export function handleMessages(message, sender, sendResponse) {
   console.log('in handle messages ', message);
+  if (message.origin && originStore.length == 0) {
+    let msgOrigin = '';
+    if (message.origin === ORIGIN_TYPE.FACEBOOK) {
+      msgOrigin = 'fb';
+    } else if (message.origin === ORIGIN_TYPE.MESSENGER) {
+      msgOrigin = 'msgr';
+    } else {
+      msgOrigin = 'wa';
+    }
+    originStore.push(msgOrigin);
+  }
+  // just check for any of the popup urls
+  if (message.popup_help_wa) {
+    if (originStore[0] === 'wa') {
+      chrome.tabs.create({
+        url: message.popup_help_wa,
+      });
+    } else if (originStore[0] === 'msgr') {
+      chrome.tabs.create({
+        url: message.popup_help_msgr,
+      });
+    }
+    return;
+  }
   if (message.type == MESSAGE_TYPE.UPDATE_ICON) {
     updateIcon(message, sender);
     return;

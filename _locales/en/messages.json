@@ -1,14 +1,26 @@
 {
-	"about_code_verify_faq_url": {
+	"about_code_verify_faq_url_msgr": {
+		"message": "https://www.messenger.com/help/799550494558955"
+	},
+	"about_code_verify_faq_url_wa": {
 		"message": "https://faq.whatsapp.com/web/security-and-privacy/about-code-verify"
 	},
-	"validation_failure_faq_url": {
+	"validation_failure_faq_url_msgr": {
+		"message": "https://www.messenger.com/help/799550494558955?ref=learn_more#validationfailure"
+	},
+	"validation_failure_faq_url_wa": {
 		"message": "https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-validation-failure-warning"
 	},
-	"possible_risk_detected_faq_url": {
+	"possible_risk_detected_faq_url_msgr": {
+		"message": "https://www.messenger.com/help/799550494558955?ref=learn_more#possibleriskdetected"
+	},
+	"possible_risk_detected_faq_url_wa": {
 		"message": "https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-possible-risk-detected-warning"
 	},
-	"network_timeout_faq_url": {
+	"network_timeout_faq_url_msgr": {
+		"message": "https://www.messenger.com/help/799550494558955?ref=learn_more#networktimedout"
+	},
+	"network_timeout_faq_url_wa": {
 		"message": "https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-network-timeout-error"
 	},
 	"i18nValidatedStatusHeader": {
