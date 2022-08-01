@@ -402,13 +402,16 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     updateCurrentState(ICON_STATE.INVALID_SOFT);
     return;
   }
+
+  const dataBtManifest = scriptNodeMaybe.getAttribute('data-btmanifest');
+  const otherType = dataBtManifest == null ? '' : dataBtManifest.split('_')[1];
   // need to get the src of the JS
   if (scriptNodeMaybe.src != null && scriptNodeMaybe.src !== '') {
     if (scriptList.size === 1) {
       scriptList.get(scriptList.keys().next().value).push({
         type: MESSAGE_TYPE.JS_WITH_SRC,
         src: scriptNodeMaybe.src,
-        otherType: '', // TODO: read from DOM when available
+        otherType: otherType, // TODO: read from DOM when available
       });
     }
   } else {
@@ -421,7 +424,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
         type: MESSAGE_TYPE.RAW_JS,
         rawjs: scriptNodeMaybe.innerHTML,
         lookupKey: hashLookupKey,
-        otherType: '', // TODO: read from DOM when available
+        otherType: otherType, // TODO: read from DOM when available
       });
     }
   }
