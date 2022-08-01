@@ -610,13 +610,6 @@ async function processJSWithSrc(script, origin, version) {
       fileName,
       sourceResponseClone.body.pipeThrough(new window.CompressionStream('gzip'))
     );
-    let fbOrigin = [ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(
-      origin
-    );
-    if (fbOrigin && sourceText.indexOf('if (self.CavalryLogger) {') === 0) {
-      sourceText = sourceText.slice(82).trim();
-    }
-    // we want to slice out the source URL from the source
     const sourceURLIndex = sourceText.indexOf('//# sourceURL');
     // if //# sourceURL is at the beginning of the response, sourceText should be empty, otherwise slicing indices will be (0, -1) and sourceText will be unchanged
     if (sourceURLIndex == 0) {
@@ -632,7 +625,7 @@ async function processJSWithSrc(script, origin, version) {
         chrome.runtime.sendMessage(
           {
             type: MESSAGE_TYPE.RAW_JS,
-            rawjs: jsPackage,
+            rawjs: jsPackage.trimStart(),
             origin: origin,
             version: version,
           },
@@ -700,7 +693,7 @@ export const processFoundJS = async (origin, version) => {
       chrome.runtime.sendMessage(
         {
           type: script.type,
-          rawjs: script.rawjs,
+          rawjs: script.rawjs.trimStart(),
           lookupKey: script.lookupKey,
           origin: origin,
           version: version,
