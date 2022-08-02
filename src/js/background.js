@@ -14,7 +14,6 @@ import {
 
 const manifestCache = new Map();
 const debugCache = new Map();
-const originStore = [];
 
 // Emulate PageActions
 chrome.runtime.onInstalled.addListener(() => {
@@ -302,32 +301,27 @@ function getDebugLog(tabId) {
 
 export function handleMessages(message, sender, sendResponse) {
   console.log('in handle messages ', message);
-  if (message.origin && originStore.length == 0) {
-    let msgOrigin = '';
-    if (message.origin === ORIGIN_TYPE.FACEBOOK) {
-      msgOrigin = 'fb';
-    } else if (message.origin === ORIGIN_TYPE.MESSENGER) {
-      msgOrigin = 'msgr';
-    } else {
-      msgOrigin = 'wa';
-    }
-    originStore.push(msgOrigin);
-  }
   // just check for any of the popup urls
   if (message.popup_help_wa) {
-    if (originStore[0] === 'wa') {
-      chrome.tabs.create({
-        url: message.popup_help_wa,
-      });
-    } else if (originStore[0] === 'msgr') {
-      chrome.tabs.create({
-        url: message.popup_help_msgr,
-      });
-    } else if (originStore[0] === 'fb') {
-      chrome.tabs.create({
-        url: message.popup_help_fb,
-      });
-    }
+    chrome.tabs.query(
+      { active: true, lastFocusedWindow: true },
+      function (tabs) {
+        const currentHostname = new URL(tabs[0].url).hostname;
+        if (currentHostname.includes('whatsapp')) {
+          chrome.tabs.create({
+            url: message.popup_help_wa,
+          });
+        } else if (currentHostname.includes('messenger')) {
+          chrome.tabs.create({
+            url: message.popup_help_msgr,
+          });
+        } else {
+          chrome.tabs.create({
+            url: message.popup_help_fb,
+          });
+        }
+      }
+    );
     return;
   }
   if (message.type == MESSAGE_TYPE.UPDATE_ICON) {

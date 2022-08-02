@@ -49,6 +49,7 @@
     "permissions": [
         "https://*.privacy-auditability.cloudflare.com/",
         "https://web.whatsapp.com/",
+        "tabs",
         "webRequest",
         "https://static.xx.fbcdn.net/"
     ]
