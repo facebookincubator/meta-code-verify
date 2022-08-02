@@ -10,6 +10,7 @@ import {
   KNOWN_EXTENSION_HASHES,
   MESSAGE_TYPE,
   ORIGIN_TYPE,
+  DOWNLOAD_JS_ENABLED,
 } from './config.js';
 
 const DOM_EVENTS = [
@@ -609,10 +610,14 @@ async function processJSWithSrc(script, origin, version) {
     const fileNameArr = script.src.split('/');
     const fileName = fileNameArr[fileNameArr.length - 1].split('?')[0];
     let sourceText = await sourceResponse.text();
-    sourceScripts.set(
-      fileName,
-      sourceResponseClone.body.pipeThrough(new window.CompressionStream('gzip'))
-    );
+    if (DOWNLOAD_JS_ENABLED) {
+      sourceScripts.set(
+        fileName,
+        sourceResponseClone.body.pipeThrough(
+          new window.CompressionStream('gzip')
+        )
+      );
+    }
     const sourceURLIndex = sourceText.indexOf('//# sourceURL');
     // if //# sourceURL is at the beginning of the response, sourceText should be empty, otherwise slicing indices will be (0, -1) and sourceText will be unchanged
     if (sourceURLIndex == 0) {
@@ -777,7 +782,7 @@ async function downloadJSToZip() {
 }
 
 chrome.runtime.onMessage.addListener(function (request) {
-  if (request.greeting === 'downloadSource') {
+  if (request.greeting === 'downloadSource' && DOWNLOAD_JS_ENABLED) {
     downloadJSToZip();
   } else if (request.greeting === 'nocacheHeaderFound') {
     updateCurrentState(ICON_STATE.INVALID_SOFT);

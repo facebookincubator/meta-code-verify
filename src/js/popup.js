@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { DOWNLOAD_JS_ENABLED } from './config.js';
+
 chrome.runtime.onMessage.addListener(message => {
   if (message && message.popup) {
     const state = message.popup.slice(message.popup.indexOf('=') + 1);
@@ -38,41 +40,54 @@ function attachListeners() {
     });
   });
   menuRowList[0].style.cursor = 'pointer';
-  menuRowList[1].addEventListener('click', () => updateDisplay('download'));
-  menuRowList[1].style.cursor = 'pointer';
 
   const downloadTextList = document.getElementsByClassName(
     'status_message_highlight'
   );
-  downloadTextList[0].addEventListener('click', () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-      chrome.tabs.sendMessage(
-        tabs[0].id,
-        { greeting: 'downloadSource' },
-        () => {}
-      );
-    });
-  });
-  downloadTextList[0].style.cursor = 'pointer';
-
   const downloadSrcButton = document.getElementById('i18nDownloadSourceButton');
 
-  downloadSrcButton.onclick = () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-      chrome.tabs.sendMessage(
-        tabs[0].id,
-        { greeting: 'downloadSource' },
-        () => {}
-      );
+  if (DOWNLOAD_JS_ENABLED) {
+    menuRowList[1].addEventListener('click', () => updateDisplay('download'));
+    menuRowList[1].style.cursor = 'pointer';
+
+    downloadTextList[0].addEventListener('click', () => {
+      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        chrome.tabs.sendMessage(
+          tabs[0].id,
+          { greeting: 'downloadSource' },
+          () => {}
+        );
+      });
     });
-  };
+    downloadTextList[0].style.cursor = 'pointer';
 
-  downloadSrcButton.style.cursor = 'pointer';
+    downloadSrcButton.onclick = () => {
+      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        chrome.tabs.sendMessage(
+          tabs[0].id,
+          { greeting: 'downloadSource' },
+          () => {}
+        );
+      });
+    };
 
-  downloadTextList[0].addEventListener('click', () =>
-    updateDisplay('download')
-  );
-  downloadTextList[0].style.cursor = 'pointer';
+    downloadSrcButton.style.cursor = 'pointer';
+
+    downloadTextList[0].addEventListener('click', () =>
+      updateDisplay('download')
+    );
+    downloadTextList[0].style.cursor = 'pointer';
+  } else {
+    menuRowList[1].remove();
+    downloadTextList[0].remove();
+    const downloadMessagePartTwo = document.getElementById(
+      'i18nValidationFailureStatusMessagePartTwo'
+    );
+    if (downloadMessagePartTwo != null) {
+      downloadMessagePartTwo.remove();
+    }
+    downloadSrcButton.remove();
+  }
 
   const learnMoreList = document.getElementsByClassName(
     'anomaly_learn_more_button'
