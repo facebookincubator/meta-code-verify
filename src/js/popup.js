@@ -37,6 +37,7 @@ function attachListeners() {
     chrome.runtime.sendMessage({
       popup_help_wa: chrome.i18n.getMessage('about_code_verify_faq_url_wa'),
       popup_help_msgr: chrome.i18n.getMessage('about_code_verify_faq_url_msgr'),
+      popup_help_fb: chrome.i18n.getMessage('about_code_verify_faq_url_fb'),
     });
   });
   menuRowList[0].style.cursor = 'pointer';
@@ -98,6 +99,7 @@ function attachListeners() {
       popup_help_msgr: chrome.i18n.getMessage(
         'validation_failure_faq_url_msgr'
       ),
+      popup_help_fb: chrome.i18n.getMessage('validation_failure_faq_url_fb'),
     });
   });
   learnMoreList[0].style.cursor = 'pointer';
@@ -112,6 +114,9 @@ function attachListeners() {
       ),
       popup_help_msgr: chrome.i18n.getMessage(
         'possible_risk_detected_faq_url_msgr'
+      ),
+      popup_help_fb: chrome.i18n.getMessage(
+        'possible_risk_detected_faq_url_fb'
       ),
     });
   });
@@ -132,6 +137,7 @@ function attachListeners() {
     chrome.runtime.sendMessage({
       popup_help_wa: chrome.i18n.getMessage('network_timeout_faq_url_wa'),
       popup_help_msgr: chrome.i18n.getMessage('network_timeout_faq_url_msgr'),
+      popup_help_fb: chrome.i18n.getMessage('network_timeout_faq_url_fb'),
     });
   });
   timeoutLearnMoreList[0].style.cursor = 'pointer';
