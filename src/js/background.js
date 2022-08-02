@@ -323,6 +323,10 @@ export function handleMessages(message, sender, sendResponse) {
       chrome.tabs.create({
         url: message.popup_help_msgr,
       });
+    } else if (originStore[0] === 'fb') {
+      chrome.tabs.create({
+        url: message.popup_help_fb,
+      });
     }
     return;
   }

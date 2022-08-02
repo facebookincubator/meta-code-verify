@@ -5,11 +5,17 @@
 	"about_code_verify_faq_url_wa": {
 		"message": "https://faq.whatsapp.com/web/security-and-privacy/about-code-verify"
 	},
+	"about_code_verify_faq_url_fb": {
+		"message": "https://www.facebook.com/help/728172628487328"
+	},
 	"validation_failure_faq_url_msgr": {
 		"message": "https://www.messenger.com/help/799550494558955?ref=learn_more#validationfailure"
 	},
 	"validation_failure_faq_url_wa": {
 		"message": "https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-validation-failure-warning"
+	},
+	"validation_failure_faq_url_fb": {
+		"message": "https://www.facebook.com/help/728172628487328?ref=learn_more#validationfailure"
 	},
 	"possible_risk_detected_faq_url_msgr": {
 		"message": "https://www.messenger.com/help/799550494558955?ref=learn_more#possibleriskdetected"
@@ -17,11 +23,17 @@
 	"possible_risk_detected_faq_url_wa": {
 		"message": "https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-possible-risk-detected-warning"
 	},
+	"possible_risk_detected_faq_url_fb": {
+		"message": "https://www.facebook.com/help/728172628487328?ref=learn_more#possibleriskdetected"
+	},
 	"network_timeout_faq_url_msgr": {
 		"message": "https://www.messenger.com/help/799550494558955?ref=learn_more#networktimedout"
 	},
 	"network_timeout_faq_url_wa": {
 		"message": "https://faq.whatsapp.com/web/security-and-privacy/why-am-i-seeing-a-network-timeout-error"
+	},
+	"network_timeout_faq_url_fb": {
+		"message": "https://www.facebook.com/help/728172628487328?ref=learn_more#networktimedout"
 	},
 	"i18nValidatedStatusHeader": {
 		"message": "Validated"
