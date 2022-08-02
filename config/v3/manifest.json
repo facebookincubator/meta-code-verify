@@ -9,7 +9,7 @@
         "default_icon": {
             "32": "default_32.png",
             "64": "default_64.png",
-           "128": "default_64@2x.png"
+            "128": "default_64@2x.png"
         },
         "default_popup": "loading.html"
     },
@@ -46,7 +46,7 @@
         }
     ],
     "permissions": [
-	"webRequest"
+        "webRequest"
     ],
     "host_permissions": [
         "https://*.privacy-auditability.cloudflare.com/",

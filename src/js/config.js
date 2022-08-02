@@ -108,3 +108,6 @@ export const ORIGIN_TYPE = {
   WHATSAPP: 'WHATSAPP',
   MESSENGER: 'MESSENGER',
 };
+
+// Firefox and Safari currently do not support CompressionStream
+export const DOWNLOAD_JS_ENABLED = 'CompressionStream' in window;
