@@ -40,7 +40,9 @@
                 "*://*.facebook.com/games/*",
                 "*://*.facebook.com/gaming/games/*",
                 "*://*.facebook.com/you/sales/confirm_identity",
-                "*://*.facebook.com/donate/*"
+                "*://*.facebook.com/donate/*",
+                "*://*.facebook.com/sharer/sharer.php*",
+                "*://*.facebook.com/sharer.php*"
             ],
             "js": ["contentFB.js"],
             "run_at": "document_start"
