@@ -43,13 +43,18 @@
                 "*://*.facebook.com/sharer/sharer.php*",
                 "*://*.facebook.com/sharer.php*"
             ],
+            "exclude_globs": [
+                "*://*.facebook.com/v?/plugins/*",
+                "*://*.facebook.com/v??/plugins/*",
+                "*://*.facebook.com/v???/plugins/*"
+            ],
             "js": ["contentFB.js"],
             "run_at": "document_start"
         },
         {
             "matches": ["*://*.whatsapp.com/*"],
             "all_frames": true,
-	        "match_about_blank": true,
+            "match_about_blank": true,
             "exclude_matches": ["*://www.whatsapp.com/", "*://*.whatsapp.com/bt-manifest/*"],
             "js": ["contentWA.js"],
             "run_at": "document_start"
@@ -61,6 +66,6 @@
     ],
     "host_permissions": [
         "https://*.privacy-auditability.cloudflare.com/",
-	    "https://web.whatsapp.com/"
+        "https://web.whatsapp.com/"
     ]
 }

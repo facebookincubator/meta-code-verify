@@ -44,6 +44,11 @@
                 "*://*.facebook.com/sharer/sharer.php*",
                 "*://*.facebook.com/sharer.php*"
             ],
+            "exclude_globs": [
+                "*://*.facebook.com/v?/plugins/*",
+                "*://*.facebook.com/v??/plugins/*",
+                "*://*.facebook.com/v???/plugins/*"
+            ],
             "js": ["contentFB.js"],
             "run_at": "document_start"
         },
