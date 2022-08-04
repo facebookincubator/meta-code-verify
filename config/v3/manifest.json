@@ -35,7 +35,6 @@
             "match_about_blank": true,
             "exclude_matches": [
                 "*://*.facebook.com/settings/*",
-                "*://*.facebook.com/*/settings/*",
                 "*://*.facebook.com/games/*",
                 "*://*.facebook.com/gaming/games/*",
                 "*://*.facebook.com/you/sales/confirm_identity",
