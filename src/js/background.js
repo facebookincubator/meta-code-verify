@@ -248,12 +248,8 @@ async function processJSWithSrc(message, manifest, tabId) {
     // if ([ORIGIN_TYPE.FACEBOOK].includes(message.origin)) {
     //   sourceText = unescape(sourceText);
     // }
-    // strip i18n delimiters
-    // eslint-disable-next-line no-useless-escape
-    const i18nRegexp = /\/\*FBT_CALL\*\/.*?\/\*FBT_CALL\*\//g;
-    const i18nStripped = sourceText.replace(i18nRegexp, '');
     // split package up if necessary
-    const packages = i18nStripped.split('/*FB_PKG_DELIM*/\n');
+    const packages = sourceText.split('/*FB_PKG_DELIM*/\n');
     const encoder = new TextEncoder();
     for (let i = 0; i < packages.length; i++) {
       const encodedPackage = encoder.encode(packages[i]);
