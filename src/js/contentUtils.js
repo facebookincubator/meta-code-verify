@@ -410,7 +410,6 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
   if (scriptNodeMaybe.src != null && scriptNodeMaybe.src !== '') {
     if (scriptList.size === 1) {
       scriptList.get(scriptList.keys().next().value).push({
-        type: MESSAGE_TYPE.JS_WITH_SRC,
         src: scriptNodeMaybe.src,
         otherType: otherType, // TODO: read from DOM when available
       });
