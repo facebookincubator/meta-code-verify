@@ -232,68 +232,6 @@ async function validateMetaCompanyManifest(rootHash, otherHashes, leaves) {
   return combinedHash === rootHash;
 }
 
-async function processJSWithSrc(message, manifest, tabId) {
-  try {
-    const sourceResponse = await fetch(message.src, { method: 'GET' });
-    let sourceText = await sourceResponse.text();
-    if (sourceText.indexOf('if (self.CavalryLogger) {') === 0) {
-      sourceText = sourceText.slice(82).trim();
-    }
-    // we want to slice out the source URL from the source
-    const sourceURLIndex = sourceText.indexOf('//# sourceURL');
-    if (sourceURLIndex >= 0) {
-      // doing minus 1 because there's usually either a space or new line
-      sourceText = sourceText.slice(0, sourceURLIndex - 1);
-    }
-    // if ([ORIGIN_TYPE.FACEBOOK].includes(message.origin)) {
-    //   sourceText = unescape(sourceText);
-    // }
-    // strip i18n delimiters
-    // eslint-disable-next-line no-useless-escape
-    const i18nRegexp = /\/\*FBT_CALL\*\/.*?\/\*FBT_CALL\*\//g;
-    const i18nStripped = sourceText.replace(i18nRegexp, '');
-    // split package up if necessary
-    const packages = i18nStripped.split('/*FB_PKG_DELIM*/\n');
-    const encoder = new TextEncoder();
-    for (let i = 0; i < packages.length; i++) {
-      const encodedPackage = encoder.encode(packages[i]);
-      const packageHashBuffer = await crypto.subtle.digest(
-        'SHA-256',
-        encodedPackage
-      );
-      const packageHash = Array.from(new Uint8Array(packageHashBuffer))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
-      console.log(
-        'manifest is ',
-        manifest.leaves.length,
-        manifest.leaves.includes(packageHash),
-        packageHash
-      );
-      if (!manifest.leaves.includes(packageHash)) {
-        return false;
-      }
-    }
-    return true; // YAY!
-  } catch (error) {
-    console.log('error occurred!', error);
-    addDebugLog(
-      tabId,
-      'Error: Processing JS with SRC ' +
-        message.origin +
-        ', ' +
-        message.version +
-        ' problematic JS is ' +
-        message.src +
-        'error is ' +
-        JSON.stringify(error).substring(0, 500)
-    );
-    return false;
-  }
-}
-
-// async function processRawJS() {}
-
 function getDebugLog(tabId) {
   let tabDebugList = debugCache.get(tabId);
   return tabDebugList == null ? [] : tabDebugList;
@@ -413,54 +351,6 @@ export function handleMessages(message, sender, sendResponse) {
         }
       });
     }
-    return true;
-  }
-
-  if (message.type == MESSAGE_TYPE.JS_WITH_SRC) {
-    // exclude known extension scripts from analysis
-    if (
-      message.src.indexOf('chrome-extension://') === 0 ||
-      message.src.indexOf('moz-extension://') === 0
-    ) {
-      addDebugLog(
-        sender.tab.id,
-        'Warning: User installed extension inserted script ' + message.src
-      );
-      sendResponse({
-        valid: false,
-        type: 'EXTENSION',
-        reason: 'User installed extension has inserted script',
-      });
-      return;
-    }
-
-    const origin = manifestCache.get(message.origin);
-    if (!origin) {
-      addDebugLog(
-        sender.tab.id,
-        'Error: JS with SRC had no matching origin ' + message.origin
-      );
-      sendResponse({ valid: false, reason: 'no matching origin' });
-      return;
-    }
-    const manifestObj = origin.get(message.version);
-    const manifest = manifestObj && manifestObj.leaves;
-    if (!manifest) {
-      addDebugLog(
-        sender.tab.id,
-        'Error: JS with SRC had no matching manifest. origin: ' +
-          message.origin +
-          ' version: ' +
-          message.version
-      );
-      sendResponse({ valid: false, reason: 'no matching manifest' });
-      return;
-    }
-    // fetch and process the src
-    processJSWithSrc(message, manifestObj, sender.tab.id).then(valid => {
-      console.log('sending processJSWithSrc response ', valid);
-      sendResponse({ valid: valid });
-    });
     return true;
   }
 
