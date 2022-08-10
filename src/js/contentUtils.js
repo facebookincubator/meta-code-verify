@@ -772,8 +772,27 @@ function parseFailedJson(queuedJsonToParse) {
   }
 }
 
-export function startFor(origin) {
+function isPathnameExcluded(excludedPathnames) {
+  let pathname = location.pathname;
+  if (!pathname.endsWith('/')) {
+    pathname = pathname + '/';
+  }
+  return excludedPathnames.some(rule => {
+    if (typeof rule === 'string') {
+      return pathname === rule;
+    } else {
+      const match = pathname.match(rule);
+      return match != null && match[0] === pathname;
+    }
+  });
+}
+
+export function startFor(origin, excludedPathnames = []) {
   chrome.runtime.sendMessage({ type: MESSAGE_TYPE.CONTENT_SCRIPT_START });
+  if (isPathnameExcluded(excludedPathnames)) {
+    updateCurrentState(STATES.IGNORE);
+    return;
+  }
   let isUserLoggedIn = false;
   if ([ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(origin)) {
     const cookies = document.cookie.split(';');

@@ -32,15 +32,6 @@
             "matches": ["*://*.facebook.com/*"],
             "all_frames": true,
             "match_about_blank": true,
-            "exclude_matches": [
-                "*://*.facebook.com/settings/*",
-                "*://*.facebook.com/games/*",
-                "*://*.facebook.com/gaming/games/*",
-                "*://*.facebook.com/you/sales/confirm_identity",
-                "*://*.facebook.com/donate/*",
-                "*://*.facebook.com/sharer/sharer.php*",
-                "*://*.facebook.com/sharer.php*"
-            ],
             "js": ["contentFB.js"],
             "run_at": "document_start"
         },
@@ -48,7 +39,11 @@
             "matches": ["*://*.whatsapp.com/*"],
             "all_frames": true,
             "match_about_blank": true,
-            "exclude_matches": ["*://www.whatsapp.com/", "*://*.whatsapp.com/bt-manifest/*"],
+            "exclude_matches": [
+                "*://www.whatsapp.com/",
+                "*://*.whatsapp.com/bt-manifest/*",
+                "*://faq.whatsapp.com/*"
+            ],
             "js": ["contentWA.js"],
             "run_at": "document_start"
         }
