@@ -6,11 +6,11 @@
  */
 
 import {
-  ICON_STATE,
   KNOWN_EXTENSION_HASHES,
   MESSAGE_TYPE,
   ORIGIN_TYPE,
   DOWNLOAD_JS_ENABLED,
+  STATES,
 } from './config.js';
 
 const DOM_EVENTS = [
@@ -245,44 +245,15 @@ const sourceScripts = new Map();
 const inlineScripts = [];
 const foundScripts = new Map();
 foundScripts.set('', []);
-let currentState = ICON_STATE.VALID;
 let currentOrigin = '';
 let currentFilterType = '';
 let manifestTimeoutID = '';
 
-function updateIcon(newState) {
-  currentState = newState;
+function updateCurrentState(state) {
   chrome.runtime.sendMessage({
-    type: MESSAGE_TYPE.UPDATE_ICON,
-    icon: newState,
+    type: MESSAGE_TYPE.UPDATE_STATE,
+    state,
   });
-}
-
-function updateCurrentState(newState) {
-  if (
-    newState === ICON_STATE.VALID &&
-    (currentState === ICON_STATE.VALID ||
-      currentState === ICON_STATE.PROCESSING)
-  ) {
-    updateIcon(newState);
-  } else if (
-    newState === ICON_STATE.PROCESSING &&
-    currentState === ICON_STATE.VALID
-  ) {
-    updateIcon(newState);
-  } else if (
-    newState === ICON_STATE.WARNING_RISK ||
-    newState === ICON_STATE.WARNING_TIMEOUT
-  ) {
-    if (
-      currentState === ICON_STATE.VALID ||
-      currentState === ICON_STATE.PROCESSING
-    ) {
-      updateIcon(newState);
-    }
-  } else if (newState === ICON_STATE.INVALID_SOFT) {
-    updateIcon(newState);
-  }
 }
 
 export function storeFoundJS(scriptNodeMaybe, scriptList) {
@@ -374,10 +345,10 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
               response.reason
             )
           ) {
-            updateCurrentState(ICON_STATE.WARNING_TIMEOUT);
+            updateCurrentState(STATES.TIMEOUT);
             return;
           }
-          updateCurrentState(ICON_STATE.INVALID_SOFT);
+          updateCurrentState(STATES.INVALID);
         }
       }
     );
@@ -400,7 +371,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     scriptNodeMaybe.src.indexOf('blob:') === 0
   ) {
     // TODO: try to process the blob. For now, flag as warning.
-    updateCurrentState(ICON_STATE.INVALID_SOFT);
+    updateCurrentState(STATES.INVALID);
     return;
   }
 
@@ -428,7 +399,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
       });
     }
   }
-  updateCurrentState(ICON_STATE.PROCESSING);
+  updateCurrentState(STATES.PROCESSING);
 }
 
 function getAttributeValue(
@@ -481,7 +452,7 @@ export function hasViolatingJavaScriptURI(htmlElement) {
         type: MESSAGE_TYPE.DEBUG,
         log: 'violating attribute: javascript url',
       });
-      updateCurrentState(ICON_STATE.INVALID_SOFT);
+      updateCurrentState(STATES.INVALID);
     }
   }
 
@@ -508,7 +479,7 @@ export function hasInvalidAttributes(htmlElement) {
             ' from element ' +
             htmlElement.outerHTML,
         });
-        updateCurrentState(ICON_STATE.INVALID_SOFT);
+        updateCurrentState(STATES.INVALID);
       }
     });
   }
@@ -579,7 +550,7 @@ export const scanForScripts = () => {
             hasInvalidScripts(checkScript, foundScripts);
           });
         } else if (mutation.type === 'attributes') {
-          updateCurrentState(ICON_STATE.INVALID_SOFT);
+          updateCurrentState(STATES.INVALID);
           chrome.runtime.sendMessage({
             type: MESSAGE_TYPE.DEBUG,
             log:
@@ -596,7 +567,7 @@ export const scanForScripts = () => {
       subtree: true,
     });
   } catch (_UnknownError) {
-    updateCurrentState(ICON_STATE.INVALID_SOFT);
+    updateCurrentState(STATES.INVALID);
   }
 };
 
@@ -678,13 +649,13 @@ export const processFoundJS = async (origin, version) => {
         pendingScriptCount--;
         if (response.valid) {
           if (pendingScriptCount == 0) {
-            updateCurrentState(ICON_STATE.VALID);
+            updateCurrentState(STATES.VALID);
           }
         } else {
           if (response.type === 'EXTENSION') {
-            updateCurrentState(ICON_STATE.WARNING_RISK);
+            updateCurrentState(STATES.RISK);
           } else {
-            updateCurrentState(ICON_STATE.INVALID_SOFT);
+            updateCurrentState(STATES.INVALID);
           }
         }
         chrome.runtime.sendMessage({
@@ -712,16 +683,16 @@ export const processFoundJS = async (origin, version) => {
             inlineScriptMap.set(response.hash, script.rawjs);
             inlineScripts.push(inlineScriptMap);
             if (pendingScriptCount == 0) {
-              updateCurrentState(ICON_STATE.VALID);
+              updateCurrentState(STATES.VALID);
             }
           } else {
             // using an array of maps, as we're using the same key for inline scripts - this will eventually be removed, once inline scripts are removed from the page load
             inlineScriptMap.set('hash not in manifest', script.rawjs);
             inlineScripts.push(inlineScriptMap);
             if (KNOWN_EXTENSION_HASHES.includes(response.hash)) {
-              updateCurrentState(ICON_STATE.WARNING_RISK);
+              updateCurrentState(STATES.RISK);
             } else {
-              updateCurrentState(ICON_STATE.INVALID_SOFT);
+              updateCurrentState(STATES.INVALID);
             }
           }
           chrome.runtime.sendMessage({
@@ -784,7 +755,7 @@ chrome.runtime.onMessage.addListener(function (request) {
   if (request.greeting === 'downloadSource' && DOWNLOAD_JS_ENABLED) {
     downloadJSToZip();
   } else if (request.greeting === 'nocacheHeaderFound') {
-    updateCurrentState(ICON_STATE.INVALID_SOFT);
+    updateCurrentState(STATES.INVALID);
   }
 });
 
@@ -796,12 +767,13 @@ function parseFailedJson(queuedJsonToParse) {
       queuedJsonToParse.retry--;
       setTimeout(() => parseFailedJson(queuedJsonToParse), 20);
     } else {
-      updateCurrentState(ICON_STATE.INVALID_SOFT);
+      updateCurrentState(STATES.INVALID);
     }
   }
 }
 
 export function startFor(origin) {
+  chrome.runtime.sendMessage({ type: MESSAGE_TYPE.CONTENT_SCRIPT_START });
   let isUserLoggedIn = false;
   if ([ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(origin)) {
     const cookies = document.cookie.split(';');
@@ -817,14 +789,14 @@ export function startFor(origin) {
     isUserLoggedIn = true;
   }
   if (isUserLoggedIn) {
-    updateCurrentState(ICON_STATE.PROCESSING);
+    updateCurrentState(STATES.PROCESSING);
     currentOrigin = origin;
     scanForScripts();
     // set the timeout once, in case there's an iframe and contentUtils sets another manifest timer
     if (manifestTimeoutID === '') {
       manifestTimeoutID = setTimeout(() => {
         // Manifest failed to load, flag a warning to the user.
-        updateCurrentState(ICON_STATE.WARNING_TIMEOUT);
+        updateCurrentState(STATES.TIMEOUT);
       }, 45000);
     }
   }

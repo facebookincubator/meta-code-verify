@@ -49,52 +49,6 @@ export const STATES_TO_ICONS = {
   [STATES.TIMEOUT]: ICONS.RISK,
 };
 
-export const ICON_STATE = {
-  DEFAULT: { badge: 'icon-badge.svg', popup: 'popup.html?state=loading' },
-  INVALID_HARD: {
-    // badge: 'error-badge.svg',
-    badge: {
-      32: 'failure_32.png',
-    },
-    popup: 'popup.html?state=error',
-  },
-  INVALID_SOFT: {
-    // badge: 'error-badge.svg',
-    badge: {
-      32: 'failure_32.png',
-    },
-    popup: 'popup.html?state=error',
-  },
-  PROCESSING: {
-    // badge: 'icon-badge.svg',
-    badge: {
-      32: 'default_32.png',
-    },
-    popup: 'popup.html?state=loading',
-  },
-  VALID: {
-    // badge: 'validated-badge.svg',
-    badge: {
-      32: 'validated_32.png',
-    },
-    popup: 'popup.html?state=valid',
-  },
-  WARNING_RISK: {
-    // badge: 'warning-badge.svg',
-    badge: {
-      32: 'risk_32.png',
-    },
-    popup: 'popup.html?state=warning_risk',
-  },
-  WARNING_TIMEOUT: {
-    // badge: 'warning-badge.svg',
-    badge: {
-      32: 'risk_32.png',
-    },
-    popup: 'popup.html?state=warning_timeout',
-  },
-};
-
 export const KNOWN_EXTENSION_HASHES = [
   '', // Chrome - Dynamic: StopAll Ads
   '727bfede71f473991faeb7f4b65632c93e7f7d17189f1b3d952cd990cd150808', // Chrome and Edge: Avast Online Security & Privacy v21.0.101
