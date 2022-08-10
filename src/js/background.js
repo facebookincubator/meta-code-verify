@@ -12,6 +12,11 @@ import {
   ORIGIN_TYPE,
 } from './config.js';
 
+import {
+  recordContentScriptStart,
+  updateContentScriptState,
+} from './tab_state_tracker/tabStateTracker.js';
+
 const manifestCache = new Map();
 const debugCache = new Map();
 
@@ -426,6 +431,18 @@ export function handleMessages(message, sender, sendResponse) {
     const debuglist = getDebugLog(message.tabId);
     console.log('debug list is ', message.tabId, debuglist);
     sendResponse({ valid: true, debugList: debuglist });
+    return;
+  }
+
+  if (message.type === MESSAGE_TYPE.UPDATE_STATE) {
+    updateContentScriptState(sender, message.state);
+    sendResponse({ success: true });
+    return;
+  }
+
+  if (message.type === MESSAGE_TYPE.CONTENT_SCRIPT_START) {
+    recordContentScriptStart(sender);
+    sendResponse({ success: true });
     return;
   }
 }

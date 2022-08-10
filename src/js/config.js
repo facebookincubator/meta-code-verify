@@ -5,6 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+export const STATES = {
+  // Starting state for all frames/tabs
+  START: 'START',
+  // Tab is processing scripts
+  PROCESSING: 'PROCESSING',
+  // Disable the extension (it shouldn't be running on this tab)
+  IGNORE: 'IGNORE',
+  // Script verification against the manifest failed.
+  INVALID: 'INVALID',
+  // Unknown inline script from an extension was found
+  RISK: 'RISK',
+  // All script verifications succeeded
+  VALID: 'VALID',
+  // Timed out waiting for the manifest to be available on the page
+  TIMEOUT: 'TIMEOUT',
+};
+
 export const ICON_STATE = {
   DEFAULT: { badge: 'icon-badge.svg', popup: 'popup.html?state=loading' },
   INVALID_HARD: {
@@ -88,6 +105,9 @@ export const MESSAGE_TYPE = {
   POPUP_STATE: 'POPUP_STATE',
   RAW_JS: 'RAW_JS',
   UPDATE_ICON: 'UPDATE_ICON',
+  UPDATE_STATE: 'UPDATE_STATE',
+  STATE_UPDATED: 'STATE_UPDATED',
+  CONTENT_SCRIPT_START: 'CONTENT_SCRIPT_START',
 };
 
 export const ORIGIN_HOST = {
