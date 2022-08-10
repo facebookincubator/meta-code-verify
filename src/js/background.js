@@ -22,47 +22,10 @@ const debugCache = new Map();
 
 // Emulate PageActions
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.action.disable();
-});
-
-function updateIconV3(message, sender) {
-  chrome.action.setIcon({ tabId: sender.tab.id, path: message.icon.badge });
-  const popupMessage = {
-    tabId: sender.tab.id,
-    popup: message.icon.popup,
-  };
-  chrome.action.setPopup(popupMessage);
-  const messageForPopup = {
-    popup: message.icon.popup,
-    tabId: sender.tab.id,
-  };
-  chrome.runtime.sendMessage(messageForPopup);
-  chrome.action.enable(sender.tab.id);
-}
-
-function updateIconV2(message, sender) {
-  chrome.pageAction.setIcon({ tabId: sender.tab.id, path: message.icon.badge });
-  const popupMessage = {
-    tabId: sender.tab.id,
-    popup: message.icon.popup,
-  };
-  chrome.pageAction.setPopup(popupMessage);
-  const messageForPopup = {
-    popup: message.icon.popup,
-    tabId: sender.tab.id,
-  };
-  chrome.runtime.sendMessage(messageForPopup);
-  chrome.pageAction.show(sender.tab.id);
-}
-
-function updateIcon(message, sender) {
-  console.log('background messages are ', message);
-  if (chrome.pageAction) {
-    updateIconV2(message, sender);
-  } else {
-    updateIconV3(message, sender);
+  if (chrome.runtime.getManifest().manifest_version >= 3) {
+    chrome.action.disable();
   }
-}
+});
 
 function addDebugLog(tabId, debugMessage) {
   let tabDebugList = debugCache.get(tabId);
@@ -265,10 +228,6 @@ export function handleMessages(message, sender, sendResponse) {
         }
       }
     );
-    return;
-  }
-  if (message.type == MESSAGE_TYPE.UPDATE_ICON) {
-    updateIcon(message, sender);
     return;
   }
 

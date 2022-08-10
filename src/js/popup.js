@@ -5,14 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { DOWNLOAD_JS_ENABLED } from './config.js';
+import { DOWNLOAD_JS_ENABLED, STATES, MESSAGE_TYPE } from './config.js';
 
-chrome.runtime.onMessage.addListener(message => {
-  if (message && message.popup) {
-    const state = message.popup.slice(message.popup.indexOf('=') + 1);
-    updateDisplay(state);
-  }
-});
+const STATE_TO_POPUP_STATE = {
+  [STATES.START]: 'loading',
+  [STATES.PROCESSING]: 'loading',
+  [STATES.IGNORE]: 'loading',
+  [STATES.INVALID]: 'error',
+  [STATES.RISK]: 'warning_risk',
+  [STATES.VALID]: 'valid',
+  [STATES.TIMEOUT]: 'warning_timeout',
+};
 
 // doing this so we can add support for i18n using messages.json
 function attachTextToHtml() {
@@ -144,11 +147,12 @@ function attachListeners() {
 }
 
 function updateDisplay(state) {
+  const popupState = STATE_TO_POPUP_STATE[state] || state;
   Array.from(document.getElementsByClassName('state_boundary')).forEach(
     element => {
-      if (element.id == state) {
+      if (element.id == popupState) {
         element.style.display = 'flex';
-        document.body.className = state + '_body';
+        document.body.className = popupState + '_body';
       } else {
         element.style.display = 'none';
       }
@@ -156,10 +160,28 @@ function updateDisplay(state) {
   );
 }
 
+function setUpBackgroundMessageHandler(tabId) {
+  if (tabId == null || tabId.trim() === '') {
+    console.error('[Popup] No tab_id query param', document.location);
+    return;
+  }
+  chrome.runtime.onMessage.addListener(message => {
+    if (!('type' in message)) {
+      return;
+    }
+    if (
+      message.type === MESSAGE_TYPE.STATE_UPDATED &&
+      message.tabId.toString() === tabId
+    ) {
+      updateDisplay(message.state);
+    }
+  });
+}
+
 function loadUp() {
   const params = new URL(document.location).searchParams;
-  const state = params.get('state');
-  updateDisplay(state);
+  setUpBackgroundMessageHandler(params.get('tab_id'));
+  updateDisplay(params.get('state'));
   attachTextToHtml();
   attachListeners();
 }
