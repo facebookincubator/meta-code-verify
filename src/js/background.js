@@ -207,29 +207,6 @@ function getDebugLog(tabId) {
 
 export function handleMessages(message, sender, sendResponse) {
   console.log('in handle messages ', message);
-  // just check for any of the popup urls
-  if (message.popup_help_wa) {
-    chrome.tabs.query(
-      { active: true, lastFocusedWindow: true },
-      function (tabs) {
-        const currentHostname = new URL(tabs[0].url).hostname;
-        if (currentHostname.includes('whatsapp')) {
-          chrome.tabs.create({
-            url: message.popup_help_wa,
-          });
-        } else if (currentHostname.includes('messenger')) {
-          chrome.tabs.create({
-            url: message.popup_help_msgr,
-          });
-        } else {
-          chrome.tabs.create({
-            url: message.popup_help_fb,
-          });
-        }
-      }
-    );
-    return;
-  }
 
   if (message.type == MESSAGE_TYPE.LOAD_MANIFEST) {
     // validate manifest
@@ -394,13 +371,13 @@ export function handleMessages(message, sender, sendResponse) {
   }
 
   if (message.type === MESSAGE_TYPE.UPDATE_STATE) {
-    updateContentScriptState(sender, message.state);
+    updateContentScriptState(sender, message.state, message.origin);
     sendResponse({ success: true });
     return;
   }
 
   if (message.type === MESSAGE_TYPE.CONTENT_SCRIPT_START) {
-    recordContentScriptStart(sender);
+    recordContentScriptStart(sender, message.origin);
     sendResponse({ success: true });
     return;
   }

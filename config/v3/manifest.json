@@ -48,7 +48,6 @@
         }
     ],
     "permissions": [
-        "tabs",
         "webRequest"
     ],
     "host_permissions": [
