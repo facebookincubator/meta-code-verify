@@ -1,3 +1,5 @@
+import staticFiles from './build/rollup-plugin-static-files.mjs';
+
 export default [
     {
         input: 'src/js/detectWAMeta.js',
@@ -55,14 +57,21 @@ export default [
         input: 'src/js/popup.js',
         output: [{
             file: 'dist/chrome/popup.js',
-            format: 'iife'
+            format: 'iife',
+            plugins: [staticFiles('config/v3/')],
         }, {
             file: 'dist/edge/popup.js',
-            format: 'iife'
+            format: 'iife',
+            plugins: [staticFiles('config/v3/')],
         }, {
             file: 'dist/firefox/popup.js',
-            format: 'iife'
-        }]
+            format: 'iife',
+            plugins: [staticFiles('config/v2/')],
+        }],
+        plugins: [
+            staticFiles(['images/', 'src/css/', 'src/html/']),
+            staticFiles('_locales/', {keepDir: true}),
+        ],
     }
 
 ];
