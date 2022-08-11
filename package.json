@@ -12,10 +12,10 @@
     "node": "^18.0.0"
   },
   "scripts": {
-    "build-local-dev": "yarn makePrettier && yarn makeBundle",
+    "build-local-dev": "yarn makeBundle",
     "lint": "yarn makePrettier && yarn run eslint src/js/**",
     "makeBundle": "yarn run rollup -c",
-    "makePrettier": "yarn run prettier --write \"src/**/*.js\"",
+    "makePrettier": "yarn run prettier --write \"src/**/*.js\" \"build/**/*.mjs\"",
     "test": "yarn lint && node --experimental-vm-modules --no-warnings node_modules/jest/bin/jest.js"
   },
   "devDependencies": {

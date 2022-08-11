@@ -37,7 +37,7 @@ const DEFAULT_OPTIONS = {
  * @returns Rollup.PluginImpl
  */
 export default function rollupPluginStaticFiles(dirs = [], options) {
-  const { keepDir } = {...DEFAULT_OPTIONS, ...options};
+  const { keepDir } = { ...DEFAULT_OPTIONS, ...options };
   if (!Array.isArray(dirs)) {
     dirs = [dirs];
   }
