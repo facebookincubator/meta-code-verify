@@ -13,6 +13,7 @@
   },
   "scripts": {
     "build-local-dev": "yarn makeBundle",
+    "watch": "yarn run rollup --config --watch",
     "lint": "yarn makePrettier && yarn run eslint src/js/**",
     "makeBundle": "yarn run rollup -c",
     "makePrettier": "yarn run prettier --write \"src/**/*.js\" \"build/**/*.mjs\"",

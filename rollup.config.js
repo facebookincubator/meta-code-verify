@@ -2,11 +2,11 @@ import cleanOnce from './build/rollup-plugin-clean-once.mjs';
 import eslintPlugin from '@rollup/plugin-eslint';
 import prettierBuildStart from './build/rollup-plugin-prettier-build-start.mjs';
 import staticFiles from './build/rollup-plugin-static-files.mjs';
+import watch from './build/rollup-plugin-watch-additional.mjs';
 
 function eslint() {
     return eslintPlugin({throwOnError: true});
 }
-
 function prettierSrc() {
     return prettierBuildStart('"src/**/*.js"');
 }
@@ -88,7 +88,7 @@ export default [
             eslint(),
             staticFiles(['images/', 'src/css/', 'src/html/']),
             staticFiles('_locales/', {keepDir: true}),
+            watch(['images/', 'src/css/', 'src/html/', '_locales/', 'config/']),
         ],
     }
-
 ];

@@ -27,13 +27,13 @@ export default function rollupPrettierBuildStartPlugin(files) {
       }
       console.log('Running prettier for', Array.from(filesToFormat).join(' '));
       await genExec(
-        `yarn run prettier ${Array.from(filesToFormat).join(' ')} --write`,
+        `yarn run prettier ${Array.from(filesToFormat).join(' ')} --write`
       );
       filesToFormat.clear();
     },
 
     watchChange(_id, _change) {
       filesToFormat.add(files);
-    }
+    },
   };
 }
