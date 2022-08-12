@@ -253,6 +253,7 @@ function updateCurrentState(state) {
   chrome.runtime.sendMessage({
     type: MESSAGE_TYPE.UPDATE_STATE,
     state,
+    origin: currentOrigin,
   });
 }
 
@@ -788,7 +789,10 @@ function isPathnameExcluded(excludedPathnames) {
 }
 
 export function startFor(origin, excludedPathnames = []) {
-  chrome.runtime.sendMessage({ type: MESSAGE_TYPE.CONTENT_SCRIPT_START });
+  chrome.runtime.sendMessage({
+    type: MESSAGE_TYPE.CONTENT_SCRIPT_START,
+    origin,
+  });
   if (isPathnameExcluded(excludedPathnames)) {
     updateCurrentState(STATES.IGNORE);
     return;

@@ -16,23 +16,25 @@ chrome.tabs.onReplaced.addListener((_addedTabId, removedTabId) => {
   tabStateTracker.delete(removedTabId);
 });
 
-function getTabStateMachine(tabId) {
+function getOrCreateTabStateMachine(tabId, origin) {
   if (!tabStateTracker.has(tabId)) {
-    tabStateTracker.set(tabId, new TabStateMachine(tabId));
+    tabStateTracker.set(tabId, new TabStateMachine(tabId, origin));
   }
   return tabStateTracker.get(tabId);
 }
 
-export function recordContentScriptStart(sender) {
+export function recordContentScriptStart(sender, origin) {
   // This is a top-level frame initializing
   if (sender.frameId === 0) {
     tabStateTracker.delete(sender.tab.id);
   }
-  getTabStateMachine(sender.tab.id).addFrameStateMachine(sender.frameId);
+  getOrCreateTabStateMachine(sender.tab.id, origin).addFrameStateMachine(
+    sender.frameId
+  );
 }
 
-export function updateContentScriptState(sender, newState) {
-  getTabStateMachine(sender.tab.id).updateStateForFrame(
+export function updateContentScriptState(sender, newState, origin) {
+  getOrCreateTabStateMachine(sender.tab.id, origin).updateStateForFrame(
     sender.frameId,
     newState
   );

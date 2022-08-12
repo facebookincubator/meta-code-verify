@@ -21,9 +21,10 @@ function getChromeV3Action() {
  * in it.
  */
 export default class TabStateMachine extends StateMachine {
-  constructor(tabId) {
+  constructor(tabId, origin) {
     super();
     this._tabId = tabId;
+    this._origin = origin;
     this._frameStates = {};
   }
 
@@ -66,7 +67,7 @@ export default class TabStateMachine extends StateMachine {
       chromeAction.enable(this._tabId);
       chromeAction.setPopup({
         tabId: this._tabId,
-        popup: `popup.html?tab_id=${this._tabId}&state=${state}`,
+        popup: `popup.html?tab_id=${this._tabId}&state=${state}&origin=${this._origin}`,
       });
       // Broadcast state update for relevant popup to update its contents.
       chrome.runtime.sendMessage({
