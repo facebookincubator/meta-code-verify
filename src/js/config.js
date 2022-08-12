@@ -5,50 +5,48 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-export const ICON_STATE = {
-  DEFAULT: { badge: 'icon-badge.svg', popup: 'popup.html?state=loading' },
-  INVALID_HARD: {
-    // badge: 'error-badge.svg',
-    badge: {
-      32: 'failure_32.png',
-    },
-    popup: 'popup.html?state=error',
+export const STATES = {
+  // Starting state for all frames/tabs
+  START: 'START',
+  // Tab is processing scripts
+  PROCESSING: 'PROCESSING',
+  // Disable the extension (it shouldn't be running on this tab)
+  IGNORE: 'IGNORE',
+  // Script verification against the manifest failed.
+  INVALID: 'INVALID',
+  // Unknown inline script from an extension was found
+  RISK: 'RISK',
+  // All script verifications succeeded
+  VALID: 'VALID',
+  // Timed out waiting for the manifest to be available on the page
+  TIMEOUT: 'TIMEOUT',
+};
+
+const ICONS = {
+  DEFAULT: {
+    32: 'default_32.png',
+    64: 'default_64.png',
+    128: 'default_64@2x.png',
   },
-  INVALID_SOFT: {
-    // badge: 'error-badge.svg',
-    badge: {
-      32: 'failure_32.png',
-    },
-    popup: 'popup.html?state=error',
+  FAILURE: {
+    32: 'failure_32.png',
   },
-  PROCESSING: {
-    // badge: 'icon-badge.svg',
-    badge: {
-      32: 'default_32.png',
-    },
-    popup: 'popup.html?state=loading',
+  RISK: {
+    32: 'risk_32.png',
   },
   VALID: {
-    // badge: 'validated-badge.svg',
-    badge: {
-      32: 'validated_32.png',
-    },
-    popup: 'popup.html?state=valid',
+    32: 'validated_32.png',
   },
-  WARNING_RISK: {
-    // badge: 'warning-badge.svg',
-    badge: {
-      32: 'risk_32.png',
-    },
-    popup: 'popup.html?state=warning_risk',
-  },
-  WARNING_TIMEOUT: {
-    // badge: 'warning-badge.svg',
-    badge: {
-      32: 'risk_32.png',
-    },
-    popup: 'popup.html?state=warning_timeout',
-  },
+};
+
+export const STATES_TO_ICONS = {
+  [STATES.START]: ICONS.DEFAULT,
+  [STATES.PROCESSING]: ICONS.DEFAULT,
+  [STATES.IGNORE]: ICONS.DEFAULT,
+  [STATES.INVALID]: ICONS.FAILURE,
+  [STATES.RISK]: ICONS.RISK,
+  [STATES.VALID]: ICONS.VALID,
+  [STATES.TIMEOUT]: ICONS.RISK,
 };
 
 export const KNOWN_EXTENSION_HASHES = [
@@ -87,7 +85,9 @@ export const MESSAGE_TYPE = {
   LOAD_MANIFEST: 'LOAD_MANIFEST',
   POPUP_STATE: 'POPUP_STATE',
   RAW_JS: 'RAW_JS',
-  UPDATE_ICON: 'UPDATE_ICON',
+  UPDATE_STATE: 'UPDATE_STATE',
+  STATE_UPDATED: 'STATE_UPDATED',
+  CONTENT_SCRIPT_START: 'CONTENT_SCRIPT_START',
 };
 
 export const ORIGIN_HOST = {

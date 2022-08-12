@@ -10,8 +10,7 @@
             "32": "temporary-extension-icon32.png",
             "48": "temporary-extension-icon48.png",
            "128": "temporary-extension-icon128.png"
-        },
-        "default_popup": "loading.html"
+        }
     },
     "icons":  {
         "32": "temporary-extension-icon32.png",
@@ -28,7 +27,6 @@
             "all_frames": true,
             "js": ["contentMSGR.js"],
             "run_at": "document_start"
-
         },
         {
             "matches": ["*://*.facebook.com/*"],
@@ -49,7 +47,7 @@
         {
             "matches": ["*://*.whatsapp.com/*"],
             "all_frames": true,
-	        "match_about_blank": true,
+            "match_about_blank": true,
             "exclude_matches": ["*://www.whatsapp.com/", "*://*.whatsapp.com/bt-manifest/*"],
             "js": ["contentWA.js"],
             "run_at": "document_start"
