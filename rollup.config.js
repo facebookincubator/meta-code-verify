@@ -1,3 +1,4 @@
+import cleanOnce from './build/rollup-plugin-clean-once.mjs';
 import staticFiles from './build/rollup-plugin-static-files.mjs';
 
 export default [
@@ -12,7 +13,8 @@ export default [
         }, {
             file: 'dist/firefox/contentWA.js',
             format: 'iife'
-        }]
+        }],
+        plugins: [cleanOnce()],
     },
     {
         input: 'src/js/detectMSGRMeta.js',

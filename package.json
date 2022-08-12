@@ -12,8 +12,7 @@
     "node": "^18.0.0"
   },
   "scripts": {
-    "build-local-dev": "yarn clean && yarn lint && yarn makeBundle",
-    "clean": "rm -rf dist/chrome/* dist/edge/* dist/firefox/*",
+    "build-local-dev": "yarn lint && yarn makeBundle",
     "lint": "yarn makePrettier && yarn run eslint src/js/**",
     "makeBundle": "yarn run rollup -c",
     "makePrettier": "yarn run prettier --write \"src/**/*.js\"",
