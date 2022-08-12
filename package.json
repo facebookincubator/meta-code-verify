@@ -8,14 +8,13 @@
   "license": "MIT",
   "type": "module",
   "private": true,
+  "engines": {
+    "node": "^18.0.0"
+  },
   "scripts": {
-    "build-local-dev": "yarn clean && yarn lint && yarn makeBundle && yarn copyStaticFilesAndConfig",
+    "build-local-dev": "yarn clean && yarn lint && yarn makeBundle",
     "clean": "rm -rf dist/chrome/* dist/edge/* dist/firefox/*",
     "lint": "yarn makePrettier && yarn run eslint src/js/**",
-    "copyChromeFilesAndConfig": "cp config/v3/* dist/chrome && cp images/* dist/chrome && cp src/html/* dist/chrome && cp src/css/* dist/chrome && cp -r _locales dist/chrome/",
-    "copyEdgeFilesAndConfig": "cp config/v3/* dist/edge && cp images/* dist/edge && cp src/html/* dist/edge && cp src/css/* dist/edge && cp -r _locales dist/edge",
-    "copyFirefoxFilesAndConfig": "cp config/v2/* dist/firefox && cp images/* dist/firefox && cp src/html/* dist/firefox && cp src/css/* dist/firefox && cp -r _locales dist/firefox",
-    "copyStaticFilesAndConfig": "yarn copyChromeFilesAndConfig && yarn copyEdgeFilesAndConfig && yarn copyFirefoxFilesAndConfig",
     "makeBundle": "yarn run rollup -c",
     "makePrettier": "yarn run prettier --write \"src/**/*.js\"",
     "test": "yarn lint && node --experimental-vm-modules --no-warnings node_modules/jest/bin/jest.js"
