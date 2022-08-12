@@ -1,5 +1,15 @@
 import cleanOnce from './build/rollup-plugin-clean-once.mjs';
+import eslintPlugin from '@rollup/plugin-eslint';
+import prettierBuildStart from './build/rollup-plugin-prettier-build-start.mjs';
 import staticFiles from './build/rollup-plugin-static-files.mjs';
+
+function eslint() {
+    return eslintPlugin({throwOnError: true});
+}
+
+function prettierSrc() {
+    return prettierBuildStart('"src/**/*.js"');
+}
 
 export default [
     {
@@ -14,7 +24,7 @@ export default [
             file: 'dist/firefox/contentWA.js',
             format: 'iife'
         }],
-        plugins: [cleanOnce()],
+        plugins: [cleanOnce(), prettierSrc(), eslint()],
     },
     {
         input: 'src/js/detectMSGRMeta.js',
@@ -27,7 +37,8 @@ export default [
         }, {
             file: 'dist/firefox/contentMSGR.js',
             format: 'iife'
-        }]
+        }],
+        plugins: [prettierSrc(), eslint()],
     }, 
     {
         input: 'src/js/detectFBMeta.js',
@@ -40,7 +51,8 @@ export default [
         }, {
             file: 'dist/firefox/contentFB.js',
             format: 'iife'
-        }]
+        }],
+        plugins: [prettierSrc(), eslint()],
     },
     {
         input: 'src/js/background.js',
@@ -53,7 +65,8 @@ export default [
         }, {
             file: 'dist/firefox/background.js',
             format: 'iife'
-        }]
+        }],
+        plugins: [prettierSrc(), eslint()],
     },
     {
         input: 'src/js/popup.js',
@@ -71,6 +84,8 @@ export default [
             plugins: [staticFiles('config/v2/')],
         }],
         plugins: [
+            prettierSrc(),
+            eslint(),
             staticFiles(['images/', 'src/css/', 'src/html/']),
             staticFiles('_locales/', {keepDir: true}),
         ],
