@@ -50,11 +50,6 @@ const EXCLUDED_PATHNAMES = [
    * Marketplace
    */
   '/marketplace/you/sales/confirm_identity/',
-
-  /**
-   * Fundraisers
-   */
-  /\/donate\/.*$/,
 ];
 
 startFor(ORIGIN_TYPE.FACEBOOK, EXCLUDED_PATHNAMES);
