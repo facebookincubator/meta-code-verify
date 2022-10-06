@@ -600,7 +600,9 @@ async function processJSWithSrc(script, origin, version) {
         sourceText.length
       );
       if (afterSourceURL.includes('alert')) {
-        updateCurrentState(STATES.INVALID);
+        return {
+          valid: false,
+        }
       }
       // doing minus 1 because there's usually either a space or new line
       sourceText = sourceText.slice(0, sourceURLIndex - 1);
