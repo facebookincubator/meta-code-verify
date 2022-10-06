@@ -602,7 +602,7 @@ async function processJSWithSrc(script, origin, version) {
       if (afterSourceURL.includes('alert')) {
         return {
           valid: false,
-        }
+        };
       }
       // doing minus 1 because there's usually either a space or new line
       sourceText = sourceText.slice(0, sourceURLIndex - 1);
