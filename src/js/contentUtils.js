@@ -594,6 +594,14 @@ async function processJSWithSrc(script, origin, version) {
     if (sourceURLIndex == 0) {
       sourceText = '';
     } else if (sourceURLIndex > 0) {
+      // check to ensure there are no popups via MITM attack after //# sourceURL - check string contents after sourceURLIndex
+      const afterSourceURL = sourceText.slice(
+        sourceURLIndex,
+        sourceText.length
+      );
+      if (afterSourceURL.includes('alert')) {
+        updateCurrentState(STATES.INVALID);
+      }
       // doing minus 1 because there's usually either a space or new line
       sourceText = sourceText.slice(0, sourceURLIndex - 1);
     }
