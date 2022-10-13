@@ -432,6 +432,8 @@ const AttributeCheckPairs = [
   { nodeName: 'object', attributeName: 'data' },
   { nodeName: 'animate', attributeName: 'xlink:href' },
   { nodeName: 'script', attributeName: 'xlink:href' },
+  { nodeName: 'use', attributeName: 'href' },
+  { nodeName: 'use', attributeName: 'xlink:href' },
 ];
 
 export function hasViolatingJavaScriptURI(htmlElement) {
@@ -484,11 +486,37 @@ export function hasInvalidAttributes(htmlElement) {
       }
     });
   }
-  // check child nodes as well, since a malicious attacker could try to inject an invalid attribute via an image node in a svg tag
+  // check child nodes as well, since a malicious attacker could try to inject an invalid attribute via an image node in a svg tag using a use element
   if (htmlElement.childNodes.length > 0) {
     htmlElement.childNodes.forEach(childNode => {
       if (childNode.nodeType === 1) {
         hasInvalidAttributes(childNode);
+      }
+      // if the element is a math element, check all the attributes of the child node to ensure that there are on href or xlink:href attributes with javascript urls
+      if (
+        htmlElement.tagName.toLowerCase() === 'math' &&
+        Object.keys(childNode.attributes).length >= 1
+      ) {
+        Array.from(childNode.attributes).forEach(elementAttribute => {
+          if (
+            (elementAttribute.localName === 'href' ||
+              elementAttribute.localName === 'xlink:href') &&
+            childNode
+              .getAttribute(elementAttribute.localName)
+              .toLowerCase()
+              .includes('javascript')
+          ) {
+            chrome.runtime.sendMessage({
+              type: MESSAGE_TYPE.DEBUG,
+              log:
+                'violating attribute ' +
+                elementAttribute.localName +
+                ' from element ' +
+                htmlElement.outerHTML,
+            });
+            updateCurrentState(STATES.INVALID);
+          }
+        });
       }
     });
   }
@@ -579,7 +607,7 @@ function checkForUrl(source) {
     return false;
   }
   // check to ensure source is being sent from fbcdn
-  else if (urlIndex.indexOf('static.xx.fbcdn.net')) {
+  else if (!urlIndex.includes('static.xx.fbcdn.net')) {
     return false;
   }
   return true;
