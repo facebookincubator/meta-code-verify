@@ -572,6 +572,19 @@ export const scanForScripts = () => {
   }
 };
 
+function checkForUrl(source) {
+  // the source URL has the following format: '//# sourceURL={url}', so we can look for '=' and check for the url from that index + 1
+  const urlIndex = source.indexOf('=') + 1;
+  if (urlIndex.slice(0, 4) !== 'http' || urlIndex.slice(0, 5) !== 'https') {
+    return false;
+  }
+  // check to ensure source is being sent from fbcdn
+  else if (urlIndex.indexOf('static.xx.fbcdn.net')){
+    return false;
+  }
+  return true;
+}
+
 async function processJSWithSrc(script, origin, version) {
   // fetch the script from page context, not the extension context.
   try {
@@ -599,7 +612,7 @@ async function processJSWithSrc(script, origin, version) {
         sourceURLIndex,
         sourceText.length
       );
-      if (afterSourceURL.includes('alert')) {
+      if (checkForUrl(afterSourceUrl) == false) {
         return {
           valid: false,
         };
