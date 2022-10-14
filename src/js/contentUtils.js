@@ -504,7 +504,7 @@ export function hasInvalidAttributes(htmlElement) {
             childNode
               .getAttribute(elementAttribute.localName)
               .toLowerCase()
-              .includes('javascript')
+              .startsWith('javascript')
           ) {
             chrome.runtime.sendMessage({
               type: MESSAGE_TYPE.DEBUG,
@@ -604,10 +604,6 @@ function checkForUrl(source) {
   // the source URL has the following format: '//# sourceURL={url}', so we can look for '=' and check for the url from that index + 1
   const urlIndex = source.indexOf('=') + 1;
   if (urlIndex.slice(0, 4) !== 'http' && urlIndex.slice(0, 5) !== 'https') {
-    return false;
-  }
-  // check to ensure source is being sent from fbcdn
-  else if (!urlIndex.includes('static.xx.fbcdn.net')) {
     return false;
   }
   return true;
