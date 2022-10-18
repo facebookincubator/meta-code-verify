@@ -432,6 +432,8 @@ const AttributeCheckPairs = [
   { nodeName: 'object', attributeName: 'data' },
   { nodeName: 'animate', attributeName: 'xlink:href' },
   { nodeName: 'script', attributeName: 'xlink:href' },
+  { nodeName: 'use', attributeName: 'href' },
+  { nodeName: 'use', attributeName: 'xlink:href' },
 ];
 
 export function hasViolatingJavaScriptURI(htmlElement) {
@@ -484,11 +486,37 @@ export function hasInvalidAttributes(htmlElement) {
       }
     });
   }
-  // check child nodes as well, since a malicious attacker could try to inject an invalid attribute via an image node in a svg tag
+  // check child nodes as well, since a malicious attacker could try to inject an invalid attribute via an image node in a svg tag using a use element
   if (htmlElement.childNodes.length > 0) {
     htmlElement.childNodes.forEach(childNode => {
       if (childNode.nodeType === 1) {
         hasInvalidAttributes(childNode);
+      }
+      // if the element is a math element, check all the attributes of the child node to ensure that there are on href or xlink:href attributes with javascript urls
+      if (
+        htmlElement.tagName.toLowerCase() === 'math' &&
+        Object.keys(childNode.attributes).length >= 1
+      ) {
+        Array.from(childNode.attributes).forEach(elementAttribute => {
+          if (
+            (elementAttribute.localName === 'href' ||
+              elementAttribute.localName === 'xlink:href') &&
+            childNode
+              .getAttribute(elementAttribute.localName)
+              .toLowerCase()
+              .startsWith('javascript')
+          ) {
+            chrome.runtime.sendMessage({
+              type: MESSAGE_TYPE.DEBUG,
+              log:
+                'violating attribute ' +
+                elementAttribute.localName +
+                ' from element ' +
+                htmlElement.outerHTML,
+            });
+            updateCurrentState(STATES.INVALID);
+          }
+        });
       }
     });
   }
@@ -572,6 +600,15 @@ export const scanForScripts = () => {
   }
 };
 
+function checkForUrl(source) {
+  // the source URL has the following format: '//# sourceURL={url}', so we can look for '=' and check for the url from that index + 1
+  const urlIndex = source.indexOf('=') + 1;
+  if (urlIndex.slice(0, 4) !== 'http' && urlIndex.slice(0, 5) !== 'https') {
+    return false;
+  }
+  return true;
+}
+
 async function processJSWithSrc(script, origin, version) {
   // fetch the script from page context, not the extension context.
   try {
@@ -594,6 +631,16 @@ async function processJSWithSrc(script, origin, version) {
     if (sourceURLIndex == 0) {
       sourceText = '';
     } else if (sourceURLIndex > 0) {
+      // check to ensure there are no popups via MITM attack after //# sourceURL - check string contents after sourceURLIndex
+      const afterSourceURL = sourceText.slice(
+        sourceURLIndex,
+        sourceText.length
+      );
+      if (checkForUrl(afterSourceURL) == false) {
+        return {
+          valid: false,
+        };
+      }
       // doing minus 1 because there's usually either a space or new line
       sourceText = sourceText.slice(0, sourceURLIndex - 1);
     }
