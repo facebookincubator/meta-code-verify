@@ -602,6 +602,9 @@ export const scanForScripts = () => {
 
 function checkForUrl(source) {
   // the source URL has the following format: '//# sourceURL={url}', so we can look for '=' and check for the url from that index + 1
+  if (source.includes("=") == false) {
+    return false;
+  }
   const urlIndex = source.indexOf('=') + 1;
   if (urlIndex.slice(0, 4) !== 'http' && urlIndex.slice(0, 5) !== 'https') {
     return false;
