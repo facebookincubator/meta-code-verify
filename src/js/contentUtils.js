@@ -600,50 +600,65 @@ export const scanForScripts = () => {
   }
 };
 
-function checkForUrl(source) {
-  // the source URL has the following format: '//# sourceURL={url}', so we can look for '=' and check for the url from that index + 1
-  const urlIndex = source.indexOf('=') + 1;
-  if (urlIndex.slice(0, 4) !== 'http' && urlIndex.slice(0, 5) !== 'https') {
-    return false;
+/**
+ * Return text from the response object. The main purpose of this method is to
+ * extract and parse sourceURL and sourceMappingURL comments from inlined data
+ * scripts.
+ * Note that this function consumes the response body!
+ *
+ * @param {Response} response Response will be consumed!
+ * @returns string Response text if the sourceURL is valid
+ */
+async function genSourceText(response) {
+  const sourceText = await response.text();
+  // Just a normal script tag with a source url
+  if (!response.url.startsWith('data:application/x-javascript')) {
+    return sourceText;
   }
-  return true;
+
+  // Inlined data-script. We need to extract with optional `//# sourceURL=` and
+  // `//# sourceMappingURL=` comments before sending it over to be hashed...
+  const sourceTextParts = sourceText.trimEnd().split('\n');
+
+  // NOTE: For security reasons, we expect inlined data scripts to *end* with
+  // sourceURL comments. This is because a man-in-the-middle can insert code
+  // after the sourceURL comment, which would execute on the browser but get
+  // stripped away by the extension before getting hashed + verified.
+  // As a result, we're always starting our search from the bottom.
+  if (
+    sourceTextParts[sourceTextParts.length - 1].startsWith('//# sourceURL=')
+  ) {
+    const sourceURL = sourceTextParts.pop().split('//# sourceURL=')[1] ?? '';
+    if (!sourceURL.startsWith('http')) {
+      throw new Error(`Invalid sourceUrl in inlined data script: ${sourceURL}`);
+    }
+  }
+  while (
+    sourceTextParts[sourceTextParts.length - 1] === '\n' ||
+    sourceTextParts[sourceTextParts.length - 1].startsWith(
+      '//# sourceMappingURL='
+    )
+  ) {
+    sourceTextParts.pop();
+  }
+  return sourceTextParts.join('\n').trim();
 }
 
 async function processJSWithSrc(script, origin, version) {
   // fetch the script from page context, not the extension context.
   try {
     const sourceResponse = await fetch(script.src, { method: 'GET' });
-    // we want to clone the stream before reading it
-    const sourceResponseClone = sourceResponse.clone();
-    const fileNameArr = script.src.split('/');
-    const fileName = fileNameArr[fileNameArr.length - 1].split('?')[0];
-    let sourceText = await sourceResponse.text();
     if (DOWNLOAD_JS_ENABLED) {
+      const fileNameArr = script.src.split('/');
+      const fileName = fileNameArr[fileNameArr.length - 1].split('?')[0];
       sourceScripts.set(
         fileName,
-        sourceResponseClone.body.pipeThrough(
-          new window.CompressionStream('gzip')
-        )
+        sourceResponse
+          .clone()
+          .body.pipeThrough(new window.CompressionStream('gzip'))
       );
     }
-    const sourceURLIndex = sourceText.indexOf('//# sourceURL');
-    // if //# sourceURL is at the beginning of the response, sourceText should be empty, otherwise slicing indices will be (0, -1) and sourceText will be unchanged
-    if (sourceURLIndex == 0) {
-      sourceText = '';
-    } else if (sourceURLIndex > 0) {
-      // check to ensure there are no popups via MITM attack after //# sourceURL - check string contents after sourceURLIndex
-      const afterSourceURL = sourceText.slice(
-        sourceURLIndex,
-        sourceText.length
-      );
-      if (checkForUrl(afterSourceURL) == false) {
-        return {
-          valid: false,
-        };
-      }
-      // doing minus 1 because there's usually either a space or new line
-      sourceText = sourceText.slice(0, sourceURLIndex - 1);
-    }
+    const sourceText = await genSourceText(sourceResponse);
     // split package up if necessary
     const packages = sourceText.split('/*FB_PKG_DELIM*/\n');
     const packagePromises = packages.map(jsPackage => {
@@ -666,9 +681,7 @@ async function processJSWithSrc(script, origin, version) {
       });
     });
     await Promise.all(packagePromises);
-    return {
-      valid: true,
-    };
+    return { valid: true };
   } catch (scriptProcessingError) {
     return {
       valid: false,
