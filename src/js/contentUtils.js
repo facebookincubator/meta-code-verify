@@ -434,6 +434,8 @@ const AttributeCheckPairs = [
   { nodeName: 'script', attributeName: 'xlink:href' },
   { nodeName: 'use', attributeName: 'href' },
   { nodeName: 'use', attributeName: 'xlink:href' },
+  { nodeName: 'x', attributeName: 'href' },
+  { nodeName: 'x', attributeName: 'xlink:href' },
 ];
 
 export function hasViolatingJavaScriptURI(htmlElement) {
