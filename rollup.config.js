@@ -9,7 +9,7 @@ function eslint() {
     return eslintPlugin({throwOnError: true});
 }
 function prettierSrc() {
-    return prettierBuildStart('"src/**/*.js"');
+    return prettierBuildStart('"src/**/*.(js|ts)"');
 }
 
 export default [

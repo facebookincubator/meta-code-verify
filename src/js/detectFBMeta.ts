@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ORIGIN_TYPE } from './config.js';
+import { ORIGIN_TYPE } from './config';
 import { startFor } from './contentUtils.js';
 
 // Pathnames that do not currently have messaging enabled and are not BT

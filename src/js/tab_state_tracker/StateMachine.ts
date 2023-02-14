@@ -5,14 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { STATES } from '../config.js';
+import { State, STATES } from '../config';
 
 // Table of possible transitions from one state to another. The entries for
 // each transition can be:
 //   (a) a boolean indicating if the transition to that state is valid
 //   (b) another state to transition to should a transition to the 'from' state
 //       is attempted.
-const STATE_TRANSITIONS = {
+const STATE_TRANSITIONS: Partial<{
+  [key in State]: Partial<{ [key in State]: boolean | State }>;
+}> = {
   [STATES.START]: {
     [STATES.START]: true,
     [STATES.PROCESSING]: true,
@@ -61,6 +63,7 @@ const STATE_TRANSITIONS = {
  * within that tab.
  */
 export default class StateMachine {
+  private _state: State;
   constructor() {
     this._state = STATES.START;
   }
@@ -69,7 +72,7 @@ export default class StateMachine {
     return this._state;
   }
 
-  updateStateIfValid(newState) {
+  updateStateIfValid(newState: State) {
     // You messed up.
     if (!(newState in STATES)) {
       console.error('State', newState, 'does not exist!');
@@ -77,7 +80,7 @@ export default class StateMachine {
       return;
     }
 
-    let skipState = STATE_TRANSITIONS[this._state][newState];
+    const skipState = STATE_TRANSITIONS[this._state][newState];
     if (typeof skipState === 'string') {
       this.updateStateIfValid(skipState);
       return;
@@ -86,7 +89,7 @@ export default class StateMachine {
     }
   }
 
-  _setState(newState) {
+  _setState(newState: State) {
     const oldState = this._state;
     this._state = newState;
     if (oldState !== newState) {

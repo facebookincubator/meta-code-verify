@@ -1,4 +1,10 @@
-import { MESSAGE_TYPE, STATES, STATES_TO_ICONS } from '../config';
+import {
+  MESSAGE_TYPE,
+  Origin,
+  State,
+  STATES,
+  STATES_TO_ICONS,
+} from '../config';
 
 import StateMachine from './StateMachine.js';
 import FrameStateMachine from './FrameStateMachine.js';
@@ -21,18 +27,22 @@ function getChromeV3Action() {
  * in it.
  */
 export default class TabStateMachine extends StateMachine {
-  constructor(tabId, origin) {
+  private _tabId: number;
+  private _origin: Origin;
+  private _frameStates: { [key: number]: FrameStateMachine };
+
+  constructor(tabId: number, origin: Origin) {
     super();
     this._tabId = tabId;
     this._origin = origin;
     this._frameStates = {};
   }
 
-  addFrameStateMachine(frameId) {
+  addFrameStateMachine(frameId: number) {
     this._frameStates[frameId] = new FrameStateMachine(this);
   }
 
-  updateStateForFrame(frameId, newState) {
+  updateStateForFrame(frameId: number, newState: State): void {
     if (!(frameId in this._frameStates)) {
       throw new Error(
         `State machine for frame: ${frameId} does not exist for tab: ${this._tabId}`
@@ -41,7 +51,7 @@ export default class TabStateMachine extends StateMachine {
     this._frameStates[frameId].updateStateIfValid(newState);
   }
 
-  updateStateIfValid(newState) {
+  updateStateIfValid(newState: State) {
     // Only update the tab's state to VALID if all of it's frames are VALID
     if (
       newState === STATES.VALID &&

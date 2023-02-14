@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-export const STATES = {
+export const STATES = Object.freeze({
   // Starting state for all frames/tabs
   START: 'START',
   // Tab is processing scripts
@@ -20,7 +20,9 @@ export const STATES = {
   VALID: 'VALID',
   // Timed out waiting for the manifest to be available on the page
   TIMEOUT: 'TIMEOUT',
-};
+});
+
+export type State = keyof typeof STATES;
 
 const ICONS = {
   DEFAULT: {
@@ -102,11 +104,13 @@ export const ORIGIN_TIMEOUT = {
   MESSENGER: 0,
 };
 
-export const ORIGIN_TYPE = {
+export const ORIGIN_TYPE = Object.freeze({
   FACEBOOK: 'FACEBOOK',
   WHATSAPP: 'WHATSAPP',
   MESSENGER: 'MESSENGER',
-};
+});
+
+export type Origin = keyof typeof ORIGIN_TYPE;
 
 // Firefox and Safari currently do not support CompressionStream
 export const DOWNLOAD_JS_ENABLED = 'CompressionStream' in window;
