@@ -19,6 +19,8 @@ import {
 
 const manifestCache = new Map();
 const debugCache = new Map();
+const cspHeaders = new Map();
+const cspReportHeaders = new Map();
 
 // Emulate PageActions
 chrome.runtime.onInstalled.addListener(() => {
@@ -378,12 +380,16 @@ export function handleMessages(message, sender, sendResponse) {
 
   if (message.type === MESSAGE_TYPE.CONTENT_SCRIPT_START) {
     recordContentScriptStart(sender, message.origin);
-    sendResponse({ success: true });
+    sendResponse({
+      success: true,
+      cspHeader: cspHeaders.get(sender.tab.id),
+      cspReportHeader: cspReportHeaders.get(sender.tab.id),
+    });
     return;
   }
 }
 chrome.runtime.onMessage.addListener(handleMessages);
-const srcFilters = { urls: ['<all_urls>'] };
+
 chrome.webRequest.onResponseStarted.addListener(
   src => {
     if (
@@ -397,9 +403,30 @@ chrome.webRequest.onResponseStarted.addListener(
       });
     }
   },
-  srcFilters,
+  { urls: ['<all_urls>'] },
   []
 );
+
+chrome.webRequest.onHeadersReceived.addListener(
+  details => {
+    if (details.frameId === 0 && details.responseHeaders) {
+      const cspHeader = details.responseHeaders.find(
+        header => header.name === 'content-security-policy'
+      );
+      const cspReportHeader = details.responseHeaders.find(
+        header => header.name === 'content-security-policy-report-only'
+      );
+      cspHeaders.set(details.tabId, cspHeader?.value);
+      cspReportHeaders.set(details.tabId, cspReportHeader?.value);
+    }
+  },
+  {
+    types: ['main_frame'],
+    urls: ['*://*.facebook.com/*', '*://*.messenger.com/*'],
+  },
+  ['responseHeaders']
+);
+
 chrome.tabs.onRemoved.addListener(tabId => {
   if (debugCache.has(tabId)) {
     debugCache.delete(tabId);
