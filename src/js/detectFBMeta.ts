@@ -11,7 +11,7 @@ import { startFor } from './contentUtils.js';
 // Pathnames that do not currently have messaging enabled and are not BT
 // compliant/
 // NOTE: All pathnames checked against this list will be surrounded by '/'
-const EXCLUDED_PATHNAMES = [
+const EXCLUDED_PATHNAMES: Array<string | RegExp> = [
   /**
    * Settings
    */

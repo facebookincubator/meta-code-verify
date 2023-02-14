@@ -1,5 +1,6 @@
 import cleanOnce from './build/rollup-plugin-clean-once.mjs';
 import eslintPlugin from '@rollup/plugin-eslint';
+import typescript from '@rollup/plugin-typescript';
 import prettierBuildStart from './build/rollup-plugin-prettier-build-start.mjs';
 import staticFiles from './build/rollup-plugin-static-files.mjs';
 import watch from './build/rollup-plugin-watch-additional.mjs';
@@ -13,7 +14,7 @@ function prettierSrc() {
 
 export default [
     {
-        input: 'src/js/detectWAMeta.js',
+        input: 'src/js/detectWAMeta.ts',
         output: [{
             file: 'dist/chrome/contentWA.js',
             format: 'iife'
@@ -24,10 +25,10 @@ export default [
             file: 'dist/firefox/contentWA.js',
             format: 'iife'
         }],
-        plugins: [cleanOnce(), prettierSrc(), eslint()],
+        plugins: [cleanOnce(), typescript(), prettierSrc(), eslint()],
     },
     {
-        input: 'src/js/detectMSGRMeta.js',
+        input: 'src/js/detectMSGRMeta.ts',
         output: [{
             file: 'dist/chrome/contentMSGR.js',
             format: 'iife'
@@ -38,10 +39,10 @@ export default [
             file: 'dist/firefox/contentMSGR.js',
             format: 'iife'
         }],
-        plugins: [prettierSrc(), eslint()],
-    }, 
+        plugins: [typescript(), prettierSrc(), eslint()],
+    },
     {
-        input: 'src/js/detectFBMeta.js',
+        input: 'src/js/detectFBMeta.ts',
         output: [{
             file: 'dist/chrome/contentFB.js',
             format: 'iife'
@@ -52,7 +53,7 @@ export default [
             file: 'dist/firefox/contentFB.js',
             format: 'iife'
         }],
-        plugins: [prettierSrc(), eslint()],
+        plugins: [typescript(), prettierSrc(), eslint()],
     },
     {
         input: 'src/js/background.js',
@@ -66,7 +67,7 @@ export default [
             file: 'dist/firefox/background.js',
             format: 'iife'
         }],
-        plugins: [prettierSrc(), eslint()],
+        plugins: [typescript(), prettierSrc(), eslint()],
     },
     {
         input: 'src/js/popup.js',
@@ -84,6 +85,7 @@ export default [
             plugins: [staticFiles('config/v2/')],
         }],
         plugins: [
+            typescript(),
             prettierSrc(),
             eslint(),
             staticFiles(['images/', 'src/css/', 'src/html/']),

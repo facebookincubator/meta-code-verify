@@ -1,16 +1,20 @@
 {
+    "root": true,
     "env": {
         "browser": true,
         "es2021": true,
         "jest": true,
         "webextensions": true
     },
-    "extends": "eslint:recommended",
-    "parserOptions": {
-        "ecmaVersion": "latest",
-        "sourceType": "module"
-    },
+    "parserOptions": { "project": ["./tsconfig.json"] },
+    "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended"
+    ],
+    "parser": "@typescript-eslint/parser",
+    "plugins": ["@typescript-eslint"],
     "rules": {
-        "no-unused-vars": ["error", {"argsIgnorePattern": "^_"}]
+        "@typescript-eslint/no-unused-vars": ["error", {"argsIgnorePattern": "^_"}],
+        "@typescript-eslint/no-empty-function": 0
     }
 }
