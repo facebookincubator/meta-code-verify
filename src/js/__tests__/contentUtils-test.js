@@ -8,9 +8,8 @@
 'use strict';
 
 import { jest } from '@jest/globals';
-import { ICON_STATE, MESSAGE_TYPE, ORIGIN_TYPE } from '../config.js';
+import { MESSAGE_TYPE, ORIGIN_TYPE, STATES } from '../config.js';
 import {
-  hasViolatingAnchorTag,
   hasInvalidAttributes,
   hasInvalidScripts,
   processFoundJS,
@@ -24,61 +23,65 @@ describe('contentUtils', () => {
   });
   describe('storeFoundJS', () => {
     it('should handle scripts with src correctly', () => {
-      const scriptList = [];
+      const scriptMap = new Map([['version', []]]);
       const fakeUrl = 'https://fancytestingyouhere.com/';
       const fakeScriptNode = {
         src: fakeUrl,
+        getAttribute: () => {},
       };
-      storeFoundJS(fakeScriptNode, scriptList);
-      expect(scriptList.length).toEqual(1);
-      expect(scriptList[0].src).toEqual(fakeUrl);
+      storeFoundJS(fakeScriptNode, scriptMap);
+      expect(scriptMap.get('version').length).toEqual(1);
+      expect(scriptMap.get('version')[0].src).toEqual(fakeUrl);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
     it('should handle inline scripts correctly', () => {
-      const scriptList = [];
+      const scriptMap = new Map([['version', []]]);
       const fakeInnerHtml = 'console.log';
       const fakeLookupKey = 'somelonghashkey';
       const fakeScriptNode = {
         attributes: {
           'data-binary-transparency-hash-key': { value: fakeLookupKey },
         },
+        getAttribute: () => {},
         innerHTML: fakeInnerHtml,
       };
-      storeFoundJS(fakeScriptNode, scriptList);
-      expect(scriptList.length).toEqual(1);
-      expect(scriptList[0].rawjs).toEqual(fakeInnerHtml);
-      expect(scriptList[0].lookupKey).toEqual(fakeLookupKey);
+      storeFoundJS(fakeScriptNode, scriptMap);
+      expect(scriptMap.get('version').length).toEqual(1);
+      expect(scriptMap.get('version')[0].rawjs).toEqual(fakeInnerHtml);
+      expect(scriptMap.get('version')[0].lookupKey).toEqual(fakeLookupKey);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
     it('should send update icon message if valid', () => {
-      const scriptList = [];
+      const scriptMap = new Map([['version', []]]);
       const fakeUrl = 'https://fancytestingyouhere.com/';
       const fakeScriptNode = {
         src: fakeUrl,
+        getAttribute: () => {},
       };
-      storeFoundJS(fakeScriptNode, scriptList);
+      storeFoundJS(fakeScriptNode, scriptMap);
       const sentMessage = window.chrome.runtime.sendMessage.mock.calls[0][0];
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
-      expect(sentMessage.type).toEqual(MESSAGE_TYPE.UPDATE_ICON);
-      expect(sentMessage.icon).toEqual(ICON_STATE.PROCESSING);
+      expect(sentMessage.type).toEqual(MESSAGE_TYPE.UPDATE_STATE);
     });
     it.skip('storeFoundJS keeps existing icon if not valid', () => {
       // TODO: come back to this after testing processFoundJS
     });
   });
-
   describe('hasInvalidAttributes', () => {
     it('should not execute if element has no attributes', () => {
-      // no hasAttributes function
-      let fakeElement = {};
+      // no hasAttribute function
+      let fakeElement = {
+        childNodes: [],
+      };
       hasInvalidAttributes(fakeElement);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
 
-      // hasAttributes is a function, but has no attributes
+      // hasAttribute is a function, but has no attributes
       fakeElement = {
-        hasAttributes: () => {
+        hasAttribute: () => {
           return false;
         },
+        childNodes: [],
       };
       hasInvalidAttributes(fakeElement);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
@@ -90,9 +93,10 @@ describe('contentUtils', () => {
           { localName: 'height' },
           { localName: 'width' },
         ],
-        hasAttributes: () => {
+        hasAttribute: () => {
           return true;
         },
+        childNodes: [],
       };
       hasInvalidAttributes(fakeElement);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
@@ -107,46 +111,10 @@ describe('contentUtils', () => {
         hasAttributes: () => {
           return true;
         },
+        childNodes: [],
       };
       hasInvalidAttributes(fakeElement);
-      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
-    });
-  });
-  describe('hasViolatingAnchorTag', () => {
-    it('should check for violating anchor tags with javascript urls', () => {
-      const anchorTagElement = {
-        nodeName: 'A',
-        href: "javascript:alert('test')",
-      };
-
-      hasViolatingAnchorTag(anchorTagElement);
-      expect(window.chrome.runtime.sendMessage.mock.calls.length).toEqual(2);
-      expect(window.chrome.runtime.sendMessage.mock.calls[1][0].type).toEqual(
-        MESSAGE_TYPE.UPDATE_ICON
-      );
-      expect(window.chrome.runtime.sendMessage.mock.calls[1][0].icon).toEqual(
-        ICON_STATE.INVALID_SOFT
-      );
-    });
-    it('should check for violating anchor tags with javascript urls in node children', () => {
-      const childAnchorTagElement = {
-        nodeName: 'A',
-        href: "javascript:alert('test')",
-      };
-      const anchorTagElement = {
-        nodeName: 'A',
-        href: 'test.com',
-        childNodes: [childAnchorTagElement],
-      };
-
-      hasViolatingAnchorTag(anchorTagElement);
-      expect(window.chrome.runtime.sendMessage.mock.calls.length).toEqual(2);
-      expect(window.chrome.runtime.sendMessage.mock.calls[1][0].type).toEqual(
-        MESSAGE_TYPE.UPDATE_ICON
-      );
-      expect(window.chrome.runtime.sendMessage.mock.calls[1][0].icon).toEqual(
-        ICON_STATE.INVALID_SOFT
-      );
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(2);
     });
   });
   describe('hasInvalidScripts', () => {
@@ -157,7 +125,7 @@ describe('contentUtils', () => {
           { localName: 'height' },
           { localName: 'width' },
         ],
-        hasAttributes: () => {
+        hasAttribute: () => {
           return true;
         },
         nodeType: 2,
@@ -168,19 +136,21 @@ describe('contentUtils', () => {
     it('should store any script elements we find', () => {
       const fakeElement = {
         attributes: { 'data-binary-transparency-hash-key': { value: 'green' } },
-        hasAttributes: () => {
+        getAttribute: () => {},
+        hasAttribute: () => {
           return false;
         },
+        childNodes: [],
         nodeName: 'SCRIPT',
         nodeType: 1,
       };
-      const foundScripts = [];
-      hasInvalidScripts(fakeElement, foundScripts);
-      expect(foundScripts.length).toBe(1);
-      expect(foundScripts[0].type).toBe(MESSAGE_TYPE.RAW_JS);
+      const scriptMap = new Map([['version', []]]);
+      hasInvalidScripts(fakeElement, scriptMap);
+      expect(scriptMap.get('version').length).toBe(1);
+      expect(scriptMap.get('version')[0].type).toBe(MESSAGE_TYPE.RAW_JS);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
       expect(window.chrome.runtime.sendMessage.mock.calls[0][0].type).toBe(
-        MESSAGE_TYPE.UPDATE_ICON
+        MESSAGE_TYPE.UPDATE_STATE
       );
     });
     it('should check all child nodes for non script elements', () => {
@@ -192,10 +162,11 @@ describe('contentUtils', () => {
               { localName: 'height' },
               { localName: 'width' },
             ],
-            hasAttributes: () => {
+            hasAttribute: () => {
               return true;
             },
             nodeType: 2,
+            nodeName: 'nodename',
           },
           {
             attributes: [
@@ -203,16 +174,19 @@ describe('contentUtils', () => {
               { localName: 'height' },
               { localName: 'width' },
             ],
-            hasAttributes: () => {
+            hasAttribute: () => {
               return true;
             },
             nodeType: 3,
+            nodeName: 'nodename',
           },
         ],
-        hasAttributes: () => {
+        hasAttribute: () => {
           return false;
         },
         nodeType: 1,
+        nodeName: 'nodename',
+        tagName: 'tagName',
       };
       const foundScripts = [];
       hasInvalidScripts(fakeElement, foundScripts);
@@ -228,34 +202,40 @@ describe('contentUtils', () => {
               { localName: 'height' },
               { localName: 'width' },
             ],
-            hasAttributes: () => {
+            hasAttribute: () => {
               return true;
             },
             nodeType: 2,
+            nodeName: 'nodename',
+            childNodes: [],
           },
           {
             attributes: {
               'data-binary-transparency-hash-key': { value: 'green' },
             },
-            hasAttributes: () => {
+            getAttribute: () => {},
+            hasAttribute: () => {
               return false;
             },
             nodeName: 'SCRIPT',
             nodeType: 1,
+            childNodes: [],
           },
         ],
-        hasAttributes: () => {
+        hasAttribute: () => {
           return false;
         },
         nodeType: 1,
+        nodeName: 'nodename',
+        tagName: 'tagName',
       };
-      const foundScripts = [];
-      hasInvalidScripts(fakeElement, foundScripts);
-      expect(foundScripts.length).toBe(1);
-      expect(foundScripts[0].type).toBe(MESSAGE_TYPE.RAW_JS);
+      const scriptMap = new Map([['version', []]]);
+      hasInvalidScripts(fakeElement, scriptMap);
+      expect(scriptMap.get('version').length).toBe(1);
+      expect(scriptMap.get('version')[0].type).toBe(MESSAGE_TYPE.RAW_JS);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
       expect(window.chrome.runtime.sendMessage.mock.calls[0][0].type).toBe(
-        MESSAGE_TYPE.UPDATE_ICON
+        MESSAGE_TYPE.UPDATE_STATE
       );
     });
     it('should check for any grandchildren script elements', () => {
@@ -267,14 +247,17 @@ describe('contentUtils', () => {
               { localName: 'height' },
               { localName: 'width' },
             ],
-            hasAttributes: () => {
+            hasAttribute: () => {
               return true;
             },
             nodeType: 2,
+            nodeName: 'nodename',
+            childNodes: [],
           },
           {
             attributes: {
               'data-binary-transparency-hash-key': { value: 'green' },
+              getAttribute: () => {},
             },
             getElementsByTagName: () => {
               return [
@@ -282,28 +265,34 @@ describe('contentUtils', () => {
                   attributes: {
                     'data-binary-transparency-hash-key': { value: 'green1' },
                   },
+                  getAttribute: () => {},
                 },
                 {
                   attributes: {
                     'data-binary-transparency-hash-key': { value: 'green2' },
                   },
+                  getAttribute: () => {},
                 },
               ];
             },
-            hasAttributes: () => {
+            hasAttribute: () => {
               return false;
             },
             nodeType: 1,
+            nodeName: 'nodename',
+            childNodes: [],
           },
         ],
-        hasAttributes: () => {
+        hasAttribute: () => {
           return false;
         },
         nodeType: 1,
+        nodeName: 'nodename',
+        tagName: 'tagName',
       };
-      const foundScripts = [];
-      hasInvalidScripts(fakeElement, foundScripts);
-      expect(foundScripts.length).toBe(2);
+      const scriptMap = new Map([['version', []]]);
+      hasInvalidScripts(fakeElement, scriptMap);
+      expect(scriptMap.get('version').length).toBe(2);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(2);
     });
   });
@@ -334,12 +323,9 @@ describe('contentUtils', () => {
           response && response({ valid: true });
         }
       );
-      processFoundJS(ORIGIN_TYPE.WHATSAPP, '100');
+      processFoundJS(ORIGIN_TYPE.WHATSAPP, '');
       await (() => new Promise(res => setTimeout(res, 10)))();
-      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(9);
-      expect(window.chrome.runtime.sendMessage.mock.calls[6][0].icon).toEqual(
-        ICON_STATE.VALID
-      );
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(12);
     });
     it('should send valid icon update when no inline based scripts are invalid', async () => {
       document.body.innerHTML =
@@ -353,11 +339,11 @@ describe('contentUtils', () => {
           response && response({ valid: true });
         }
       );
-      processFoundJS(ORIGIN_TYPE.WHATSAPP, '102');
+      processFoundJS(ORIGIN_TYPE.WHATSAPP, '');
       await (() => new Promise(res => setTimeout(res, 10)))();
-      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(11);
-      expect(window.chrome.runtime.sendMessage.mock.calls[6][0].icon).toEqual(
-        ICON_STATE.VALID
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(15);
+      expect(window.chrome.runtime.sendMessage.mock.calls[13][0].state).toEqual(
+        STATES.VALID
       );
     });
     it('should send invalid icon update when invalid response received with src', async () => {
@@ -372,15 +358,15 @@ describe('contentUtils', () => {
           response && response({ valid: false });
         }
       );
-      processFoundJS(ORIGIN_TYPE.WHATSAPP, '101');
+      processFoundJS(ORIGIN_TYPE.WHATSAPP, '');
       await (() => new Promise(res => setTimeout(res, 10)))();
-      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(14);
-      expect(window.chrome.runtime.sendMessage.mock.calls[7][0].icon).toEqual(
-        ICON_STATE.INVALID_SOFT
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(23);
+      expect(window.chrome.runtime.sendMessage.mock.calls[21][0].state).toEqual(
+        STATES.INVALID
       );
     });
-    // it.todo(
-    //   'should send invalid icon update when invalid inline response received'
-    // );
+    it.todo(
+      'should send invalid icon update when invalid inline response received'
+    );
   });
 });
