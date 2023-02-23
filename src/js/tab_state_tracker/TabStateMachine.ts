@@ -6,8 +6,8 @@ import {
   STATES_TO_ICONS,
 } from '../config';
 
-import StateMachine from './StateMachine.js';
-import FrameStateMachine from './FrameStateMachine.js';
+import StateMachine from './StateMachine';
+import FrameStateMachine from './FrameStateMachine';
 
 function getChromeV3Action() {
   if (self.chrome.runtime.getManifest().manifest_version >= 3) {

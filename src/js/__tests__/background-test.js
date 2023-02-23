@@ -8,8 +8,8 @@
 'use strict';
 
 import { jest } from '@jest/globals';
-import { MESSAGE_TYPE, ORIGIN_TYPE } from '../config.js';
-import { handleMessages } from '../background.js';
+import { MESSAGE_TYPE, ORIGIN_TYPE } from '../config';
+import { handleMessages } from '../background';
 
 describe('background', () => {
   beforeEach(() => {

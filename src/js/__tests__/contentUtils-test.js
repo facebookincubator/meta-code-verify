@@ -8,14 +8,14 @@
 'use strict';
 
 import { jest } from '@jest/globals';
-import { MESSAGE_TYPE, ORIGIN_TYPE, STATES } from '../config.js';
+import { MESSAGE_TYPE, ORIGIN_TYPE, STATES } from '../config';
 import {
   hasInvalidAttributes,
   hasInvalidScripts,
   processFoundJS,
   scanForScripts,
   storeFoundJS,
-} from '../contentUtils.js';
+} from '../contentUtils';
 
 describe('contentUtils', () => {
   beforeEach(() => {

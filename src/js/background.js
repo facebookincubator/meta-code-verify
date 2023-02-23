@@ -10,12 +10,12 @@ import {
   ORIGIN_HOST,
   ORIGIN_TIMEOUT,
   ORIGIN_TYPE,
-} from './config.js';
+} from './config';
 
 import {
   recordContentScriptStart,
   updateContentScriptState,
-} from './tab_state_tracker/tabStateTracker.js';
+} from './tab_state_tracker/tabStateTracker';
 
 const manifestCache = new Map();
 const debugCache = new Map();
