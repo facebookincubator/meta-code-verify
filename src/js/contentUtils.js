@@ -11,7 +11,7 @@ import {
   ORIGIN_TYPE,
   DOWNLOAD_JS_ENABLED,
   STATES,
-} from './config.js';
+} from './config';
 
 const DOM_EVENTS = [
   'onabort',
