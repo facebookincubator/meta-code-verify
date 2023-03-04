@@ -42,6 +42,12 @@ const EXCLUDED_PATHNAMES: Array<string | RegExp> = [
   /\/v[\d.]+\/plugins\/like.php\/.*$/,
 
   /**
+   * Page embed plugin
+   */
+  // e.g. /v2.5/plugins/page.php
+  /\/v[\d.]+\/plugins\/page.php\/.*$/,
+
+  /**
    * Help center articles
    */
   /\/help\/.*$/,
