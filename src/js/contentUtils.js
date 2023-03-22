@@ -856,7 +856,7 @@ export function startFor(origin, excludedPathnames = []) {
     origin,
   });
   if (isPathnameExcluded(excludedPathnames)) {
-    updateCurrentState(STATES.IGNORE);
+    updateCurrentState(STATES.INVALID);
     return;
   }
   let isUserLoggedIn = false;

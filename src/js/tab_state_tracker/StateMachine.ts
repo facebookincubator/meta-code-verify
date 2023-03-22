@@ -19,6 +19,7 @@ const STATE_TRANSITIONS: Partial<{
     [STATES.START]: true,
     [STATES.PROCESSING]: true,
     [STATES.IGNORE]: true,
+    [STATES.INVALID]: true,
   },
   [STATES.PROCESSING]: {
     [STATES.PROCESSING]: true,
