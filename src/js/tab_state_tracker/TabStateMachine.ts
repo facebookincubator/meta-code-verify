@@ -4,6 +4,7 @@ import {
   State,
   STATES,
   STATES_TO_ICONS,
+  ORIGIN_HOST,
 } from '../config';
 
 import StateMachine from './StateMachine';
@@ -71,20 +72,31 @@ export default class TabStateMachine extends StateMachine {
       tabId: this._tabId,
       path: STATES_TO_ICONS[state],
     });
-    if (state === STATES.IGNORE || state === STATES.START) {
-      chromeAction.disable(this._tabId);
-    } else {
-      chromeAction.enable(this._tabId);
-      chromeAction.setPopup({
-        tabId: this._tabId,
-        popup: `popup.html?tab_id=${this._tabId}&state=${state}&origin=${this._origin}`,
-      });
-      // Broadcast state update for relevant popup to update its contents.
-      chrome.runtime.sendMessage({
-        type: MESSAGE_TYPE.STATE_UPDATED,
-        tabId: this._tabId,
-        state,
-      });
+    chromeAction.enable(this._tabId);
+    chromeAction.setPopup({
+      tabId: this._tabId,
+      popup: `popup.html?tab_id=${this._tabId}&state=${state}&origin=${this._origin}`,
+    });
+    // Broadcast state update for relevant popup to update its contents.
+    chrome.runtime.sendMessage({
+      type: MESSAGE_TYPE.STATE_UPDATED,
+      tabId: this._tabId,
+      state,
+    });
+    if (state === STATES.IGNORE) {
+      this.genDisableTab();
     }
+  }
+
+  private async genDisableTab(): Promise<void> {
+    const tab = await chrome.tabs.get(this._tabId);
+    if (tab.url) {
+      const host = new URL(tab.url).hostname.replace('www.', '');
+      if (Object.values(ORIGIN_HOST).includes(host)) {
+        this.updateStateIfValid(STATES.INVALID);
+        return;
+      }
+    }
+    getChromeV3Action().disable(this._tabId);
   }
 }

@@ -13,29 +13,6 @@ import { startFor } from './contentUtils.js';
 // NOTE: All pathnames checked against this list will be surrounded by '/'
 const EXCLUDED_PATHNAMES: Array<string | RegExp> = [
   /**
-   * Settings
-   */
-  '/settings/',
-  /\/[^/]+?\/settings\/$/, // Page settings
-
-  /**
-   * Games
-   */
-  '/games/',
-  // Anything in the /games pathname except /games/instantgames/
-  /\/games\/(?:(?!instantgames\/)).*$/,
-  '/gaming/games/',
-  // Anything in the /gaming/games pathname except /gaming/games/instantgames/
-  /\/gaming\/games\/(?:(?!instantgames\/)).*$/,
-
-  /**
-   * Share plugin
-   */
-  '/sharer.php/',
-  '/sharer/',
-  /\/sharer\/sharer.php.*$/,
-
-  /**
    * Like plugin
    */
   // e.g. /v2.5/plugins/like.php
@@ -51,11 +28,6 @@ const EXCLUDED_PATHNAMES: Array<string | RegExp> = [
    * Help center articles
    */
   /\/help\/.*$/,
-
-  /**
-   * Marketplace
-   */
-  '/marketplace/you/sales/confirm_identity/',
 ];
 
 startFor(ORIGIN_TYPE.FACEBOOK, EXCLUDED_PATHNAMES);
