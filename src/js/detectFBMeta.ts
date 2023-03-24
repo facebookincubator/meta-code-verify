@@ -23,11 +23,6 @@ const EXCLUDED_PATHNAMES: Array<string | RegExp> = [
    */
   // e.g. /v2.5/plugins/page.php
   /\/v[\d.]+\/plugins\/page.php\/.*$/,
-
-  /**
-   * Help center articles
-   */
-  /\/help\/.*$/,
 ];
 
 startFor(ORIGIN_TYPE.FACEBOOK, EXCLUDED_PATHNAMES);
