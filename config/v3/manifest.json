@@ -52,6 +52,8 @@
     ],
     "host_permissions": [
         "https://*.privacy-auditability.cloudflare.com/",
-        "https://web.whatsapp.com/"
+        "*://*.messenger.com/*",
+        "*://*.facebook.com/*",
+        "*://*.whatsapp.com/*"
     ]
 }

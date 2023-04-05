@@ -49,9 +49,11 @@
         }
     ],
     "permissions": [
-        "https://*.privacy-auditability.cloudflare.com/",
-        "https://web.whatsapp.com/",
         "webRequest",
-        "https://static.xx.fbcdn.net/"
+        "https://*.privacy-auditability.cloudflare.com/",
+        "https://static.xx.fbcdn.net/",
+        "*://*.messenger.com/*",
+        "*://*.facebook.com/*",
+        "*://*.whatsapp.com/*"
     ]
 }
