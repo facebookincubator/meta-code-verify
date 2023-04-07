@@ -564,13 +564,7 @@ export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
 const parseCSPString = csp => {
   const directiveStrings = csp.split(';');
   return directiveStrings.reduce((map, directiveString) => {
-    const directive = directiveString.substring(
-      0,
-      directiveString.indexOf(' ')
-    );
-    const values = directiveString
-      .substring(directiveString.indexOf(' '))
-      .split(' ');
+    const [directive, ...values] = directiveString.split(' ');
     return map.set(directive, new Set(values));
   }, new Map());
 };
@@ -597,16 +591,28 @@ const checkCSPHeaders = (cspHeader, cspReportHeader) => {
     if (cspReportMap.has('script-src')) {
       if (cspReportMap.get('script-src').has("'unsafe-eval'")) {
         updateCurrentState(STATES.INVALID);
+        chrome.runtime.sendMessage({
+          type: MESSAGE_TYPE.DEBUG,
+          log: 'Missing unsafe-eval from CSP report-only header',
+        });
         return;
       }
     }
     if (!cspReportMap.has('script-src') && cspReportMap.has('default-src')) {
       if (cspReportMap.get('default-src').has("'unsafe-eval'")) {
         updateCurrentState(STATES.INVALID);
+        chrome.runtime.sendMessage({
+          type: MESSAGE_TYPE.DEBUG,
+          log: 'Missing unsafe-eval from CSP report-only header',
+        });
         return;
       }
     }
   } else {
+    chrome.runtime.sendMessage({
+      type: MESSAGE_TYPE.DEBUG,
+      log: 'Missing CSP report-only header',
+    });
     updateCurrentState(STATES.INVALID);
     return;
   }
