@@ -6,7 +6,7 @@ The idea is you can publish what JavaScript should appear on your site into a "m
 
 ## Installation
 
-You can install Code Verify from the extension store of Chrome, Firefox, or Edge. (Safari support coming soon, also direct links to the extensions.)
+You can install Code Verify from the extension store of [Chrome](https://chrome.google.com/webstore/detail/code-verify/llohflklppcaghdpehpbklhlfebooeog), [Firefox](https://addons.mozilla.org/en-US/firefox/addon/code-verify/#:~:text=The%20new%20Code%20Verify%20is,inauthentic%20or%20has%20been%20modified.), or [Edge](https://microsoftedge.microsoft.com/addons/detail/code-verify/cpndjjealjjagamdecpipjfamiigaknk#:~:text=Code%20Verify%20will%20immediately%20alert,and%20hasn't%20been%20modified.). (Safari support coming soon)
 
 ### [Code of Conduct](https://code.fb.com/codeofconduct)
 
@@ -14,4 +14,4 @@ Meta has adopted a Code of Conduct that we expect project participants to adhere
 
 ### License
 
-React is [MIT licensed](./LICENSE).
+Code Verify is [MIT licensed](./LICENSE.md).
