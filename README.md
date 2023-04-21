@@ -1,4 +1,7 @@
-# meta-code-verify &middot; [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](/LICENSE.md)
+# meta-code-verify 
+
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg?color=white)](/LICENSE.md) [![Chrome Users](https://img.shields.io/chrome-web-store/users/llohflklppcaghdpehpbklhlfebooeog?label=Users&logo=Google%20Chrome&logoColor=yellow&color=blue)](https://chrome.google.com/webstore/detail/code-verify/llohflklppcaghdpehpbklhlfebooeog) [![Edge Users](https://img.shields.io/badge/dynamic/json?label=users&query=%24.activeInstallCount&logo=Microsoft%20Edge&logoColor=blue&url=https%3A%2F%2Fmicrosoftedge.microsoft.com%2Faddons%2Fgetproductdetailsbycrxid%2Fcpndjjealjjagamdecpipjfamiigaknk)](https://microsoftedge.microsoft.com/addons/detail/code-verify/cpndjjealjjagamdecpipjfamiigaknk) [![Firefox Users](https://img.shields.io/amo/users/code-verify?logo=Firefox&logoColor=orange)](https://addons.mozilla.org/en-US/firefox/addon/code-verify/) [![Build status](https://img.shields.io/github/actions/workflow/status/facebookincubator/meta-code-verify/tests.js.yml)](https://github.com/facebookincubator/meta-code-verify/actions/workflows/tests.js.yml)
+
 
 Code Verify is an extension for verifying the integrity of a web page.
 
