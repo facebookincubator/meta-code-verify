@@ -273,6 +273,15 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     (scriptNodeMaybe.id === 'binary-transparency-manifest' ||
       scriptNodeMaybe.getAttribute('name') === 'binary-transparency-manifest')
   ) {
+    if (scriptNodeMaybe.getAttribute('type') !== 'application/json') {
+      chrome.runtime.sendMessage({
+        type: MESSAGE_TYPE.DEBUG,
+        log: 'Manifest script type is invalid',
+      });
+      updateCurrentState(STATES.INVALID);
+      return;
+    }
+
     let rawManifest = '';
     try {
       rawManifest = JSON.parse(scriptNodeMaybe.textContent);
