@@ -77,7 +77,7 @@ export default [
         plugins: [typescript(), prettierSrc(), eslint()],
     },
     {
-        input: 'src/js/popup.js',
+        input: 'src/js/popup.ts',
         output: [{
             file: 'dist/chrome/popup.js',
             format: 'iife',

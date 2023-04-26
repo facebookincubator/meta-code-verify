@@ -44,14 +44,14 @@ const ORIGIN_TO_LEARN_MORE_PAGES = {
 };
 
 // doing this so we can add support for i18n using messages.json
-function attachTextToHtml() {
+function attachTextToHtml(): void {
   const i18nElements = document.querySelectorAll(`[id^="i18n"]`);
   Array.from(i18nElements).forEach(element => {
     element.innerHTML = chrome.i18n.getMessage(element.id);
   });
 }
 
-function attachListeners(origin) {
+function attachListeners(origin: string | null): void {
   if (!(origin in ORIGIN_TO_LEARN_MORE_PAGES)) {
     throw new Error(
       `Learn more pages for origin type: ${origin} do not exist!`
@@ -72,7 +72,9 @@ function attachListeners(origin) {
   menuRowList[0].addEventListener('click', _evt => {
     chrome.tabs.create({ url: learnMoreUrls.about });
   });
-  menuRowList[0].style.cursor = 'pointer';
+  if (menuRowList[0] instanceof HTMLElement) {
+    menuRowList[0].style.cursor = 'pointer';
+  }
 
   const downloadTextList = document.getElementsByClassName(
     'status_message_highlight'
@@ -81,7 +83,9 @@ function attachListeners(origin) {
 
   if (DOWNLOAD_JS_ENABLED) {
     menuRowList[1].addEventListener('click', () => updateDisplay('download'));
-    menuRowList[1].style.cursor = 'pointer';
+    if (menuRowList[1] instanceof HTMLElement) {
+      menuRowList[1].style.cursor = 'pointer';
+    }
 
     downloadTextList[0].addEventListener('click', () => {
       chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
@@ -92,7 +96,9 @@ function attachListeners(origin) {
         );
       });
     });
-    downloadTextList[0].style.cursor = 'pointer';
+    if (downloadTextList[0] instanceof HTMLElement) {
+      downloadTextList[0].style.cursor = 'pointer';
+    }
 
     downloadSrcButton.onclick = () => {
       chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
@@ -109,7 +115,9 @@ function attachListeners(origin) {
     downloadTextList[0].addEventListener('click', () =>
       updateDisplay('download')
     );
-    downloadTextList[0].style.cursor = 'pointer';
+    if (downloadTextList[0] instanceof HTMLElement) {
+      downloadTextList[0].style.cursor = 'pointer';
+    }
   } else {
     menuRowList[1].remove();
     downloadTextList[0].remove();
@@ -128,7 +136,9 @@ function attachListeners(origin) {
   learnMoreList[0].addEventListener('click', () => {
     chrome.tabs.create({ url: learnMoreUrls.failure });
   });
-  learnMoreList[0].style.cursor = 'pointer';
+  if (learnMoreList[0] instanceof HTMLElement) {
+    learnMoreList[0].style.cursor = 'pointer';
+  }
 
   const riskLearnMoreList = document.getElementsByClassName(
     'risk_learn_more_button'
@@ -136,14 +146,18 @@ function attachListeners(origin) {
   riskLearnMoreList[0].addEventListener('click', () => {
     chrome.tabs.create({ url: learnMoreUrls.risk });
   });
-  riskLearnMoreList[0].style.cursor = 'pointer';
+  if (riskLearnMoreList[0] instanceof HTMLElement) {
+    riskLearnMoreList[0].style.cursor = 'pointer';
+  }
 
   const retryButtonList = document.getElementsByClassName('retry_button');
   Array.from(retryButtonList).forEach(retryButton => {
     retryButton.addEventListener('click', () => {
       chrome.tabs.reload();
     });
-    retryButton.style.cursor = 'pointer';
+    if (retryButton instanceof HTMLElement) {
+      retryButton.style.cursor = 'pointer';
+    }
   });
 
   const timeoutLearnMoreList = document.getElementsByClassName(
@@ -152,13 +166,15 @@ function attachListeners(origin) {
   timeoutLearnMoreList[0].addEventListener('click', () => {
     chrome.tabs.create({ url: learnMoreUrls.timeout });
   });
-  timeoutLearnMoreList[0].style.cursor = 'pointer';
+  if (timeoutLearnMoreList[0] instanceof HTMLElement) {
+    timeoutLearnMoreList[0].style.cursor = 'pointer';
+  }
 }
 
-function updateDisplay(state) {
+function updateDisplay(state: string | null): void {
   const popupState = STATE_TO_POPUP_STATE[state] || state;
   Array.from(document.getElementsByClassName('state_boundary')).forEach(
-    element => {
+    (element: HTMLElement) => {
       if (element.id == popupState) {
         element.style.display = 'flex';
         document.body.className = popupState + '_body';
@@ -169,7 +185,7 @@ function updateDisplay(state) {
   );
 }
 
-function setUpBackgroundMessageHandler(tabId) {
+function setUpBackgroundMessageHandler(tabId: string | null): void {
   if (tabId == null || tabId.trim() === '') {
     console.error('[Popup] No tab_id query param', document.location);
     return;
@@ -187,12 +203,10 @@ function setUpBackgroundMessageHandler(tabId) {
   });
 }
 
-function loadUp() {
-  const params = new URL(document.location).searchParams;
+(function (): void {
+  const params = new URL(document.location.href).searchParams;
   setUpBackgroundMessageHandler(params.get('tab_id'));
   updateDisplay(params.get('state'));
   attachTextToHtml();
   attachListeners(params.get('origin'));
-}
-
-loadUp();
+})();
