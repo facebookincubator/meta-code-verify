@@ -17,6 +17,10 @@ import {
   updateContentScriptState,
 } from './tab_state_tracker/tabStateTracker';
 
+import { setupCSPListener } from './background/setupCSPListener';
+import { validateMetaCompanyManifest } from './background/validateMetaCompanyManifest';
+import { validateManifest } from './background/validateManifest';
+
 const manifestCache = new Map();
 const debugCache = new Map();
 const cspHeaders = new Map();
@@ -37,169 +41,6 @@ function addDebugLog(tabId, debugMessage) {
   }
 
   tabDebugList.push(debugMessage);
-}
-
-const fromHexString = hexString =>
-  new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-const toHexString = bytes =>
-  bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
-
-function getCFHashWorkaroundFunction(host, version) {
-  return new Promise((resolve, reject) => {
-    fetch(
-      'https://staging-api.privacy-auditability.cloudflare.com/v1/hash/' +
-        encodeURIComponent(host) +
-        '/' +
-        encodeURIComponent(version),
-      { method: 'GET' }
-    )
-      .then(response => {
-        resolve(response);
-      })
-      .catch(response => {
-        reject(response);
-      });
-  });
-}
-
-async function validateManifest(rootHash, leaves, host, version, workaround) {
-  // does rootHash match what was published?
-  const cfResponse = await getCFHashWorkaroundFunction(host, version).catch(
-    cfError => {
-      console.log('error fetching hash from CF', cfError);
-      return {
-        valid: false,
-        reason: 'ENDPOINT_FAILURE',
-        error: cfError,
-      };
-    }
-  );
-  if (cfResponse == null || cfResponse.json == null) {
-    return {
-      valid: false,
-      reason: 'UNKNOWN_ENDPOINT_ISSUE',
-    };
-  }
-  const cfPayload = await cfResponse.json();
-  let cfRootHash = cfPayload.root_hash;
-  if (cfPayload.root_hash.startsWith('0x')) {
-    cfRootHash = cfPayload.root_hash.slice(2);
-  }
-  // validate
-  if (rootHash !== cfRootHash) {
-    console.log('hash mismatch with CF ', rootHash, cfRootHash);
-
-    // secondary hash to mitigate accidental build issue.
-    const encoder = new TextEncoder();
-    const backupHashEncoded = encoder.encode(workaround);
-    const backupHashArray = Array.from(
-      new Uint8Array(await crypto.subtle.digest('SHA-256', backupHashEncoded))
-    );
-    const backupHash = backupHashArray
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
-    console.log(
-      'secondary hashing of CF value fails too ',
-      rootHash,
-      backupHash
-    );
-    if (backupHash !== cfRootHash) {
-      return {
-        valid: false,
-        reason: 'ROOT_HASH_VERFIY_FAIL_3RD_PARTY',
-      };
-    }
-  }
-
-  let oldhashes = leaves.map(
-    leaf => fromHexString(leaf.replace('0x', '')).buffer
-  );
-  let newhashes = [];
-  let bonus = '';
-
-  while (oldhashes.length > 1) {
-    for (let index = 0; index < oldhashes.length; index += 2) {
-      const validSecondValue = index + 1 < oldhashes.length;
-      if (validSecondValue) {
-        const hashValue = new Uint8Array(
-          oldhashes[index].byteLength + oldhashes[index + 1].byteLength
-        );
-        hashValue.set(new Uint8Array(oldhashes[index]), 0);
-        hashValue.set(
-          new Uint8Array(oldhashes[index + 1]),
-          oldhashes[index].byteLength
-        );
-        newhashes.push(await crypto.subtle.digest('SHA-256', hashValue.buffer));
-      } else {
-        bonus = oldhashes[index];
-      }
-    }
-    oldhashes = newhashes;
-    if (bonus !== '') {
-      oldhashes.push(bonus);
-    }
-    console.log(
-      'layer hex is ',
-      oldhashes.map(hash => {
-        return Array.from(new Uint8Array(hash))
-          .map(b => b.toString(16).padStart(2, ''))
-          .join('');
-      })
-    );
-    newhashes = [];
-    bonus = '';
-    console.log(
-      'in loop hashes.length is',
-      oldhashes.length,
-      rootHash,
-      oldhashes
-    );
-  }
-  const lastHash = toHexString(new Uint8Array(oldhashes[0]));
-  console.log('before return comparison', rootHash, lastHash);
-  if (lastHash === rootHash) {
-    return {
-      valid: true,
-    };
-  }
-  return {
-    valid: false,
-    reason: 'ROOT_HASH_VERFIY_FAIL_IN_PAGE',
-  };
-}
-
-async function validateMetaCompanyManifest(rootHash, otherHashes, leaves) {
-  // merge all the hashes into one
-  const megaHash = JSON.stringify(leaves);
-  // hash it
-  const encoder = new TextEncoder();
-  const encodedMegaHash = encoder.encode(megaHash);
-  const jsHashArray = Array.from(
-    new Uint8Array(await crypto.subtle.digest('SHA-256', encodedMegaHash))
-  );
-  const jsHash = jsHashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  // compare to main and long tail, it should match one
-  // then hash it with the other
-  let combinedHash = '';
-  if (jsHash === otherHashes.main || jsHash === otherHashes.longtail) {
-    const combinedHashArray = Array.from(
-      new Uint8Array(
-        await crypto.subtle.digest(
-          'SHA-256',
-          encoder.encode(otherHashes.longtail + otherHashes.main)
-        )
-      )
-    );
-    combinedHash = combinedHashArray
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
-  } else {
-    return false;
-  }
-
-  // ensure result matches root, return.
-  console.log('combined hash is ', combinedHash, rootHash);
-  return combinedHash === rootHash;
 }
 
 function getDebugLog(tabId) {
@@ -407,25 +248,7 @@ chrome.webRequest.onResponseStarted.addListener(
   []
 );
 
-chrome.webRequest.onHeadersReceived.addListener(
-  details => {
-    if (details.frameId === 0 && details.responseHeaders) {
-      const cspHeader = details.responseHeaders.find(
-        header => header.name === 'content-security-policy'
-      );
-      const cspReportHeader = details.responseHeaders.find(
-        header => header.name === 'content-security-policy-report-only'
-      );
-      cspHeaders.set(details.tabId, cspHeader?.value);
-      cspReportHeaders.set(details.tabId, cspReportHeader?.value);
-    }
-  },
-  {
-    types: ['main_frame'],
-    urls: ['*://*.facebook.com/*', '*://*.messenger.com/*'],
-  },
-  ['responseHeaders']
-);
+setupCSPListener(cspHeaders, cspReportHeaders);
 
 chrome.tabs.onRemoved.addListener(tabId => {
   if (debugCache.has(tabId)) {
