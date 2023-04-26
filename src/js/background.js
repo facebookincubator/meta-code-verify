@@ -17,6 +17,8 @@ import {
   updateContentScriptState,
 } from './tab_state_tracker/tabStateTracker';
 
+import { setupCSPListener } from './background/setupCSPListener';
+
 const manifestCache = new Map();
 const debugCache = new Map();
 const cspHeaders = new Map();
@@ -407,25 +409,7 @@ chrome.webRequest.onResponseStarted.addListener(
   []
 );
 
-chrome.webRequest.onHeadersReceived.addListener(
-  details => {
-    if (details.frameId === 0 && details.responseHeaders) {
-      const cspHeader = details.responseHeaders.find(
-        header => header.name === 'content-security-policy'
-      );
-      const cspReportHeader = details.responseHeaders.find(
-        header => header.name === 'content-security-policy-report-only'
-      );
-      cspHeaders.set(details.tabId, cspHeader?.value);
-      cspReportHeaders.set(details.tabId, cspReportHeader?.value);
-    }
-  },
-  {
-    types: ['main_frame'],
-    urls: ['*://*.facebook.com/*', '*://*.messenger.com/*'],
-  },
-  ['responseHeaders']
-);
+setupCSPListener(cspHeaders, cspReportHeaders);
 
 chrome.tabs.onRemoved.addListener(tabId => {
   if (debugCache.has(tabId)) {
