@@ -249,6 +249,9 @@ export function hasViolatingJavaScriptURI(htmlElement) {
   }
 }
 
+function isEventHandlerAttribute = attribute =>
+  attribute.indexOf('on') === 0;
+
 export function hasInvalidAttributes(htmlElement) {
   if (
     typeof htmlElement.attributes === 'object' &&
@@ -256,7 +259,7 @@ export function hasInvalidAttributes(htmlElement) {
   ) {
     Array.from(htmlElement.attributes).forEach(elementAttribute => {
       // check first for violating attributes
-      if (elementAttribute.localName.indexOf('on') === 0) {
+      if (isEventHandlerAttribute(elementAttribute.localName)) {
         chrome.runtime.sendMessage({
           type: MESSAGE_TYPE.DEBUG,
           log:
@@ -463,7 +466,10 @@ export const scanForScripts = () => {
           Array.from(mutation.addedNodes).forEach(checkScript => {
             hasInvalidScripts(checkScript, foundScripts);
           });
-        } else if (mutation.type === 'attributes') {
+        } else if (
+          mutation.type === 'attributes' &&
+          isEventHandlerAttribute(mutation.attributeName)
+        ) {
           updateCurrentState(STATES.INVALID);
           chrome.runtime.sendMessage({
             type: MESSAGE_TYPE.DEBUG,
