@@ -249,8 +249,9 @@ export function hasViolatingJavaScriptURI(htmlElement) {
   }
 }
 
-function isEventHandlerAttribute = attribute =>
-  attribute.indexOf('on') === 0;
+function isEventHandlerAttribute(attribute) {
+  return attribute.indexOf('on') === 0;
+}
 
 export function hasInvalidAttributes(htmlElement) {
   if (
