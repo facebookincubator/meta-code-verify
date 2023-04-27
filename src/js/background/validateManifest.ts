@@ -38,7 +38,7 @@ export async function validateManifest(
   host: string,
   version: string,
   workaround: string
-): Promise<{valid: boolean, reason?: string}> {
+): Promise<{ valid: boolean; reason?: string }> {
   // does rootHash match what was published?
   const cfResponse = await getCFHashWorkaroundFunction(host, version).catch(
     cfError => {
