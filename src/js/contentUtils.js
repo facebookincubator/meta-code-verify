@@ -219,7 +219,7 @@ const AttributeCheckPairs = [
   { nodeName: 'x', attributeName: 'xlink:href' },
 ];
 
-export function hasViolatingJavaScriptURI(htmlElement) {
+export function hasViolatingJavaScriptURI(htmlElement, checkChildren) {
   let checkURL = '';
   const lowerCaseNodeName = htmlElement.nodeName.toLowerCase();
   AttributeCheckPairs.forEach(checkPair => {
@@ -242,9 +242,9 @@ export function hasViolatingJavaScriptURI(htmlElement) {
     }
   }
 
-  if (typeof htmlElement.childNodes !== 'undefined') {
+  if (checkChildren && typeof htmlElement.childNodes !== 'undefined') {
     htmlElement.childNodes.forEach(element => {
-      hasViolatingJavaScriptURI(element);
+      hasViolatingJavaScriptURI(element, checkChildren);
     });
   }
 }
@@ -253,7 +253,7 @@ function isEventHandlerAttribute(attribute) {
   return attribute.indexOf('on') === 0;
 }
 
-export function hasInvalidAttributes(htmlElement) {
+export function hasInvalidAttributes(htmlElement, checkChildren) {
   if (
     typeof htmlElement.attributes === 'object' &&
     Object.keys(htmlElement.attributes).length >= 1
@@ -274,10 +274,10 @@ export function hasInvalidAttributes(htmlElement) {
     });
   }
   // check child nodes as well, since a malicious attacker could try to inject an invalid attribute via an image node in a svg tag using a use element
-  if (htmlElement.childNodes.length > 0) {
+  if (checkChildren && htmlElement.childNodes.length > 0) {
     htmlElement.childNodes.forEach(childNode => {
       if (childNode.nodeType === 1) {
-        hasInvalidAttributes(childNode);
+        hasInvalidAttributes(childNode, checkChildren);
       }
       // if the element is a math element, check all the attributes of the child node to ensure that there are on href or xlink:href attributes with javascript urls
       if (
@@ -309,9 +309,9 @@ export function hasInvalidAttributes(htmlElement) {
   }
 }
 
-function checkNodesForViolations(element) {
-  hasViolatingJavaScriptURI(element);
-  hasInvalidAttributes(element);
+function checkNodesForViolations(element, checkChildren = true) {
+  hasViolatingJavaScriptURI(element, checkChildren);
+  hasInvalidAttributes(element, checkChildren);
 }
 
 export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
@@ -451,11 +451,11 @@ const scanForCSPEvalReportViolations = () => {
 export const scanForScripts = () => {
   const allElements = document.getElementsByTagName('*');
 
-  Array.from(allElements).forEach(allElement => {
-    checkNodesForViolations(allElement);
+  Array.from(allElements).forEach(element => {
+    checkNodesForViolations(element);
     // next check for existing script elements and if they're violating
-    if (allElement.nodeName.toLowerCase() === 'script') {
-      storeFoundJS(allElement, foundScripts);
+    if (element.nodeName.toLowerCase() === 'script') {
+      storeFoundJS(element, foundScripts);
     }
   });
 
@@ -469,7 +469,7 @@ export const scanForScripts = () => {
           });
         } else if (
           mutation.type === 'attributes' &&
-          isEventHandlerAttribute(mutation.attributeName)
+          checkNodesForViolations(mutation.target, false)
         ) {
           updateCurrentState(STATES.INVALID);
           chrome.runtime.sendMessage({
