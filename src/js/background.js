@@ -5,21 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {
-  MESSAGE_TYPE,
-  ORIGIN_HOST,
-  ORIGIN_TIMEOUT,
-  ORIGIN_TYPE,
-} from './config';
+import {MESSAGE_TYPE, ORIGIN_HOST, ORIGIN_TIMEOUT, ORIGIN_TYPE} from './config';
 
 import {
   recordContentScriptStart,
   updateContentScriptState,
 } from './tab_state_tracker/tabStateTracker';
 
-import { setupCSPListener } from './background/setupCSPListener';
-import { validateMetaCompanyManifest } from './background/validateMetaCompanyManifest';
-import { validateManifest } from './background/validateManifest';
+import {setupCSPListener} from './background/setupCSPListener';
+import {validateMetaCompanyManifest} from './background/validateMetaCompanyManifest';
+import {validateManifest} from './background/validateManifest';
 
 const manifestCache = new Map();
 const debugCache = new Map();
@@ -59,7 +54,7 @@ export function handleMessages(message, sender, sendResponse) {
       validateMetaCompanyManifest(
         message.rootHash,
         message.otherHashes,
-        message.leaves
+        message.leaves,
       ).then(valid => {
         console.log('result is ', valid);
         if (valid) {
@@ -91,9 +86,9 @@ export function handleMessages(message, sender, sendResponse) {
               manifest.leaves.push(leaf);
             }
           });
-          sendResponse({ valid: true });
+          sendResponse({valid: true});
         } else {
-          sendResponse({ valid: false });
+          sendResponse({valid: false});
         }
       });
     } else {
@@ -106,7 +101,7 @@ export function handleMessages(message, sender, sendResponse) {
         slicedLeaves,
         ORIGIN_HOST[message.origin],
         message.version,
-        message.workaround
+        message.workaround,
       ).then(validationResult => {
         if (validationResult.valid) {
           // store manifest to subsequently validate JS
@@ -129,7 +124,7 @@ export function handleMessages(message, sender, sendResponse) {
             root: slicedHash,
             start: Date.now(),
           });
-          sendResponse({ valid: true });
+          sendResponse({valid: true});
         } else {
           sendResponse(validationResult);
         }
@@ -143,9 +138,9 @@ export function handleMessages(message, sender, sendResponse) {
     if (!origin) {
       addDebugLog(
         sender.tab.id,
-        'Error: RAW_JS had no matching origin ' + message.origin
+        'Error: RAW_JS had no matching origin ' + message.origin,
       );
-      sendResponse({ valid: false, reason: 'no matching origin' });
+      sendResponse({valid: false, reason: 'no matching origin'});
       return;
     }
     const manifestObj = origin.get(message.version);
@@ -156,9 +151,9 @@ export function handleMessages(message, sender, sendResponse) {
         'Error: JS with SRC had no matching manifest. origin: ' +
           message.origin +
           ' version: ' +
-          message.version
+          message.version,
       );
-      sendResponse({ valid: false, reason: 'no matching manifest' });
+      sendResponse({valid: false, reason: 'no matching manifest'});
       return;
     }
 
@@ -173,7 +168,7 @@ export function handleMessages(message, sender, sendResponse) {
         .join('');
 
       if (manifestObj.leaves.includes(jsHash)) {
-        sendResponse({ valid: true });
+        sendResponse({valid: true});
       } else {
         console.log('generate hash is ', jsHash);
         addDebugLog(
@@ -183,7 +178,7 @@ export function handleMessages(message, sender, sendResponse) {
             ', ' +
             message.version +
             ', unmatched JS is ' +
-            message.rawjs.substring(0, 500)
+            message.rawjs.substring(0, 500),
         );
         sendResponse({
           valid: false,
@@ -209,13 +204,13 @@ export function handleMessages(message, sender, sendResponse) {
   if (message.type == MESSAGE_TYPE.GET_DEBUG) {
     const debuglist = getDebugLog(message.tabId);
     console.log('debug list is ', message.tabId, debuglist);
-    sendResponse({ valid: true, debugList: debuglist });
+    sendResponse({valid: true, debugList: debuglist});
     return;
   }
 
   if (message.type === MESSAGE_TYPE.UPDATE_STATE) {
     updateContentScriptState(sender, message.state, message.origin);
-    sendResponse({ success: true });
+    sendResponse({success: true});
     return;
   }
 
@@ -239,13 +234,13 @@ chrome.webRequest.onResponseStarted.addListener(
       src.url.indexOf('chrome-extension://') === 0 &&
       src.url.indexOf('moz-extension://') === 0
     ) {
-      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, { greeting: 'nocacheHeaderFound' });
+      chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, {greeting: 'nocacheHeaderFound'});
       });
     }
   },
-  { urls: ['<all_urls>'] },
-  []
+  {urls: ['<all_urls>']},
+  [],
 );
 
 setupCSPListener(cspHeaders, cspReportHeaders);

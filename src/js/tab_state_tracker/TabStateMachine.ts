@@ -37,7 +37,7 @@ function getChromeV3Action() {
 export default class TabStateMachine extends StateMachine {
   private _tabId: number;
   private _origin: Origin;
-  private _frameStates: { [key: number]: FrameStateMachine };
+  private _frameStates: {[key: number]: FrameStateMachine};
 
   constructor(tabId: number, origin: Origin) {
     super();
@@ -53,7 +53,7 @@ export default class TabStateMachine extends StateMachine {
   updateStateForFrame(frameId: number, newState: State): void {
     if (!(frameId in this._frameStates)) {
       throw new Error(
-        `State machine for frame: ${frameId} does not exist for tab: ${this._tabId}`
+        `State machine for frame: ${frameId} does not exist for tab: ${this._tabId}`,
       );
     }
     this._frameStates[frameId].updateStateIfValid(newState);
@@ -64,7 +64,7 @@ export default class TabStateMachine extends StateMachine {
     if (
       newState === STATES.VALID &&
       !Object.values(this._frameStates).every(
-        fsm => fsm.getState() === STATES.VALID
+        fsm => fsm.getState() === STATES.VALID,
       )
     ) {
       return;

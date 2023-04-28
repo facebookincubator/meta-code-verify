@@ -36,7 +36,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     manifestTimeoutID = '';
     window.setTimeout(
       () => processFoundJS(currentOrigin, foundScripts.keys().next().value),
-      0
+      0,
     );
   }
   // check if it's the manifest node
@@ -59,8 +59,8 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
       rawManifest = JSON.parse(scriptNodeMaybe.textContent);
     } catch (manifestParseError) {
       setTimeout(
-        () => parseFailedJson({ node: scriptNodeMaybe, retry: 5000 }),
-        20
+        () => parseFailedJson({node: scriptNodeMaybe, retry: 5000}),
+        20,
       );
       return;
     }
@@ -124,7 +124,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
         } else {
           if (
             ['ENDPOINT_FAILURE', 'UNKNOWN_ENDPOINT_ISSUE'].includes(
-              response.reason
+              response.reason,
             )
           ) {
             updateCurrentState(STATES.TIMEOUT);
@@ -132,7 +132,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
           }
           updateCurrentState(STATES.INVALID);
         }
-      }
+      },
     );
   }
 
@@ -141,8 +141,8 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
       JSON.parse(scriptNodeMaybe.textContent);
     } catch (parseError) {
       setTimeout(
-        () => parseFailedJson({ node: scriptNodeMaybe, retry: 1500 }),
-        20
+        () => parseFailedJson({node: scriptNodeMaybe, retry: 1500}),
+        20,
       );
     }
     return;
@@ -189,7 +189,7 @@ function getAttributeValue(
   checkNode,
   htmlElement,
   attributeName,
-  currentAttributeValue
+  currentAttributeValue,
 ) {
   if (
     nodeName.toLowerCase() === checkNode &&
@@ -201,22 +201,22 @@ function getAttributeValue(
 }
 
 const AttributeCheckPairs = [
-  { nodeName: 'a', attributeName: 'href' },
-  { nodeName: 'iframe', attributeName: 'src' },
-  { nodeName: 'iframe', attributeName: 'srcdoc' },
-  { nodeName: 'form', attributeName: 'action' },
-  { nodeName: 'input', attributeName: 'formaction' },
-  { nodeName: 'button', attributeName: 'formaction' },
-  { nodeName: 'a', attributeName: 'xlink:href' },
-  { nodeName: 'ncc', attributeName: 'href' },
-  { nodeName: 'embed', attributeName: 'src' },
-  { nodeName: 'object', attributeName: 'data' },
-  { nodeName: 'animate', attributeName: 'xlink:href' },
-  { nodeName: 'script', attributeName: 'xlink:href' },
-  { nodeName: 'use', attributeName: 'href' },
-  { nodeName: 'use', attributeName: 'xlink:href' },
-  { nodeName: 'x', attributeName: 'href' },
-  { nodeName: 'x', attributeName: 'xlink:href' },
+  {nodeName: 'a', attributeName: 'href'},
+  {nodeName: 'iframe', attributeName: 'src'},
+  {nodeName: 'iframe', attributeName: 'srcdoc'},
+  {nodeName: 'form', attributeName: 'action'},
+  {nodeName: 'input', attributeName: 'formaction'},
+  {nodeName: 'button', attributeName: 'formaction'},
+  {nodeName: 'a', attributeName: 'xlink:href'},
+  {nodeName: 'ncc', attributeName: 'href'},
+  {nodeName: 'embed', attributeName: 'src'},
+  {nodeName: 'object', attributeName: 'data'},
+  {nodeName: 'animate', attributeName: 'xlink:href'},
+  {nodeName: 'script', attributeName: 'xlink:href'},
+  {nodeName: 'use', attributeName: 'href'},
+  {nodeName: 'use', attributeName: 'xlink:href'},
+  {nodeName: 'x', attributeName: 'href'},
+  {nodeName: 'x', attributeName: 'xlink:href'},
 ];
 
 export function hasViolatingJavaScriptURI(htmlElement, checkChildren) {
@@ -228,7 +228,7 @@ export function hasViolatingJavaScriptURI(htmlElement, checkChildren) {
       checkPair.nodeName,
       htmlElement,
       checkPair.attributeName,
-      checkURL
+      checkURL,
     );
   });
   if (checkURL !== '') {
@@ -338,7 +338,7 @@ export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
       Array.from(childNode.getElementsByTagName('script')).forEach(
         childScript => {
           storeFoundJS(childScript, scriptList);
-        }
+        },
       );
     });
   }
@@ -418,7 +418,7 @@ const scanForCSPEvalReportViolations = () => {
       return;
     }
 
-    fetch(e.sourceFile, { cache: 'only-if-cached', mode: 'same-origin' })
+    fetch(e.sourceFile, {cache: 'only-if-cached', mode: 'same-origin'})
       .then(response => {
         if (response.status === 504) {
           updateCurrentState(STATES.INVALID);
@@ -528,7 +528,7 @@ async function genSourceText(response) {
   while (
     sourceTextParts[sourceTextParts.length - 1] === '\n' ||
     sourceTextParts[sourceTextParts.length - 1].startsWith(
-      '//# sourceMappingURL='
+      '//# sourceMappingURL=',
     )
   ) {
     sourceTextParts.pop();
@@ -539,7 +539,7 @@ async function genSourceText(response) {
 async function processJSWithSrc(script, origin, version) {
   // fetch the script from page context, not the extension context.
   try {
-    const sourceResponse = await fetch(script.src, { method: 'GET' });
+    const sourceResponse = await fetch(script.src, {method: 'GET'});
     if (DOWNLOAD_JS_ENABLED) {
       const fileNameArr = script.src.split('/');
       const fileName = fileNameArr[fileNameArr.length - 1].split('?')[0];
@@ -547,7 +547,7 @@ async function processJSWithSrc(script, origin, version) {
         fileName,
         sourceResponse
           .clone()
-          .body.pipeThrough(new window.CompressionStream('gzip'))
+          .body.pipeThrough(new window.CompressionStream('gzip')),
       );
     }
     const sourceText = await genSourceText(sourceResponse);
@@ -568,12 +568,12 @@ async function processJSWithSrc(script, origin, version) {
             } else {
               reject(response.type);
             }
-          }
+          },
         );
       });
     });
     await Promise.all(packagePromises);
-    return { valid: true };
+    return {valid: true};
   } catch (scriptProcessingError) {
     return {
       valid: false,
@@ -656,7 +656,7 @@ export const processFoundJS = async (origin, version) => {
               ' ' +
               JSON.stringify(response).substring(0, 500),
           });
-        }
+        },
       );
     }
   }
@@ -681,8 +681,8 @@ async function downloadJSToZip() {
     let writer = delimStream.writable.getWriter();
     writer.write(encodedDelim);
     writer.close();
-    await delimStream.readable.pipeTo(writableStream, { preventClose: true });
-    await compressedStream.pipeTo(writableStream, { preventClose: true });
+    await delimStream.readable.pipeTo(writableStream, {preventClose: true});
+    await compressedStream.pipeTo(writableStream, {preventClose: true});
   }
 
   for (const inlineSrcMap of inlineScripts) {
@@ -694,12 +694,12 @@ async function downloadJSToZip() {
     let delimWriter = delimStream.writable.getWriter();
     delimWriter.write(encodedDelim);
     delimWriter.close();
-    await delimStream.readable.pipeTo(writableStream, { preventClose: true });
+    await delimStream.readable.pipeTo(writableStream, {preventClose: true});
     let inlineStream = new window.CompressionStream('gzip');
     let writer = inlineStream.writable.getWriter();
     writer.write(enc.encode(inlineSrc));
     writer.close();
-    await inlineStream.readable.pipeTo(writableStream, { preventClose: true });
+    await inlineStream.readable.pipeTo(writableStream, {preventClose: true});
   }
   writableStream.close();
 }

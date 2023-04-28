@@ -1,5 +1,7 @@
 {
     arrowParens: "avoid",
     singleQuote: true,
-    tabWidth: 2
+    trailingComma: "all",
+    bracketSpacing: false,
+    bracketSameLine: true
 }

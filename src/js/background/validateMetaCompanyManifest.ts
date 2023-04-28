@@ -12,7 +12,7 @@ export async function validateMetaCompanyManifest(
     longtail: string;
     main: string;
   },
-  leaves: Array<string>
+  leaves: Array<string>,
 ): Promise<boolean> {
   // merge all the hashes into one
   const megaHash = JSON.stringify(leaves);
@@ -20,7 +20,7 @@ export async function validateMetaCompanyManifest(
   const encoder = new TextEncoder();
   const encodedMegaHash = encoder.encode(megaHash);
   const jsHashArray = Array.from(
-    new Uint8Array(await crypto.subtle.digest('SHA-256', encodedMegaHash))
+    new Uint8Array(await crypto.subtle.digest('SHA-256', encodedMegaHash)),
   );
   const jsHash = jsHashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   // compare to main and long tail, it should match one
@@ -31,9 +31,9 @@ export async function validateMetaCompanyManifest(
       new Uint8Array(
         await crypto.subtle.digest(
           'SHA-256',
-          encoder.encode(otherHashes.longtail + otherHashes.main)
-        )
-      )
+          encoder.encode(otherHashes.longtail + otherHashes.main),
+        ),
+      ),
     );
     combinedHash = combinedHashArray
       .map(b => b.toString(16).padStart(2, '0'))

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { State, STATES } from '../config';
+import {State, STATES} from '../config';
 
 // Table of possible transitions from one state to another. The entries for
 // each transition can be:
@@ -13,7 +13,7 @@ import { State, STATES } from '../config';
 //   (b) another state to transition to should a transition to the 'from' state
 //       is attempted.
 const STATE_TRANSITIONS: Partial<{
-  [key in State]: Partial<{ [key in State]: boolean | State }>;
+  [key in State]: Partial<{[key in State]: boolean | State}>;
 }> = {
   [STATES.START]: {
     [STATES.START]: true,
