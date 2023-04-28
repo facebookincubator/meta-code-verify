@@ -45,7 +45,7 @@ export default function rollupPluginCleanOnce() {
       deletedDirs.add(dirToDelete);
       if (await genHasAccess(dirToDelete)) {
         console.log('Deleting:', dirToDelete);
-        await fs.rm(dirToDelete, { recursive: true });
+        await fs.rm(dirToDelete, {recursive: true});
       }
     },
   };

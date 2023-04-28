@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { exec } from 'child_process';
+import {exec} from 'child_process';
 
 function genExec(command) {
   return new Promise((resolve, reject) => {
@@ -15,7 +15,7 @@ function genExec(command) {
         error.stderr = stderr;
         reject(error);
       } else {
-        resolve({ stdout, stderr });
+        resolve({stdout, stderr});
       }
     });
   });
@@ -34,7 +34,7 @@ export default function rollupPrettierBuildStartPlugin(files) {
       }
       console.log('Running prettier for', Array.from(filesToFormat).join(' '));
       await genExec(
-        `yarn run prettier ${Array.from(filesToFormat).join(' ')} --write`
+        `yarn run prettier ${Array.from(filesToFormat).join(' ')} --write`,
       );
       filesToFormat.clear();
     },

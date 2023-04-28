@@ -22,13 +22,13 @@ export async function readDirRecursive(dirPath) {
       const stats = await fs.stat(path.resolve(dirPath, fileName));
       if (stats.isDirectory()) {
         files.push(
-          ...(await readDirRecursive(path.resolve(dirPath, fileName)))
+          ...(await readDirRecursive(path.resolve(dirPath, fileName))),
         );
       } else {
         files.push(path.resolve(dirPath, fileName));
         return Promise.resolve();
       }
-    })
+    }),
   );
   return files;
 }
