@@ -8,7 +8,7 @@
 import * as path from 'path';
 import * as process from 'process';
 
-import { readDirRecursive } from './utils';
+import {readDirRecursive} from './utils';
 
 export default function rollupPluginWatch(dirs) {
   return {
@@ -19,12 +19,12 @@ export default function rollupPluginWatch(dirs) {
       await Promise.all(
         dirs.map(async dir => {
           const watchFilePaths = await readDirRecursive(
-            path.resolve(rootDir, dir)
+            path.resolve(rootDir, dir),
           );
           for (const filePath of watchFilePaths) {
             this.addWatchFile(filePath);
           }
-        })
+        }),
       );
     },
   };

@@ -9,7 +9,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as process from 'process';
 
-import { readDirRecursive } from './utils';
+import {readDirRecursive} from './utils';
 
 const DEFAULT_OPTIONS = {
   keepDir: false,
@@ -27,7 +27,7 @@ const DEFAULT_OPTIONS = {
  * @returns Rollup.PluginImpl
  */
 export default function rollupPluginStaticFiles(dirs = [], options) {
-  const { keepDir } = { ...DEFAULT_OPTIONS, ...options };
+  const {keepDir} = {...DEFAULT_OPTIONS, ...options};
   if (!Array.isArray(dirs)) {
     dirs = [dirs];
   }
@@ -47,9 +47,9 @@ export default function rollupPluginStaticFiles(dirs = [], options) {
                 fileName: path.relative(keepDir ? rootDir : dirPath, filePath),
                 source: await fs.readFile(filePath),
               });
-            })
+            }),
           );
-        })
+        }),
       );
     },
   };
