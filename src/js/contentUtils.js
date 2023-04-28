@@ -268,6 +268,7 @@ export function hasInvalidAttributes(htmlElement) {
     });
   }
   // if the element is a math element, check all the attributes of the child node to ensure that there are on href or xlink:href attributes with javascript urls
+
   if (
     htmlElement.tagName.toLowerCase() === 'math' &&
     Object.keys(htmlElement.attributes).length >= 1
