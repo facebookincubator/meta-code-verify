@@ -13,7 +13,7 @@ const toHexString = (bytes: Uint8Array): string =>
 
 function getCFHashWorkaroundFunction(
   host: string,
-  version: string
+  version: string,
 ): Promise<Response> {
   return new Promise((resolve, reject) => {
     fetch(
@@ -21,7 +21,7 @@ function getCFHashWorkaroundFunction(
         encodeURIComponent(host) +
         '/' +
         encodeURIComponent(version),
-      { method: 'GET' }
+      {method: 'GET'},
     )
       .then(response => {
         resolve(response);
@@ -37,8 +37,8 @@ export async function validateManifest(
   leaves: Array<string>,
   host: string,
   version: string,
-  workaround: string
-): Promise<{ valid: boolean; reason?: string }> {
+  workaround: string,
+): Promise<{valid: boolean; reason?: string}> {
   // does rootHash match what was published?
   const cfResponse = await getCFHashWorkaroundFunction(host, version).catch(
     cfError => {
@@ -48,7 +48,7 @@ export async function validateManifest(
         reason: 'ENDPOINT_FAILURE',
         error: cfError,
       };
-    }
+    },
   );
   if (cfResponse == null || !('json' in cfResponse)) {
     return {
@@ -69,7 +69,7 @@ export async function validateManifest(
     const encoder = new TextEncoder();
     const backupHashEncoded = encoder.encode(workaround);
     const backupHashArray = Array.from(
-      new Uint8Array(await crypto.subtle.digest('SHA-256', backupHashEncoded))
+      new Uint8Array(await crypto.subtle.digest('SHA-256', backupHashEncoded)),
     );
     const backupHash = backupHashArray
       .map(b => b.toString(16).padStart(2, '0'))
@@ -77,7 +77,7 @@ export async function validateManifest(
     console.log(
       'secondary hashing of CF value fails too ',
       rootHash,
-      backupHash
+      backupHash,
     );
     if (backupHash !== cfRootHash) {
       return {
@@ -88,7 +88,7 @@ export async function validateManifest(
   }
 
   let oldhashes = leaves.map(
-    leaf => fromHexString(leaf.replace('0x', '')).buffer
+    leaf => fromHexString(leaf.replace('0x', '')).buffer,
   );
   let newhashes = [];
   let bonus: ArrayBufferLike = null;
@@ -98,12 +98,12 @@ export async function validateManifest(
       const validSecondValue = index + 1 < oldhashes.length;
       if (validSecondValue) {
         const hashValue = new Uint8Array(
-          oldhashes[index].byteLength + oldhashes[index + 1].byteLength
+          oldhashes[index].byteLength + oldhashes[index + 1].byteLength,
         );
         hashValue.set(new Uint8Array(oldhashes[index]), 0);
         hashValue.set(
           new Uint8Array(oldhashes[index + 1]),
-          oldhashes[index].byteLength
+          oldhashes[index].byteLength,
         );
         newhashes.push(await crypto.subtle.digest('SHA-256', hashValue.buffer));
       } else {
@@ -120,7 +120,7 @@ export async function validateManifest(
         return Array.from(new Uint8Array(hash))
           .map(b => b.toString(16).padStart(2, ''))
           .join('');
-      })
+      }),
     );
     newhashes = [];
     bonus = null;
@@ -128,7 +128,7 @@ export async function validateManifest(
       'in loop hashes.length is',
       oldhashes.length,
       rootHash,
-      oldhashes
+      oldhashes,
     );
   }
   const lastHash = toHexString(new Uint8Array(oldhashes[0]));

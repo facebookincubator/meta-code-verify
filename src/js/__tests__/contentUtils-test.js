@@ -7,8 +7,8 @@
 
 'use strict';
 
-import { jest } from '@jest/globals';
-import { MESSAGE_TYPE, ORIGIN_TYPE, STATES } from '../config';
+import {jest} from '@jest/globals';
+import {MESSAGE_TYPE, ORIGIN_TYPE, STATES} from '../config';
 import {
   hasInvalidAttributes,
   hasInvalidScripts,
@@ -40,7 +40,7 @@ describe('contentUtils', () => {
       const fakeLookupKey = 'somelonghashkey';
       const fakeScriptNode = {
         attributes: {
-          'data-binary-transparency-hash-key': { value: fakeLookupKey },
+          'data-binary-transparency-hash-key': {value: fakeLookupKey},
         },
         getAttribute: () => {},
         innerHTML: fakeInnerHtml,
@@ -89,9 +89,9 @@ describe('contentUtils', () => {
     it('should not update the icon if no violating attributes are found', () => {
       const fakeElement = {
         attributes: [
-          { localName: 'background' },
-          { localName: 'height' },
-          { localName: 'width' },
+          {localName: 'background'},
+          {localName: 'height'},
+          {localName: 'width'},
         ],
         hasAttribute: () => {
           return true;
@@ -104,9 +104,9 @@ describe('contentUtils', () => {
     it('should update the icon if violating attributes are found', () => {
       const fakeElement = {
         attributes: [
-          { localName: 'onclick' },
-          { localName: 'height' },
-          { localName: 'width' },
+          {localName: 'onclick'},
+          {localName: 'height'},
+          {localName: 'width'},
         ],
         hasAttributes: () => {
           return true;
@@ -121,9 +121,9 @@ describe('contentUtils', () => {
     it('should not check for non-HTMLElements', () => {
       const fakeElement = {
         attributes: [
-          { localName: 'onclick' },
-          { localName: 'height' },
-          { localName: 'width' },
+          {localName: 'onclick'},
+          {localName: 'height'},
+          {localName: 'width'},
         ],
         hasAttribute: () => {
           return true;
@@ -135,7 +135,7 @@ describe('contentUtils', () => {
     });
     it('should store any script elements we find', () => {
       const fakeElement = {
-        attributes: { 'data-binary-transparency-hash-key': { value: 'green' } },
+        attributes: {'data-binary-transparency-hash-key': {value: 'green'}},
         getAttribute: () => {},
         hasAttribute: () => {
           return false;
@@ -150,7 +150,7 @@ describe('contentUtils', () => {
       expect(scriptMap.get('version')[0].type).toBe(MESSAGE_TYPE.RAW_JS);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
       expect(window.chrome.runtime.sendMessage.mock.calls[0][0].type).toBe(
-        MESSAGE_TYPE.UPDATE_STATE
+        MESSAGE_TYPE.UPDATE_STATE,
       );
     });
     it('should check all child nodes for non script elements', () => {
@@ -158,9 +158,9 @@ describe('contentUtils', () => {
         childNodes: [
           {
             attributes: [
-              { localName: 'onclick' },
-              { localName: 'height' },
-              { localName: 'width' },
+              {localName: 'onclick'},
+              {localName: 'height'},
+              {localName: 'width'},
             ],
             hasAttribute: () => {
               return true;
@@ -170,9 +170,9 @@ describe('contentUtils', () => {
           },
           {
             attributes: [
-              { localName: 'onclick' },
-              { localName: 'height' },
-              { localName: 'width' },
+              {localName: 'onclick'},
+              {localName: 'height'},
+              {localName: 'width'},
             ],
             hasAttribute: () => {
               return true;
@@ -198,9 +198,9 @@ describe('contentUtils', () => {
         childNodes: [
           {
             attributes: [
-              { localName: 'onclick' },
-              { localName: 'height' },
-              { localName: 'width' },
+              {localName: 'onclick'},
+              {localName: 'height'},
+              {localName: 'width'},
             ],
             hasAttribute: () => {
               return true;
@@ -211,7 +211,7 @@ describe('contentUtils', () => {
           },
           {
             attributes: {
-              'data-binary-transparency-hash-key': { value: 'green' },
+              'data-binary-transparency-hash-key': {value: 'green'},
             },
             getAttribute: () => {},
             hasAttribute: () => {
@@ -235,7 +235,7 @@ describe('contentUtils', () => {
       expect(scriptMap.get('version')[0].type).toBe(MESSAGE_TYPE.RAW_JS);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
       expect(window.chrome.runtime.sendMessage.mock.calls[0][0].type).toBe(
-        MESSAGE_TYPE.UPDATE_STATE
+        MESSAGE_TYPE.UPDATE_STATE,
       );
     });
     it('should check for any grandchildren script elements', () => {
@@ -243,9 +243,9 @@ describe('contentUtils', () => {
         childNodes: [
           {
             attributes: [
-              { localName: 'onclick' },
-              { localName: 'height' },
-              { localName: 'width' },
+              {localName: 'onclick'},
+              {localName: 'height'},
+              {localName: 'width'},
             ],
             hasAttribute: () => {
               return true;
@@ -256,20 +256,20 @@ describe('contentUtils', () => {
           },
           {
             attributes: {
-              'data-binary-transparency-hash-key': { value: 'green' },
+              'data-binary-transparency-hash-key': {value: 'green'},
               getAttribute: () => {},
             },
             getElementsByTagName: () => {
               return [
                 {
                   attributes: {
-                    'data-binary-transparency-hash-key': { value: 'green1' },
+                    'data-binary-transparency-hash-key': {value: 'green1'},
                   },
                   getAttribute: () => {},
                 },
                 {
                   attributes: {
-                    'data-binary-transparency-hash-key': { value: 'green2' },
+                    'data-binary-transparency-hash-key': {value: 'green2'},
                   },
                   getAttribute: () => {},
                 },
@@ -320,8 +320,8 @@ describe('contentUtils', () => {
       scanForScripts();
       window.chrome.runtime.sendMessage.mockImplementation(
         (message, response) => {
-          response && response({ valid: true });
-        }
+          response && response({valid: true});
+        },
       );
       processFoundJS(ORIGIN_TYPE.WHATSAPP, '');
       await (() => new Promise(res => setTimeout(res, 10)))();
@@ -336,14 +336,14 @@ describe('contentUtils', () => {
       scanForScripts();
       window.chrome.runtime.sendMessage.mockImplementation(
         (message, response) => {
-          response && response({ valid: true });
-        }
+          response && response({valid: true});
+        },
       );
       processFoundJS(ORIGIN_TYPE.WHATSAPP, '');
       await (() => new Promise(res => setTimeout(res, 10)))();
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(15);
       expect(window.chrome.runtime.sendMessage.mock.calls[13][0].state).toEqual(
-        STATES.VALID
+        STATES.VALID,
       );
     });
     it('should send invalid icon update when invalid response received with src', async () => {
@@ -355,18 +355,18 @@ describe('contentUtils', () => {
       scanForScripts();
       window.chrome.runtime.sendMessage.mockImplementation(
         (message, response) => {
-          response && response({ valid: false });
-        }
+          response && response({valid: false});
+        },
       );
       processFoundJS(ORIGIN_TYPE.WHATSAPP, '');
       await (() => new Promise(res => setTimeout(res, 10)))();
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(23);
       expect(window.chrome.runtime.sendMessage.mock.calls[21][0].state).toEqual(
-        STATES.INVALID
+        STATES.INVALID,
       );
     });
     it.todo(
-      'should send invalid icon update when invalid inline response received'
+      'should send invalid icon update when invalid inline response received',
     );
   });
 });

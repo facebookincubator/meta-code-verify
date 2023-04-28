@@ -54,7 +54,7 @@ function attachTextToHtml(): void {
 function attachListeners(origin: string | null): void {
   if (!(origin in ORIGIN_TO_LEARN_MORE_PAGES)) {
     throw new Error(
-      `Learn more pages for origin type: ${origin} do not exist!`
+      `Learn more pages for origin type: ${origin} do not exist!`,
     );
   }
   const learnMoreUrls = ORIGIN_TO_LEARN_MORE_PAGES[origin];
@@ -70,14 +70,14 @@ function attachListeners(origin: string | null): void {
   const menuRowList = document.getElementsByClassName('menu_row');
 
   menuRowList[0].addEventListener('click', _evt => {
-    chrome.tabs.create({ url: learnMoreUrls.about });
+    chrome.tabs.create({url: learnMoreUrls.about});
   });
   if (menuRowList[0] instanceof HTMLElement) {
     menuRowList[0].style.cursor = 'pointer';
   }
 
   const downloadTextList = document.getElementsByClassName(
-    'status_message_highlight'
+    'status_message_highlight',
   );
   const downloadSrcButton = document.getElementById('i18nDownloadSourceButton');
 
@@ -88,11 +88,11 @@ function attachListeners(origin: string | null): void {
     }
 
     downloadTextList[0].addEventListener('click', () => {
-      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
         chrome.tabs.sendMessage(
           tabs[0].id,
-          { greeting: 'downloadSource' },
-          () => {}
+          {greeting: 'downloadSource'},
+          () => {},
         );
       });
     });
@@ -101,11 +101,11 @@ function attachListeners(origin: string | null): void {
     }
 
     downloadSrcButton.onclick = () => {
-      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
         chrome.tabs.sendMessage(
           tabs[0].id,
-          { greeting: 'downloadSource' },
-          () => {}
+          {greeting: 'downloadSource'},
+          () => {},
         );
       });
     };
@@ -113,7 +113,7 @@ function attachListeners(origin: string | null): void {
     downloadSrcButton.style.cursor = 'pointer';
 
     downloadTextList[0].addEventListener('click', () =>
-      updateDisplay('download')
+      updateDisplay('download'),
     );
     if (downloadTextList[0] instanceof HTMLElement) {
       downloadTextList[0].style.cursor = 'pointer';
@@ -122,7 +122,7 @@ function attachListeners(origin: string | null): void {
     menuRowList[1].remove();
     downloadTextList[0].remove();
     const downloadMessagePartTwo = document.getElementById(
-      'i18nValidationFailureStatusMessagePartTwo'
+      'i18nValidationFailureStatusMessagePartTwo',
     );
     if (downloadMessagePartTwo != null) {
       downloadMessagePartTwo.remove();
@@ -131,20 +131,20 @@ function attachListeners(origin: string | null): void {
   }
 
   const learnMoreList = document.getElementsByClassName(
-    'anomaly_learn_more_button'
+    'anomaly_learn_more_button',
   );
   learnMoreList[0].addEventListener('click', () => {
-    chrome.tabs.create({ url: learnMoreUrls.failure });
+    chrome.tabs.create({url: learnMoreUrls.failure});
   });
   if (learnMoreList[0] instanceof HTMLElement) {
     learnMoreList[0].style.cursor = 'pointer';
   }
 
   const riskLearnMoreList = document.getElementsByClassName(
-    'risk_learn_more_button'
+    'risk_learn_more_button',
   );
   riskLearnMoreList[0].addEventListener('click', () => {
-    chrome.tabs.create({ url: learnMoreUrls.risk });
+    chrome.tabs.create({url: learnMoreUrls.risk});
   });
   if (riskLearnMoreList[0] instanceof HTMLElement) {
     riskLearnMoreList[0].style.cursor = 'pointer';
@@ -161,10 +161,10 @@ function attachListeners(origin: string | null): void {
   });
 
   const timeoutLearnMoreList = document.getElementsByClassName(
-    'timeout_learn_more_button'
+    'timeout_learn_more_button',
   );
   timeoutLearnMoreList[0].addEventListener('click', () => {
-    chrome.tabs.create({ url: learnMoreUrls.timeout });
+    chrome.tabs.create({url: learnMoreUrls.timeout});
   });
   if (timeoutLearnMoreList[0] instanceof HTMLElement) {
     timeoutLearnMoreList[0].style.cursor = 'pointer';
@@ -181,7 +181,7 @@ function updateDisplay(state: string | null): void {
       } else {
         element.style.display = 'none';
       }
-    }
+    },
   );
 }
 

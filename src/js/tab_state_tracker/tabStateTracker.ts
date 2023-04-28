@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { Origin, State } from '../config';
+import {Origin, State} from '../config';
 import TabStateMachine from './TabStateMachine';
 
 const tabStateTracker = new Map<number, TabStateMachine>();
@@ -26,24 +26,24 @@ function getOrCreateTabStateMachine(tabId: number, origin: Origin) {
 
 export function recordContentScriptStart(
   sender: chrome.runtime.MessageSender,
-  origin: Origin
+  origin: Origin,
 ) {
   // This is a top-level frame initializing
   if (sender.frameId === 0) {
     tabStateTracker.delete(sender.tab.id);
   }
   getOrCreateTabStateMachine(sender.tab.id, origin).addFrameStateMachine(
-    sender.frameId
+    sender.frameId,
   );
 }
 
 export function updateContentScriptState(
   sender: chrome.runtime.MessageSender,
   newState: State,
-  origin: Origin
+  origin: Origin,
 ) {
   getOrCreateTabStateMachine(sender.tab.id, origin).updateStateForFrame(
     sender.frameId,
-    newState
+    newState,
   );
 }
