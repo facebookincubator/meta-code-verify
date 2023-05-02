@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {Origin, State} from '../config';
+import {Origin, State} from '../../config';
 import TabStateMachine from './TabStateMachine';
 
 const tabStateTracker = new Map<number, TabStateMachine>();

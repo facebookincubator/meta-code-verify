@@ -81,7 +81,7 @@ export const KNOWN_EXTENSION_HASHES = [
   '', // Edge - Dynamic: Tau adblock v1.4.1
 ];
 
-export const MESSAGE_TYPE = {
+export const MESSAGE_TYPE = Object.freeze({
   DEBUG: 'DEBUG',
   GET_DEBUG: 'GET_DEBUG',
   LOAD_MANIFEST: 'LOAD_MANIFEST',
@@ -90,7 +90,9 @@ export const MESSAGE_TYPE = {
   UPDATE_STATE: 'UPDATE_STATE',
   STATE_UPDATED: 'STATE_UPDATED',
   CONTENT_SCRIPT_START: 'CONTENT_SCRIPT_START',
-};
+});
+
+export type MessageType = keyof typeof MESSAGE_TYPE;
 
 export const ORIGIN_HOST = {
   FACEBOOK: 'facebook.com',

@@ -5,45 +5,50 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import type {MessageType, Origin} from './config';
 import {MESSAGE_TYPE, ORIGIN_HOST, ORIGIN_TIMEOUT, ORIGIN_TYPE} from './config';
 
 import {
   recordContentScriptStart,
   updateContentScriptState,
-} from './tab_state_tracker/tabStateTracker';
-
+} from './background/tab_state_tracker/tabStateTracker';
+import {
+  addDebugLog,
+  getDebugLog,
+  setupDebugLogListener,
+} from './background/debugUtils';
 import {setupCSPListener} from './background/setupCSPListener';
 import {validateMetaCompanyManifest} from './background/validateMetaCompanyManifest';
 import {validateManifest} from './background/validateManifest';
 
-const manifestCache = new Map();
-const debugCache = new Map();
-const cspHeaders = new Map();
-const cspReportHeaders = new Map();
+const manifestCache = new Map<Origin, Map<string, Manifest>>();
+const cspHeaders = new Map<number, string | undefined>();
+const cspReportHeaders = new Map<number, string | undefined>();
 
-// Emulate PageActions
-chrome.runtime.onInstalled.addListener(() => {
-  if (chrome.runtime.getManifest().manifest_version >= 3) {
-    chrome.action.disable();
-  }
-});
+type Manifest = {
+  root: string;
+  start: number;
+  leaves: Array<string>;
+};
+type MessagePayload = {
+  type: MessageType;
+  [key: string]: any;
+};
+type Response = {
+  valid?: boolean;
+  success?: boolean;
+  debugList?: Array<string>;
+  reason?: string;
+  hash?: string;
+  cspHeader?: string;
+  cspReportHeader?: string;
+};
 
-function addDebugLog(tabId, debugMessage) {
-  let tabDebugList = debugCache.get(tabId);
-  if (tabDebugList == null) {
-    tabDebugList = [];
-    debugCache.set(tabId, tabDebugList);
-  }
-
-  tabDebugList.push(debugMessage);
-}
-
-function getDebugLog(tabId) {
-  let tabDebugList = debugCache.get(tabId);
-  return tabDebugList == null ? [] : tabDebugList;
-}
-
-export function handleMessages(message, sender, sendResponse) {
+function handleMessages(
+  message: MessagePayload,
+  sender: chrome.runtime.MessageSender,
+  sendResponse: (_: Response) => void,
+): void | boolean {
   console.log('in handle messages ', message);
 
   if (message.type == MESSAGE_TYPE.LOAD_MANIFEST) {
@@ -65,7 +70,7 @@ export function handleMessages(message, sender, sendResponse) {
           }
           // roll through the existing manifests and remove expired ones
           if (ORIGIN_TIMEOUT[message.origin] > 0) {
-            for (let [key, manif] of origin.entries()) {
+            for (const [key, manif] of origin.entries()) {
               if (manif.start + ORIGIN_TIMEOUT[message.origin] < Date.now()) {
                 origin.delete(key);
               }
@@ -112,7 +117,7 @@ export function handleMessages(message, sender, sendResponse) {
           }
           // roll through the existing manifests and remove expired ones
           if (ORIGIN_TIMEOUT[message.origin] > 0) {
-            for (let [key, manif] of origin.entries()) {
+            for (const [key, manif] of origin.entries()) {
               if (manif.start + ORIGIN_TIMEOUT[message.origin] < Date.now()) {
                 origin.delete(key);
               }
@@ -131,9 +136,7 @@ export function handleMessages(message, sender, sendResponse) {
       });
     }
     return true;
-  }
-
-  if (message.type == MESSAGE_TYPE.RAW_JS) {
+  } else if (message.type == MESSAGE_TYPE.RAW_JS) {
     const origin = manifestCache.get(message.origin);
     if (!origin) {
       addDebugLog(
@@ -194,37 +197,36 @@ export function handleMessages(message, sender, sendResponse) {
       }
     });
     return true;
-  }
-
-  if (message.type == MESSAGE_TYPE.DEBUG) {
+  } else if (message.type == MESSAGE_TYPE.DEBUG) {
     addDebugLog(sender.tab.id, message.log);
-    return;
-  }
-
-  if (message.type == MESSAGE_TYPE.GET_DEBUG) {
+  } else if (message.type == MESSAGE_TYPE.GET_DEBUG) {
     const debuglist = getDebugLog(message.tabId);
     console.log('debug list is ', message.tabId, debuglist);
     sendResponse({valid: true, debugList: debuglist});
-    return;
-  }
-
-  if (message.type === MESSAGE_TYPE.UPDATE_STATE) {
+  } else if (message.type === MESSAGE_TYPE.UPDATE_STATE) {
     updateContentScriptState(sender, message.state, message.origin);
     sendResponse({success: true});
-    return;
-  }
-
-  if (message.type === MESSAGE_TYPE.CONTENT_SCRIPT_START) {
+  } else if (message.type === MESSAGE_TYPE.CONTENT_SCRIPT_START) {
     recordContentScriptStart(sender, message.origin);
     sendResponse({
       success: true,
       cspHeader: cspHeaders.get(sender.tab.id),
       cspReportHeader: cspReportHeaders.get(sender.tab.id),
     });
-    return;
   }
 }
+
 chrome.runtime.onMessage.addListener(handleMessages);
+
+setupCSPListener(cspHeaders, cspReportHeaders);
+setupDebugLogListener();
+
+// Emulate PageActions
+chrome.runtime.onInstalled.addListener(() => {
+  if (chrome.runtime.getManifest().manifest_version >= 3) {
+    chrome.action.disable();
+  }
+});
 
 chrome.webRequest.onResponseStarted.addListener(
   src => {
@@ -242,11 +244,3 @@ chrome.webRequest.onResponseStarted.addListener(
   {urls: ['<all_urls>']},
   [],
 );
-
-setupCSPListener(cspHeaders, cspReportHeaders);
-
-chrome.tabs.onRemoved.addListener(tabId => {
-  if (debugCache.has(tabId)) {
-    debugCache.delete(tabId);
-  }
-});

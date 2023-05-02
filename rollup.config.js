@@ -63,7 +63,7 @@ export default [
         plugins: [typescript(), prettierSrc(), eslint()],
     },
     {
-        input: 'src/js/background.js',
+        input: 'src/js/background.ts',
         output: [{
             file: 'dist/chrome/background.js',
             format: 'iife'
