@@ -12,13 +12,16 @@ import {
   recordContentScriptStart,
   updateContentScriptState,
 } from './tab_state_tracker/tabStateTracker';
-
+import {
+  addDebugLog,
+  getDebugLog,
+  setupDebugLogListener,
+} from './background/debugUtils';
 import {setupCSPListener} from './background/setupCSPListener';
 import {validateMetaCompanyManifest} from './background/validateMetaCompanyManifest';
 import {validateManifest} from './background/validateManifest';
 
 const manifestCache = new Map<Origin, Map<string, Manifest>>();
-const debugCache = new Map<number, Array<string>>();
 const cspHeaders = new Map<number, string | undefined>();
 const cspReportHeaders = new Map<number, string | undefined>();
 
@@ -40,28 +43,6 @@ type Response = {
   cspHeader?: string;
   cspReportHeader?: string;
 };
-
-// Emulate PageActions
-chrome.runtime.onInstalled.addListener(() => {
-  if (chrome.runtime.getManifest().manifest_version >= 3) {
-    chrome.action.disable();
-  }
-});
-
-function addDebugLog(tabId, debugMessage) {
-  let tabDebugList = debugCache.get(tabId);
-  if (tabDebugList == null) {
-    tabDebugList = [];
-    debugCache.set(tabId, tabDebugList);
-  }
-
-  tabDebugList.push(debugMessage);
-}
-
-function getDebugLog(tabId) {
-  const tabDebugList = debugCache.get(tabId);
-  return tabDebugList == null ? [] : tabDebugList;
-}
 
 export function handleMessages(
   message: MessagePayload,
@@ -237,6 +218,16 @@ export function handleMessages(
 
 chrome.runtime.onMessage.addListener(handleMessages);
 
+setupCSPListener(cspHeaders, cspReportHeaders);
+setupDebugLogListener();
+
+// Emulate PageActions
+chrome.runtime.onInstalled.addListener(() => {
+  if (chrome.runtime.getManifest().manifest_version >= 3) {
+    chrome.action.disable();
+  }
+});
+
 chrome.webRequest.onResponseStarted.addListener(
   src => {
     if (
@@ -253,11 +244,3 @@ chrome.webRequest.onResponseStarted.addListener(
   {urls: ['<all_urls>']},
   [],
 );
-
-setupCSPListener(cspHeaders, cspReportHeaders);
-
-chrome.tabs.onRemoved.addListener(tabId => {
-  if (debugCache.has(tabId)) {
-    debugCache.delete(tabId);
-  }
-});
