@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {State, STATES} from '../config';
+import {State, STATES} from '../../config';
 
 // Table of possible transitions from one state to another. The entries for
 // each transition can be:

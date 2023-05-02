@@ -12,7 +12,7 @@ import {
   STATES,
   STATES_TO_ICONS,
   ORIGIN_HOST,
-} from '../config';
+} from '../../config';
 
 import StateMachine from './StateMachine';
 import FrameStateMachine from './FrameStateMachine';

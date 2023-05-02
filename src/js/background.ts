@@ -11,7 +11,7 @@ import {MESSAGE_TYPE, ORIGIN_HOST, ORIGIN_TIMEOUT, ORIGIN_TYPE} from './config';
 import {
   recordContentScriptStart,
   updateContentScriptState,
-} from './tab_state_tracker/tabStateTracker';
+} from './background/tab_state_tracker/tabStateTracker';
 import {
   addDebugLog,
   getDebugLog,
