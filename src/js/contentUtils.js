@@ -13,21 +13,15 @@ import {
   STATES,
 } from './config';
 
+import {checkCSPHeaders} from './content/checkCSPHeaders';
+import {currentOrigin, updateCurrentState} from './content/updateCurrentState';
+
 const sourceScripts = new Map();
 const inlineScripts = [];
 const foundScripts = new Map();
 foundScripts.set('', []);
-let currentOrigin = '';
 let currentFilterType = '';
 let manifestTimeoutID = '';
-
-function updateCurrentState(state) {
-  chrome.runtime.sendMessage({
-    type: MESSAGE_TYPE.UPDATE_STATE,
-    state,
-    origin: currentOrigin,
-  });
-}
 
 export function storeFoundJS(scriptNodeMaybe, scriptList) {
   if (window != window.top) {
@@ -35,7 +29,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     clearTimeout(manifestTimeoutID);
     manifestTimeoutID = '';
     window.setTimeout(
-      () => processFoundJS(currentOrigin, foundScripts.keys().next().value),
+      () => processFoundJS(currentOrigin.val, foundScripts.keys().next().value),
       0,
     );
   }
@@ -71,7 +65,9 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     let roothash = rawManifest.root;
     let version = rawManifest.version;
 
-    if ([ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(currentOrigin)) {
+    if (
+      [ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(currentOrigin.val)
+    ) {
       leaves = rawManifest.manifest;
       otherHashes = rawManifest.manifest_hashes;
       otherType = scriptNodeMaybe.getAttribute('data-manifest-type');
@@ -99,7 +95,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
       {
         type: MESSAGE_TYPE.LOAD_MANIFEST,
         leaves: leaves,
-        origin: currentOrigin,
+        origin: currentOrigin.val,
         otherHashes: otherHashes,
         otherType: otherType,
         rootHash: roothash,
@@ -120,7 +116,10 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
             clearTimeout(manifestTimeoutID);
             manifestTimeoutID = '';
           }
-          window.setTimeout(() => processFoundJS(currentOrigin, version), 0);
+          window.setTimeout(
+            () => processFoundJS(currentOrigin.val, version),
+            0,
+          );
         } else {
           if (
             ['ENDPOINT_FAILURE', 'UNKNOWN_ENDPOINT_ISSUE'].includes(
@@ -345,108 +344,6 @@ export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
 
   return;
 }
-
-const parseCSPString = csp => {
-  const directiveStrings = csp.split(';');
-  return directiveStrings.reduce((map, directiveString) => {
-    const [directive, ...values] = directiveString.split(' ');
-    return map.set(directive, new Set(values));
-  }, new Map());
-};
-
-const checkCSPHeaders = (cspHeader, cspReportHeader) => {
-  // If CSP is enforcing on evals we don't need to do extra checks
-  if (cspHeader != null) {
-    const cspMap = parseCSPString(cspHeader);
-    if (cspMap.has('script-src')) {
-      if (!cspMap.get('script-src').has("'unsafe-eval'")) {
-        return;
-      }
-    }
-    if (!cspMap.has('script-src') && cspMap.has('default-src')) {
-      if (!cspMap.get('default-src').has("'unsafe-eval'")) {
-        return;
-      }
-    }
-  }
-
-  // If CSP is not reporting on evals we cannot catch them
-  if (cspReportHeader != null) {
-    const cspReportMap = parseCSPString(cspReportHeader);
-    if (cspReportMap.has('script-src')) {
-      if (cspReportMap.get('script-src').has("'unsafe-eval'")) {
-        updateCurrentState(STATES.INVALID);
-        chrome.runtime.sendMessage({
-          type: MESSAGE_TYPE.DEBUG,
-          log: 'Missing unsafe-eval from CSP report-only header',
-        });
-        return;
-      }
-    }
-    if (!cspReportMap.has('script-src') && cspReportMap.has('default-src')) {
-      if (cspReportMap.get('default-src').has("'unsafe-eval'")) {
-        updateCurrentState(STATES.INVALID);
-        chrome.runtime.sendMessage({
-          type: MESSAGE_TYPE.DEBUG,
-          log: 'Missing unsafe-eval from CSP report-only header',
-        });
-        return;
-      }
-    }
-  } else {
-    chrome.runtime.sendMessage({
-      type: MESSAGE_TYPE.DEBUG,
-      log: 'Missing CSP report-only header',
-    });
-    updateCurrentState(STATES.INVALID);
-    return;
-  }
-
-  // Check for evals
-  scanForCSPEvalReportViolations();
-};
-
-const scanForCSPEvalReportViolations = () => {
-  document.addEventListener('securitypolicyviolation', e => {
-    // Older Browser can't distinguish between 'eval' and 'wasm-eval' violations
-    // We need to check if there is an eval violation
-    if (e.blockedURI !== 'eval') {
-      return;
-    }
-
-    if (e.disposition === 'enforce') {
-      return;
-    }
-
-    fetch(e.sourceFile, {cache: 'only-if-cached', mode: 'same-origin'})
-      .then(response => {
-        if (response.status === 504) {
-          updateCurrentState(STATES.INVALID);
-        }
-
-        return response.text();
-      })
-      .then(code => {
-        const violatingLine = code.split(/\r?\n/)[e.lineNumber - 1];
-        if (
-          violatingLine.includes('WebAssembly') &&
-          !violatingLine.includes('eval(') &&
-          !violatingLine.includes('Function(') &&
-          !violatingLine.includes("setTimeout('") &&
-          !violatingLine.includes("setInterval('") &&
-          !violatingLine.includes('setTimeout("') &&
-          !violatingLine.includes('setInterval("')
-        ) {
-          return;
-        }
-        updateCurrentState(STATES.INVALID);
-        chrome.runtime.sendMessage({
-          type: MESSAGE_TYPE.DEBUG,
-          log: `Caught eval in ${e.sourceFile}`,
-        });
-      });
-  });
-};
 
 export const scanForScripts = () => {
   const allElements = document.getElementsByTagName('*');
@@ -748,7 +645,9 @@ export function startFor(origin, excludedPathnames = []) {
     })
     .then(resp => {
       if (
-        [ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(currentOrigin)
+        [ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(
+          currentOrigin.val,
+        )
       ) {
         checkCSPHeaders(resp.cspHeader, resp.cspReportHeader);
       }
@@ -773,7 +672,7 @@ export function startFor(origin, excludedPathnames = []) {
   }
   if (isUserLoggedIn) {
     updateCurrentState(STATES.PROCESSING);
-    currentOrigin = origin;
+    currentOrigin.val = origin;
     scanForScripts();
     // set the timeout once, in case there's an iframe and contentUtils sets another manifest timer
     if (manifestTimeoutID === '') {
