@@ -44,7 +44,7 @@ type Response = {
   cspReportHeader?: string;
 };
 
-export function handleMessages(
+function handleMessages(
   message: MessagePayload,
   sender: chrome.runtime.MessageSender,
   sendResponse: (_: Response) => void,
