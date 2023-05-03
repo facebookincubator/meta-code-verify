@@ -5,11 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import type {Plugin} from 'rollup';
+
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as process from 'process';
 
-async function genHasAccess(path) {
+async function genHasAccess(path: string): Promise<boolean> {
   try {
     await fs.access(path, fs.constants.R_OK | fs.constants.W_OK);
     return true;
@@ -18,14 +20,14 @@ async function genHasAccess(path) {
   }
 }
 
-const deletedDirs = new Set();
+const deletedDirs = new Set<string>();
 
 /**
  * A simple plugin that deletes output directories *once* (so we don't delete
  * them over and over again when running `watch`, and to not mess up subsquent
  * rollup entries that use the same directory and the same plugin).
  */
-export default function rollupPluginCleanOnce() {
+export default function rollupPluginCleanOnce(): Plugin {
   return {
     name: 'rollup-plugin-clean',
 

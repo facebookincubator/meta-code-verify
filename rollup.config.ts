@@ -5,21 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import cleanOnce from './build/rollup-plugin-clean-once.mjs';
+import type { Plugin, RollupOptions } from 'rollup';
+
+import cleanOnce from './build/rollup-plugin-clean-once.js';
 import eslintPlugin from '@rollup/plugin-eslint';
 import typescript from '@rollup/plugin-typescript';
-import prettierBuildStart from './build/rollup-plugin-prettier-build-start.mjs';
-import staticFiles from './build/rollup-plugin-static-files.mjs';
-import watch from './build/rollup-plugin-watch-additional.mjs';
+import prettierBuildStart from './build/rollup-plugin-prettier-build-start.js';
+import staticFiles from './build/rollup-plugin-static-files.js';
+import watch from './build/rollup-plugin-watch-additional.js';
 
-function eslint() {
+function eslint(): Plugin {
     return eslintPlugin({throwOnError: true});
 }
-function prettierSrc() {
+function prettierSrc(): Plugin {
     return prettierBuildStart('"src/**/*.(js|ts)"');
 }
 
-export default [
+const config: Array<RollupOptions> = [
     {
         input: 'src/js/detectWAMeta.ts',
         output: [{
@@ -101,3 +103,5 @@ export default [
         ],
     }
 ];
+
+export default config;

@@ -5,16 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import type {Plugin} from 'rollup';
+
 import * as path from 'path';
 import * as process from 'process';
 
 import {readDirRecursive} from './utils';
 
-export default function rollupPluginWatch(dirs) {
+export default function rollupPluginWatch(dirs: Array<string>): Plugin {
   return {
     name: 'rollup-plugin-watch-additional',
 
-    async buildStart(_options) {
+    async buildStart() {
       const rootDir = process.cwd();
       await Promise.all(
         dirs.map(async dir => {
