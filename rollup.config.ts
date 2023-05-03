@@ -7,12 +7,12 @@
 
 import type { Plugin, RollupOptions } from 'rollup';
 
-import cleanOnce from './build/rollup-plugin-clean-once.js';
+import cleanOnce from './build/rollup-plugin-clean-once';
 import eslintPlugin from '@rollup/plugin-eslint';
 import typescript from '@rollup/plugin-typescript';
-import prettierBuildStart from './build/rollup-plugin-prettier-build-start.js';
-import staticFiles from './build/rollup-plugin-static-files.js';
-import watch from './build/rollup-plugin-watch-additional.js';
+import prettierBuildStart from './build/rollup-plugin-prettier-build-start';
+import staticFiles from './build/rollup-plugin-static-files';
+import watch from './build/rollup-plugin-watch-additional';
 
 function eslint(): Plugin {
     return eslintPlugin({throwOnError: true});
