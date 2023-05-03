@@ -5,15 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import type {Plugin} from 'rollup';
+
 import {exec} from 'child_process';
 
-function genExec(command) {
+function genExec(command: string) {
   return new Promise((resolve, reject) => {
     exec(command, (error, stdout, stderr) => {
       if (error) {
-        error.stdout = stdout;
-        error.stderr = stderr;
-        reject(error);
+        reject({...error, stdout, stderr});
       } else {
         resolve({stdout, stderr});
       }
@@ -21,9 +21,9 @@ function genExec(command) {
   });
 }
 
-const filesToFormat = new Set();
+const filesToFormat = new Set<string>();
 
-export default function rollupPrettierBuildStartPlugin(files) {
+export default function rollupPrettierBuildStartPlugin(files: string): Plugin {
   filesToFormat.add(files);
   return {
     name: 'rollup-plugin-prettier-src-formatter',

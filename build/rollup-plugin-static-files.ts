@@ -8,6 +8,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as process from 'process';
+import type {Plugin} from 'rollup';
 
 import {readDirRecursive} from './utils';
 
@@ -18,26 +19,24 @@ const DEFAULT_OPTIONS = {
 /**
  * A simple plugin that copies files from a source directory to output.dir
  *
- * @param {Array<string>} dirs Directories to recursively copy files from
- * @param {Object} options Plugin options
  * @param {boolean} option.keepDir Include directory in output directory
  *    (e.g. if true, and your directory is `locales/`, output directory will
  *    have: `dist/locales/<contents of locales/>`, vs. just
  *    `dist/<contents of locales>`)
- * @returns Rollup.PluginImpl
  */
-export default function rollupPluginStaticFiles(dirs = [], options) {
+export default function rollupPluginStaticFiles(
+  dirs: Array<string> | string = [],
+  options?: {keepDir: boolean},
+): Plugin {
   const {keepDir} = {...DEFAULT_OPTIONS, ...options};
-  if (!Array.isArray(dirs)) {
-    dirs = [dirs];
-  }
+  const dirsArray = !Array.isArray(dirs) ? [dirs] : dirs;
   return {
     name: 'rollup-plugin-static-files',
 
     async generateBundle(_options, _bundle, _isWrite) {
       const rootDir = process.cwd();
       await Promise.all(
-        dirs.map(async dir => {
+        dirsArray.map(async dir => {
           const dirPath = path.resolve(rootDir, dir);
           const filePaths = await readDirRecursive(path.resolve(rootDir, dir));
           return await Promise.all(

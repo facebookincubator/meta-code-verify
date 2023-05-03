@@ -12,10 +12,10 @@
     "node": "^18.0.0"
   },
   "scripts": {
-    "build": "yarn run rollup -c",
+    "build": "yarn run rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript",
     "watch": "yarn build -w",
     "lint": "yarn beautify && yarn run eslint src/js/**",
-    "beautify": "yarn run prettier --write \"src/**/*.js\" \"build/**/*.mjs\"",
+    "beautify": "yarn run prettier --write \"src/**/*.(ts|js)\" \"build/**/*.ts\"",
     "test": "yarn lint && node --experimental-vm-modules --no-warnings node_modules/jest/bin/jest.js"
   },
   "devDependencies": {
