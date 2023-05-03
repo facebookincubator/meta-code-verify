@@ -231,7 +231,6 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.webRequest.onResponseStarted.addListener(
   src => {
     if (
-      src.type === 'script' &&
       !src.fromCache &&
       src.url.indexOf('chrome-extension://') === 0 &&
       src.url.indexOf('moz-extension://') === 0
@@ -241,6 +240,6 @@ chrome.webRequest.onResponseStarted.addListener(
       });
     }
   },
-  {urls: ['<all_urls>']},
+  {urls: ['<all_urls>'], types: ['script']},
   [],
 );

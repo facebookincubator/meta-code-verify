@@ -52,6 +52,7 @@
     ],
     "host_permissions": [
         "https://*.privacy-auditability.cloudflare.com/",
+        "https://static.xx.fbcdn.net/",
         "*://*.messenger.com/*",
         "*://*.facebook.com/*",
         "*://*.whatsapp.com/*"
