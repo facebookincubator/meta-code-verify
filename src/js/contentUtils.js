@@ -14,6 +14,7 @@ import {
 } from './config';
 
 import {checkCSPHeaders} from './content/checkCSPHeaders';
+import {downloadJSArchive} from './content/downloadJSArchive';
 import {currentOrigin, updateCurrentState} from './content/updateCurrentState';
 
 const sourceScripts = new Map();
@@ -560,55 +561,6 @@ export const processFoundJS = async (origin, version) => {
   window.setTimeout(() => processFoundJS(origin, version), 3000);
 };
 
-async function downloadJSToZip() {
-  const fileHandle = await window.showSaveFilePicker({
-    suggestedName: 'meta_source_files.gz',
-  });
-
-  const writableStream = await fileHandle.createWritable();
-  // delimiter between files
-  const delimPrefix = '\n********** new file: ';
-  const delimSuffix = ' **********\n';
-  const enc = new TextEncoder();
-
-  for (const [fileName, compressedStream] of sourceScripts.entries()) {
-    let delim = delimPrefix + fileName + delimSuffix;
-    let encodedDelim = enc.encode(delim);
-    let delimStream = new window.CompressionStream('gzip');
-    let writer = delimStream.writable.getWriter();
-    writer.write(encodedDelim);
-    writer.close();
-    await delimStream.readable.pipeTo(writableStream, {preventClose: true});
-    await compressedStream.pipeTo(writableStream, {preventClose: true});
-  }
-
-  for (const inlineSrcMap of inlineScripts) {
-    let inlineHash = inlineSrcMap.keys().next().value;
-    let inlineSrc = inlineSrcMap.values().next().value;
-    let delim = delimPrefix + 'Inline Script ' + inlineHash + delimSuffix;
-    let encodedDelim = enc.encode(delim);
-    let delimStream = new window.CompressionStream('gzip');
-    let delimWriter = delimStream.writable.getWriter();
-    delimWriter.write(encodedDelim);
-    delimWriter.close();
-    await delimStream.readable.pipeTo(writableStream, {preventClose: true});
-    let inlineStream = new window.CompressionStream('gzip');
-    let writer = inlineStream.writable.getWriter();
-    writer.write(enc.encode(inlineSrc));
-    writer.close();
-    await inlineStream.readable.pipeTo(writableStream, {preventClose: true});
-  }
-  writableStream.close();
-}
-
-chrome.runtime.onMessage.addListener(function (request) {
-  if (request.greeting === 'downloadSource' && DOWNLOAD_JS_ENABLED) {
-    downloadJSToZip();
-  } else if (request.greeting === 'nocacheHeaderFound') {
-    updateCurrentState(STATES.INVALID);
-  }
-});
-
 function parseFailedJson(queuedJsonToParse) {
   try {
     JSON.parse(queuedJsonToParse.node.textContent);
@@ -683,3 +635,11 @@ export function startFor(origin, excludedPathnames = []) {
     }
   }
 }
+
+chrome.runtime.onMessage.addListener(function (request) {
+  if (request.greeting === 'downloadSource' && DOWNLOAD_JS_ENABLED) {
+    downloadJSArchive(sourceScripts, inlineScripts);
+  } else if (request.greeting === 'nocacheHeaderFound') {
+    updateCurrentState(STATES.INVALID);
+  }
+});
