@@ -15,6 +15,7 @@ import {
 
 import {checkCSPHeaders} from './content/checkCSPHeaders';
 import {downloadJSArchive} from './content/downloadJSArchive';
+import alertBackgroundOfImminentFetch from './content/alertBackgroundOfImminentFetch';
 import {currentOrigin, updateCurrentState} from './content/updateCurrentState';
 
 const sourceScripts = new Map();
@@ -437,7 +438,10 @@ async function genSourceText(response) {
 async function processJSWithSrc(script, origin, version) {
   // fetch the script from page context, not the extension context.
   try {
-    const sourceResponse = await fetch(script.src, {method: 'GET'});
+    await alertBackgroundOfImminentFetch(script.src);
+    const sourceResponse = await fetch(script.src, {
+      method: 'GET',
+    });
     if (DOWNLOAD_JS_ENABLED) {
       const fileNameArr = script.src.split('/');
       const fileName = fileNameArr[fileNameArr.length - 1].split('?')[0];

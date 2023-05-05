@@ -7,6 +7,7 @@
 
 import {MESSAGE_TYPE, STATES} from '../config';
 import {updateCurrentState} from './updateCurrentState';
+import alertBackgroundOfImminentFetch from './alertBackgroundOfImminentFetch';
 
 function parseCSPString(csp: string): Map<string, Set<string>> {
   const directiveStrings = csp.split(';');
@@ -28,33 +29,29 @@ function scanForCSPEvalReportViolations(): void {
       return;
     }
 
-    fetch(e.sourceFile, {cache: 'only-if-cached', mode: 'same-origin'})
-      .then(response => {
-        if (response.status === 504) {
+    alertBackgroundOfImminentFetch(e.sourceFile).then(() => {
+      fetch(e.sourceFile)
+        .then(response => response.text())
+        .then(code => {
+          const violatingLine = code.split(/\r?\n/)[e.lineNumber - 1];
+          if (
+            violatingLine.includes('WebAssembly') &&
+            !violatingLine.includes('eval(') &&
+            !violatingLine.includes('Function(') &&
+            !violatingLine.includes("setTimeout('") &&
+            !violatingLine.includes("setInterval('") &&
+            !violatingLine.includes('setTimeout("') &&
+            !violatingLine.includes('setInterval("')
+          ) {
+            return;
+          }
           updateCurrentState(STATES.INVALID);
-        }
-
-        return response.text();
-      })
-      .then(code => {
-        const violatingLine = code.split(/\r?\n/)[e.lineNumber - 1];
-        if (
-          violatingLine.includes('WebAssembly') &&
-          !violatingLine.includes('eval(') &&
-          !violatingLine.includes('Function(') &&
-          !violatingLine.includes("setTimeout('") &&
-          !violatingLine.includes("setInterval('") &&
-          !violatingLine.includes('setTimeout("') &&
-          !violatingLine.includes('setInterval("')
-        ) {
-          return;
-        }
-        updateCurrentState(STATES.INVALID);
-        chrome.runtime.sendMessage({
-          type: MESSAGE_TYPE.DEBUG,
-          log: `Caught eval in ${e.sourceFile}`,
+          chrome.runtime.sendMessage({
+            type: MESSAGE_TYPE.DEBUG,
+            log: `Caught eval in ${e.sourceFile}`,
+          });
         });
-      });
+    });
   });
 }
 
