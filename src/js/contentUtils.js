@@ -313,7 +313,7 @@ export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
     storeFoundJS(scriptNodeMaybe, scriptList);
   } else if (scriptNodeMaybe.childNodes.length > 0) {
     scriptNodeMaybe.childNodes.forEach(childNode => {
-      hasInvalidScripts(childNode);
+      hasInvalidScripts(childNode, scriptList);
     });
   }
 }
