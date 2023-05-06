@@ -304,33 +304,18 @@ function checkNodeForViolations(element) {
 export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
   // if not an HTMLElement ignore it!
   if (scriptNodeMaybe.nodeType !== 1) {
-    return false;
+    return;
   }
+
   checkNodeForViolations(scriptNodeMaybe);
 
   if (scriptNodeMaybe.nodeName.toLowerCase() === 'script') {
-    return storeFoundJS(scriptNodeMaybe, scriptList);
+    storeFoundJS(scriptNodeMaybe, scriptList);
   } else if (scriptNodeMaybe.childNodes.length > 0) {
     scriptNodeMaybe.childNodes.forEach(childNode => {
-      // if not an HTMLElement ignore it!
-      if (childNode.nodeType !== 1) {
-        return;
-      }
-      checkNodeForViolations(childNode);
-      if (childNode.nodeName.toLowerCase() === 'script') {
-        storeFoundJS(childNode, scriptList);
-        return;
-      }
-
-      Array.from(childNode.getElementsByTagName('script')).forEach(
-        childScript => {
-          storeFoundJS(childScript, scriptList);
-        },
-      );
+      hasInvalidScripts(childNode);
     });
   }
-
-  return;
 }
 
 export const scanForScripts = () => {
