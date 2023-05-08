@@ -11,6 +11,7 @@ export default function setupNoCacheListeners(
   chrome.webRequest.onResponseStarted.addListener(
     response => {
       if (
+        response.tabId !== -1 &&
         cachedScriptsUrls.get(response.tabId).has(response.url) &&
         !response.fromCache
       ) {
