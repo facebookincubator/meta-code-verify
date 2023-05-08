@@ -12,8 +12,8 @@ export default function setupNoCacheListeners(
     response => {
       if (
         response.tabId !== -1 &&
-        cachedScriptsUrls.get(response.tabId).has(response.url) &&
-        !response.fromCache
+        !response.fromCache &&
+        cachedScriptsUrls.get(response.tabId).has(response.url)
       ) {
         console.log(`Detected uncached script ${response.url}`);
         chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
