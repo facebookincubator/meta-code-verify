@@ -220,7 +220,7 @@ const AttributeCheckPairs = [
   {nodeName: 'x', attributeName: 'xlink:href'},
 ];
 
-export function hasViolatingJavaScriptURI(htmlElement, checkChildren) {
+export function hasViolatingJavaScriptURI(htmlElement) {
   let checkURL = '';
   const lowerCaseNodeName = htmlElement.nodeName.toLowerCase();
   AttributeCheckPairs.forEach(checkPair => {
@@ -242,19 +242,13 @@ export function hasViolatingJavaScriptURI(htmlElement, checkChildren) {
       updateCurrentState(STATES.INVALID);
     }
   }
-
-  if (checkChildren && typeof htmlElement.childNodes !== 'undefined') {
-    htmlElement.childNodes.forEach(element => {
-      hasViolatingJavaScriptURI(element, checkChildren);
-    });
-  }
 }
 
 function isEventHandlerAttribute(attribute) {
   return attribute.indexOf('on') === 0;
 }
 
-export function hasInvalidAttributes(htmlElement, checkChildren) {
+export function hasInvalidAttributes(htmlElement) {
   if (
     typeof htmlElement.attributes === 'object' &&
     Object.keys(htmlElement.attributes).length >= 1
@@ -274,84 +268,62 @@ export function hasInvalidAttributes(htmlElement, checkChildren) {
       }
     });
   }
-  // check child nodes as well, since a malicious attacker could try to inject an invalid attribute via an image node in a svg tag using a use element
-  if (checkChildren && htmlElement.childNodes.length > 0) {
-    htmlElement.childNodes.forEach(childNode => {
-      if (childNode.nodeType === 1) {
-        hasInvalidAttributes(childNode, checkChildren);
-      }
-      // if the element is a math element, check all the attributes of the child node to ensure that there are on href or xlink:href attributes with javascript urls
+  // if the element is a math element, check all the attributes of the child node to ensure that there are on href or xlink:href attributes with javascript urls
+
+  if (
+    htmlElement.tagName.toLowerCase() === 'math' &&
+    Object.keys(htmlElement.attributes).length >= 1
+  ) {
+    Array.from(htmlElement.attributes).forEach(elementAttribute => {
       if (
-        htmlElement.tagName.toLowerCase() === 'math' &&
-        Object.keys(childNode.attributes).length >= 1
+        (elementAttribute.localName === 'href' ||
+          elementAttribute.localName === 'xlink:href') &&
+        htmlElement
+          .getAttribute(elementAttribute.localName)
+          .toLowerCase()
+          .startsWith('javascript')
       ) {
-        Array.from(childNode.attributes).forEach(elementAttribute => {
-          if (
-            (elementAttribute.localName === 'href' ||
-              elementAttribute.localName === 'xlink:href') &&
-            childNode
-              .getAttribute(elementAttribute.localName)
-              .toLowerCase()
-              .startsWith('javascript')
-          ) {
-            chrome.runtime.sendMessage({
-              type: MESSAGE_TYPE.DEBUG,
-              log:
-                'violating attribute ' +
-                elementAttribute.localName +
-                ' from element ' +
-                htmlElement.outerHTML,
-            });
-            updateCurrentState(STATES.INVALID);
-          }
+        chrome.runtime.sendMessage({
+          type: MESSAGE_TYPE.DEBUG,
+          log:
+            'violating attribute ' +
+            elementAttribute.localName +
+            ' from element ' +
+            htmlElement.outerHTML,
         });
+        updateCurrentState(STATES.INVALID);
       }
     });
   }
 }
 
-function checkNodesForViolations(element, checkChildren = true) {
-  hasViolatingJavaScriptURI(element, checkChildren);
-  hasInvalidAttributes(element, checkChildren);
+function checkNodeForViolations(element) {
+  hasViolatingJavaScriptURI(element);
+  hasInvalidAttributes(element);
 }
 
 export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
   // if not an HTMLElement ignore it!
   if (scriptNodeMaybe.nodeType !== 1) {
-    return false;
+    return;
   }
-  checkNodesForViolations(scriptNodeMaybe);
+
+  checkNodeForViolations(scriptNodeMaybe);
 
   if (scriptNodeMaybe.nodeName.toLowerCase() === 'script') {
-    return storeFoundJS(scriptNodeMaybe, scriptList);
+    storeFoundJS(scriptNodeMaybe, scriptList);
   } else if (scriptNodeMaybe.childNodes.length > 0) {
     scriptNodeMaybe.childNodes.forEach(childNode => {
-      // if not an HTMLElement ignore it!
-      if (childNode.nodeType !== 1) {
-        return;
-      }
-      checkNodesForViolations(childNode);
-      if (childNode.nodeName.toLowerCase() === 'script') {
-        storeFoundJS(childNode, scriptList);
-        return;
-      }
-
-      Array.from(childNode.getElementsByTagName('script')).forEach(
-        childScript => {
-          storeFoundJS(childScript, scriptList);
-        },
-      );
+      hasInvalidScripts(childNode, scriptList);
     });
   }
-
-  return;
 }
 
 export const scanForScripts = () => {
   const allElements = document.getElementsByTagName('*');
 
   Array.from(allElements).forEach(element => {
-    checkNodesForViolations(element);
+    checkNodeForViolations(element);
     // next check for existing script elements and if they're violating
     if (element.nodeName.toLowerCase() === 'script') {
       storeFoundJS(element, foundScripts);
@@ -368,7 +340,7 @@ export const scanForScripts = () => {
           });
         } else if (
           mutation.type === 'attributes' &&
-          checkNodesForViolations(mutation.target, false)
+          checkNodeForViolations(mutation.target, false)
         ) {
           updateCurrentState(STATES.INVALID);
           chrome.runtime.sendMessage({

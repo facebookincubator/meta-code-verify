@@ -72,6 +72,7 @@ describe('contentUtils', () => {
       // no hasAttribute function
       let fakeElement = {
         childNodes: [],
+        tagName: 'tagName',
       };
       hasInvalidAttributes(fakeElement);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
@@ -82,6 +83,7 @@ describe('contentUtils', () => {
           return false;
         },
         childNodes: [],
+        tagName: 'tagName',
       };
       hasInvalidAttributes(fakeElement);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
@@ -97,6 +99,7 @@ describe('contentUtils', () => {
           return true;
         },
         childNodes: [],
+        tagName: 'div',
       };
       hasInvalidAttributes(fakeElement);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
@@ -112,6 +115,7 @@ describe('contentUtils', () => {
           return true;
         },
         childNodes: [],
+        tagName: 'div',
       };
       hasInvalidAttributes(fakeElement);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(2);
@@ -129,6 +133,7 @@ describe('contentUtils', () => {
           return true;
         },
         nodeType: 2,
+        tagName: 'tagName',
       };
       hasInvalidScripts(fakeElement, []);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
@@ -143,6 +148,7 @@ describe('contentUtils', () => {
         childNodes: [],
         nodeName: 'SCRIPT',
         nodeType: 1,
+        tagName: 'div',
       };
       const scriptMap = new Map([['version', []]]);
       hasInvalidScripts(fakeElement, scriptMap);
@@ -167,6 +173,7 @@ describe('contentUtils', () => {
             },
             nodeType: 2,
             nodeName: 'nodename',
+            tagName: 'tagName',
           },
           {
             attributes: [
@@ -179,6 +186,7 @@ describe('contentUtils', () => {
             },
             nodeType: 3,
             nodeName: 'nodename',
+            tagName: 'tagName',
           },
         ],
         hasAttribute: () => {
@@ -208,6 +216,7 @@ describe('contentUtils', () => {
             nodeType: 2,
             nodeName: 'nodename',
             childNodes: [],
+            tagName: 'tagName',
           },
           {
             attributes: {
@@ -220,6 +229,7 @@ describe('contentUtils', () => {
             nodeName: 'SCRIPT',
             nodeType: 1,
             childNodes: [],
+            tagName: 'tagName',
           },
         ],
         hasAttribute: () => {
@@ -253,34 +263,45 @@ describe('contentUtils', () => {
             nodeType: 2,
             nodeName: 'nodename',
             childNodes: [],
+            tagName: 'tagName',
           },
           {
             attributes: {
               'data-binary-transparency-hash-key': {value: 'green'},
               getAttribute: () => {},
             },
-            getElementsByTagName: () => {
-              return [
-                {
-                  attributes: {
-                    'data-binary-transparency-hash-key': {value: 'green1'},
-                  },
-                  getAttribute: () => {},
+            childNodes: [
+              {
+                attributes: {
+                  'data-binary-transparency-hash-key': {value: 'green1'},
                 },
-                {
-                  attributes: {
-                    'data-binary-transparency-hash-key': {value: 'green2'},
-                  },
-                  getAttribute: () => {},
+                nodeName: 'script',
+                nodeType: 1,
+                getAttribute: () => {},
+                hasAttribute: () => {
+                  return false;
                 },
-              ];
-            },
+                tagName: 'tagName',
+              },
+              {
+                attributes: {
+                  'data-binary-transparency-hash-key': {value: 'green2'},
+                },
+                getAttribute: () => {},
+                hasAttribute: () => {
+                  return false;
+                },
+                nodeName: 'script',
+                nodeType: 1,
+                tagName: 'tagName',
+              },
+            ],
             hasAttribute: () => {
               return false;
             },
             nodeType: 1,
             nodeName: 'nodename',
-            childNodes: [],
+            tagName: 'tagName',
           },
         ],
         hasAttribute: () => {
