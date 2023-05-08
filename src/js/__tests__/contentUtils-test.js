@@ -270,28 +270,37 @@ describe('contentUtils', () => {
               'data-binary-transparency-hash-key': {value: 'green'},
               getAttribute: () => {},
             },
-            getElementsByTagName: () => {
-              return [
-                {
-                  attributes: {
-                    'data-binary-transparency-hash-key': {value: 'green1'},
-                  },
-                  getAttribute: () => {},
+            childNodes: [
+              {
+                attributes: {
+                  'data-binary-transparency-hash-key': {value: 'green1'},
                 },
-                {
-                  attributes: {
-                    'data-binary-transparency-hash-key': {value: 'green2'},
-                  },
-                  getAttribute: () => {},
+                nodeName: 'script',
+                nodeType: 1,
+                getAttribute: () => {},
+                hasAttribute: () => {
+                  return false;
                 },
-              ];
-            },
+                tagName: 'tagName',
+              },
+              {
+                attributes: {
+                  'data-binary-transparency-hash-key': {value: 'green2'},
+                },
+                getAttribute: () => {},
+                hasAttribute: () => {
+                  return false;
+                },
+                nodeName: 'script',
+                nodeType: 1,
+                tagName: 'tagName',
+              },
+            ],
             hasAttribute: () => {
               return false;
             },
             nodeType: 1,
             nodeName: 'nodename',
-            childNodes: [],
             tagName: 'tagName',
           },
         ],
