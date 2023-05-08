@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-export function setupCSPListener(
+export default function setupCSPListener(
   cspHeaders: Map<number, string | undefined>,
   cspReportHeaders: Map<number, string | undefined>,
 ): void {

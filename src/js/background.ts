@@ -17,13 +17,18 @@ import {
   getDebugLog,
   setupDebugLogListener,
 } from './background/debugUtils';
-import {setupCSPListener} from './background/setupCSPListener';
+import setupCSPListener from './background/setupCSPListener';
+import setupNoCacheListeners from './background/setupNoCacheListeners';
 import {validateMetaCompanyManifest} from './background/validateMetaCompanyManifest';
 import {validateManifest} from './background/validateManifest';
 
 const manifestCache = new Map<Origin, Map<string, Manifest>>();
 const cspHeaders = new Map<number, string | undefined>();
 const cspReportHeaders = new Map<number, string | undefined>();
+
+// Keeps track of scripts `fetch`-ed by the extension to ensure they are all
+// resolved from browser cache
+const cachedScriptsUrls = new Map<number, Set<string>>();
 
 type Manifest = {
   root: string;
@@ -213,12 +218,20 @@ function handleMessages(
       cspHeader: cspHeaders.get(sender.tab.id),
       cspReportHeader: cspReportHeaders.get(sender.tab.id),
     });
+  } else if (message.type === MESSAGE_TYPE.UPDATED_CACHED_SCRIPT_URLS) {
+    if (!cachedScriptsUrls.has(sender.tab.id)) {
+      cachedScriptsUrls.set(sender.tab.id, new Set());
+    }
+    cachedScriptsUrls.get(sender.tab.id).add(message.url);
+    sendResponse({success: true});
+    return true;
   }
 }
 
 chrome.runtime.onMessage.addListener(handleMessages);
 
 setupCSPListener(cspHeaders, cspReportHeaders);
+setupNoCacheListeners(cachedScriptsUrls);
 setupDebugLogListener();
 
 // Emulate PageActions
@@ -227,19 +240,3 @@ chrome.runtime.onInstalled.addListener(() => {
     chrome.action.disable();
   }
 });
-
-chrome.webRequest.onResponseStarted.addListener(
-  src => {
-    if (
-      !src.fromCache &&
-      src.url.indexOf('chrome-extension://') === 0 &&
-      src.url.indexOf('moz-extension://') === 0
-    ) {
-      chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, {greeting: 'nocacheHeaderFound'});
-      });
-    }
-  },
-  {urls: ['<all_urls>'], types: ['script']},
-  [],
-);
