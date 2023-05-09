@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-export async function downloadJSArchive(
+export default async function downloadJSArchive(
   sourceScripts: Map<string, ReadableStream>,
   inlineScripts: Array<Map<string, string>>,
 ): Promise<void> {

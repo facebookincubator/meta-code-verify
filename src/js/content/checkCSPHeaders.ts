@@ -55,7 +55,7 @@ function scanForCSPEvalReportViolations(): void {
   });
 }
 
-export function checkCSPHeaders(
+export default function checkCSPHeaders(
   cspHeader: string | undefined,
   cspReportHeader: string | undefined,
 ) {
