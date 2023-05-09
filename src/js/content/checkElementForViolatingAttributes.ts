@@ -12,9 +12,7 @@ function isEventHandlerAttribute(attribute: string): boolean {
   return attribute.indexOf('on') === 0;
 }
 
-export default function checkElementForViolatingAttributes(
-  element: Element,
-): void {
+export function checkElementForViolatingAttributes(element: Element): void {
   if (
     typeof element.attributes === 'object' &&
     Object.keys(element.attributes).length >= 1

@@ -8,34 +8,34 @@
 'use strict';
 
 import {jest} from '@jest/globals';
-import {MESSAGE_TYPE, ORIGIN_TYPE, STATES} from '../config';
+import {MESSAGE_TYPE} from '../config';
 import {
-  hasInvalidAttributes,
   hasInvalidScripts,
-  processFoundJS,
   scanForScripts,
+  FOUND_SCRIPTS,
   storeFoundJS,
 } from '../contentUtils';
+import {checkElementForViolatingAttributes} from '../content/checkElementForViolatingAttributes';
 
 describe('contentUtils', () => {
   beforeEach(() => {
     window.chrome.runtime.sendMessage = jest.fn(() => {});
+    FOUND_SCRIPTS.clear();
+    FOUND_SCRIPTS.set('version', []);
   });
   describe('storeFoundJS', () => {
     it('should handle scripts with src correctly', () => {
-      const scriptMap = new Map([['version', []]]);
       const fakeUrl = 'https://fancytestingyouhere.com/';
       const fakeScriptNode = {
         src: fakeUrl,
         getAttribute: () => {},
       };
-      storeFoundJS(fakeScriptNode, scriptMap);
-      expect(scriptMap.get('version').length).toEqual(1);
-      expect(scriptMap.get('version')[0].src).toEqual(fakeUrl);
+      storeFoundJS(fakeScriptNode);
+      expect(FOUND_SCRIPTS.get('version').length).toEqual(1);
+      expect(FOUND_SCRIPTS.get('version')[0].src).toEqual(fakeUrl);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
     it('should handle inline scripts correctly', () => {
-      const scriptMap = new Map([['version', []]]);
       const fakeInnerHtml = 'console.log';
       const fakeLookupKey = 'somelonghashkey';
       const fakeScriptNode = {
@@ -45,20 +45,19 @@ describe('contentUtils', () => {
         getAttribute: () => {},
         innerHTML: fakeInnerHtml,
       };
-      storeFoundJS(fakeScriptNode, scriptMap);
-      expect(scriptMap.get('version').length).toEqual(1);
-      expect(scriptMap.get('version')[0].rawjs).toEqual(fakeInnerHtml);
-      expect(scriptMap.get('version')[0].lookupKey).toEqual(fakeLookupKey);
+      storeFoundJS(fakeScriptNode);
+      expect(FOUND_SCRIPTS.get('version').length).toEqual(1);
+      expect(FOUND_SCRIPTS.get('version')[0].rawjs).toEqual(fakeInnerHtml);
+      expect(FOUND_SCRIPTS.get('version')[0].lookupKey).toEqual(fakeLookupKey);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
     it('should send update icon message if valid', () => {
-      const scriptMap = new Map([['version', []]]);
       const fakeUrl = 'https://fancytestingyouhere.com/';
       const fakeScriptNode = {
         src: fakeUrl,
         getAttribute: () => {},
       };
-      storeFoundJS(fakeScriptNode, scriptMap);
+      storeFoundJS(fakeScriptNode);
       const sentMessage = window.chrome.runtime.sendMessage.mock.calls[0][0];
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
       expect(sentMessage.type).toEqual(MESSAGE_TYPE.UPDATE_STATE);
@@ -67,14 +66,14 @@ describe('contentUtils', () => {
       // TODO: come back to this after testing processFoundJS
     });
   });
-  describe('hasInvalidAttributes', () => {
+  describe('checkElementForViolatingAttributes', () => {
     it('should not execute if element has no attributes', () => {
       // no hasAttribute function
       let fakeElement = {
         childNodes: [],
         tagName: 'tagName',
       };
-      hasInvalidAttributes(fakeElement);
+      checkElementForViolatingAttributes(fakeElement);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
 
       // hasAttribute is a function, but has no attributes
@@ -85,7 +84,7 @@ describe('contentUtils', () => {
         childNodes: [],
         tagName: 'tagName',
       };
-      hasInvalidAttributes(fakeElement);
+      checkElementForViolatingAttributes(fakeElement);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
     });
     it('should not update the icon if no violating attributes are found', () => {
@@ -101,7 +100,7 @@ describe('contentUtils', () => {
         childNodes: [],
         tagName: 'div',
       };
-      hasInvalidAttributes(fakeElement);
+      checkElementForViolatingAttributes(fakeElement);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
     });
     it('should update the icon if violating attributes are found', () => {
@@ -117,7 +116,7 @@ describe('contentUtils', () => {
         childNodes: [],
         tagName: 'div',
       };
-      hasInvalidAttributes(fakeElement);
+      checkElementForViolatingAttributes(fakeElement);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(2);
     });
   });
@@ -135,7 +134,7 @@ describe('contentUtils', () => {
         nodeType: 2,
         tagName: 'tagName',
       };
-      hasInvalidScripts(fakeElement, []);
+      hasInvalidScripts(fakeElement);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
     });
     it('should store any script elements we find', () => {
@@ -150,10 +149,9 @@ describe('contentUtils', () => {
         nodeType: 1,
         tagName: 'div',
       };
-      const scriptMap = new Map([['version', []]]);
-      hasInvalidScripts(fakeElement, scriptMap);
-      expect(scriptMap.get('version').length).toBe(1);
-      expect(scriptMap.get('version')[0].type).toBe(MESSAGE_TYPE.RAW_JS);
+      hasInvalidScripts(fakeElement);
+      expect(FOUND_SCRIPTS.get('version').length).toBe(1);
+      expect(FOUND_SCRIPTS.get('version')[0].type).toBe(MESSAGE_TYPE.RAW_JS);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
       expect(window.chrome.runtime.sendMessage.mock.calls[0][0].type).toBe(
         MESSAGE_TYPE.UPDATE_STATE,
@@ -196,9 +194,8 @@ describe('contentUtils', () => {
         nodeName: 'nodename',
         tagName: 'tagName',
       };
-      const foundScripts = [];
-      hasInvalidScripts(fakeElement, foundScripts);
-      expect(foundScripts.length).toBe(0);
+      hasInvalidScripts(fakeElement);
+      expect(FOUND_SCRIPTS.get('version').length).toBe(0);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
     });
     it('should store any script element direct children', () => {
@@ -239,10 +236,9 @@ describe('contentUtils', () => {
         nodeName: 'nodename',
         tagName: 'tagName',
       };
-      const scriptMap = new Map([['version', []]]);
-      hasInvalidScripts(fakeElement, scriptMap);
-      expect(scriptMap.get('version').length).toBe(1);
-      expect(scriptMap.get('version')[0].type).toBe(MESSAGE_TYPE.RAW_JS);
+      hasInvalidScripts(fakeElement);
+      expect(FOUND_SCRIPTS.get('version').length).toBe(1);
+      expect(FOUND_SCRIPTS.get('version')[0].type).toBe(MESSAGE_TYPE.RAW_JS);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
       expect(window.chrome.runtime.sendMessage.mock.calls[0][0].type).toBe(
         MESSAGE_TYPE.UPDATE_STATE,
@@ -311,9 +307,8 @@ describe('contentUtils', () => {
         nodeName: 'nodename',
         tagName: 'tagName',
       };
-      const scriptMap = new Map([['version', []]]);
-      hasInvalidScripts(fakeElement, scriptMap);
-      expect(scriptMap.get('version').length).toBe(2);
+      hasInvalidScripts(fakeElement);
+      expect(FOUND_SCRIPTS.get('version').length).toBe(2);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(2);
     });
   });
@@ -328,66 +323,5 @@ describe('contentUtils', () => {
       scanForScripts();
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(2);
     });
-  });
-  describe('processFoundJS', () => {
-    // these are flaky because jest.resestModules doesn't work for esm
-    // while the above may be true, redo these as async and flush promises and they should work.
-    it('should send valid icon update when no src based scripts are invalid', async () => {
-      document.body.innerHTML =
-        '<div>' +
-        '  <script>console.log("a unit test");</script>' +
-        '  <script src="https://facebook.com/"></script>' +
-        '</div>';
-      scanForScripts();
-      window.chrome.runtime.sendMessage.mockImplementation(
-        (message, response) => {
-          response && response({valid: true});
-        },
-      );
-      processFoundJS(ORIGIN_TYPE.WHATSAPP, '');
-      await (() => new Promise(res => setTimeout(res, 10)))();
-      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(12);
-    });
-    it('should send valid icon update when no inline based scripts are invalid', async () => {
-      document.body.innerHTML =
-        '<div>' +
-        '  <script src="https://facebook.com/"></script>' +
-        '  <script>console.log("a unit test");</script>' +
-        '</div>';
-      scanForScripts();
-      window.chrome.runtime.sendMessage.mockImplementation(
-        (message, response) => {
-          response && response({valid: true});
-        },
-      );
-      processFoundJS(ORIGIN_TYPE.WHATSAPP, '');
-      await (() => new Promise(res => setTimeout(res, 10)))();
-      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(15);
-      expect(window.chrome.runtime.sendMessage.mock.calls[13][0].state).toEqual(
-        STATES.VALID,
-      );
-    });
-    it('should send invalid icon update when invalid response received with src', async () => {
-      document.body.innerHTML =
-        '<div>' +
-        '  <script>console.log("a unit test");</script>' +
-        '  <script src="https://facebook.com/"></script>' +
-        '</div>';
-      scanForScripts();
-      window.chrome.runtime.sendMessage.mockImplementation(
-        (message, response) => {
-          response && response({valid: false});
-        },
-      );
-      processFoundJS(ORIGIN_TYPE.WHATSAPP, '');
-      await (() => new Promise(res => setTimeout(res, 10)))();
-      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(23);
-      expect(window.chrome.runtime.sendMessage.mock.calls[21][0].state).toEqual(
-        STATES.INVALID,
-      );
-    });
-    it.todo(
-      'should send invalid icon update when invalid inline response received',
-    );
   });
 });

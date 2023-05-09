@@ -20,13 +20,13 @@ import downloadJSArchive from './content/downloadJSArchive';
 import alertBackgroundOfImminentFetch from './content/alertBackgroundOfImminentFetch';
 import {currentOrigin, updateCurrentState} from './content/updateCurrentState';
 import checkElementForViolatingJSURI from './content/checkElementForViolatingJSURI';
-import checkElementForViolatingAttributes from './content/checkElementForViolatingAttributes';
+import {checkElementForViolatingAttributes} from './content/checkElementForViolatingAttributes';
 import isFbOrMsgrOrigin from './shared/isFbOrMsgrOrigin';
 import {MessagePayload} from './shared/MessagePayload';
 
 const SOURCE_SCRIPTS = new Map();
 const INLINE_SCRIPTS = [];
-const FOUND_SCRIPTS = new Map([['', []]]);
+export const FOUND_SCRIPTS = new Map([['', []]]);
 
 let currentFilterType = '';
 let manifestTimeoutID: string | number = '';
