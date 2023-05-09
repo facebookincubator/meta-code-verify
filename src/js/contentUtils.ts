@@ -19,6 +19,7 @@ import alertBackgroundOfImminentFetch from './content/alertBackgroundOfImminentF
 import {currentOrigin, updateCurrentState} from './content/updateCurrentState';
 import checkElementForViolatingJSURI from './content/checkElementForViolatingJSURI';
 import checkElementForViolatingAttributes from './content/checkElementForViolatingAttributes';
+import isFbOrMsgrOrigin from './shared/isFbOrMsgrOrigin';
 
 const SOURCE_SCRIPTS = new Map();
 const INLINE_SCRIPTS = [];
@@ -70,11 +71,7 @@ export function storeFoundJS(scriptNodeMaybe) {
     let roothash = rawManifest.root;
     let version = rawManifest.version;
 
-    if (
-      [ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].some(
-        e => e === currentOrigin.val,
-      )
-    ) {
+    if (isFbOrMsgrOrigin(currentOrigin.val)) {
       leaves = rawManifest.manifest;
       otherHashes = rawManifest.manifest_hashes;
       otherType = scriptNodeMaybe.getAttribute('data-manifest-type');
@@ -458,11 +455,7 @@ export function startFor(origin, excludedPathnames = []) {
       origin,
     })
     .then(resp => {
-      if (
-        [ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].some(
-          e => e === currentOrigin.val,
-        )
-      ) {
+      if (isFbOrMsgrOrigin(currentOrigin.val)) {
         checkCSPHeaders(resp.cspHeader, resp.cspReportHeader);
       }
     });

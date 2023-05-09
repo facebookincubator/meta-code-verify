@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type {MessageType, Origin} from './config';
-import {MESSAGE_TYPE, ORIGIN_HOST, ORIGIN_TIMEOUT, ORIGIN_TYPE} from './config';
+import type {Origin, State} from './config';
+import {MESSAGE_TYPE, ORIGIN_HOST, ORIGIN_TIMEOUT} from './config';
 
 import {
   recordContentScriptStart,
@@ -21,6 +21,7 @@ import setupCSPListener from './background/setupCSPListener';
 import setupNoCacheListeners from './background/setupNoCacheListeners';
 import {validateMetaCompanyManifest} from './background/validateMetaCompanyManifest';
 import {validateManifest} from './background/validateManifest';
+import isFbOrMsgrOrigin from './shared/isFbOrMsgrOrigin';
 
 const MANIFEST_CACHE = new Map<Origin, Map<string, Manifest>>();
 const CSP_HEADERS = new Map<number, string | undefined>();
@@ -35,10 +36,48 @@ type Manifest = {
   start: number;
   leaves: Array<string>;
 };
-type MessagePayload = {
-  type: MessageType;
-  [key: string]: any;
-};
+type MessagePayload =
+  | {
+      type: typeof MESSAGE_TYPE.LOAD_MANIFEST;
+      origin: Origin;
+      rootHash: string;
+      otherHashes: {
+        combined_hash: string;
+        longtail: string;
+        main: string;
+      };
+      leaves: Array<string>;
+      version: string;
+      workaround: string;
+    }
+  | {
+      type: typeof MESSAGE_TYPE.RAW_JS;
+      rawjs: string;
+      origin: Origin;
+      version: string;
+    }
+  | {
+      type: typeof MESSAGE_TYPE.DEBUG;
+      log: string;
+    }
+  | {
+      type: typeof MESSAGE_TYPE.GET_DEBUG;
+      tabId: number;
+    }
+  | {
+      type: typeof MESSAGE_TYPE.UPDATE_STATE;
+      state: State;
+      origin: Origin;
+    }
+  | {
+      type: typeof MESSAGE_TYPE.CONTENT_SCRIPT_START;
+      origin: Origin;
+    }
+  | {
+      type: typeof MESSAGE_TYPE.UPDATED_CACHED_SCRIPT_URLS;
+      url: string;
+    };
+
 type Response = {
   valid?: boolean;
   success?: boolean;
@@ -58,9 +97,7 @@ function handleMessages(
 
   if (message.type == MESSAGE_TYPE.LOAD_MANIFEST) {
     // validate manifest
-    if (
-      [ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(message.origin)
-    ) {
+    if (isFbOrMsgrOrigin(message.origin)) {
       validateMetaCompanyManifest(
         message.rootHash,
         message.otherHashes,
