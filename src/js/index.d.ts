@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import {MessagePayload} from './shared/MessagePayload';
+
 export {};
 
 type CompressionFormat = 'deflate' | 'deflate-raw' | 'gzip';

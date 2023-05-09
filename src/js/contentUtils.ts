@@ -11,7 +11,9 @@ import {
   ORIGIN_TYPE,
   DOWNLOAD_JS_ENABLED,
   STATES,
+  Origin,
 } from './config';
+// import {MessagePayload} from './shared/MessagePayload';
 
 import checkCSPHeaders from './content/checkCSPHeaders';
 import downloadJSArchive from './content/downloadJSArchive';
@@ -20,6 +22,7 @@ import {currentOrigin, updateCurrentState} from './content/updateCurrentState';
 import checkElementForViolatingJSURI from './content/checkElementForViolatingJSURI';
 import checkElementForViolatingAttributes from './content/checkElementForViolatingAttributes';
 import isFbOrMsgrOrigin from './shared/isFbOrMsgrOrigin';
+import {MessagePayload} from './shared/MessagePayload';
 
 const SOURCE_SCRIPTS = new Map();
 const INLINE_SCRIPTS = [];
@@ -46,7 +49,7 @@ export function storeFoundJS(scriptNodeMaybe) {
       scriptNodeMaybe.getAttribute('name') === 'binary-transparency-manifest')
   ) {
     if (scriptNodeMaybe.getAttribute('type') !== 'application/json') {
-      chrome.runtime.sendMessage({
+      sendMessage({
         type: MESSAGE_TYPE.DEBUG,
         log: 'Manifest script type is invalid',
       });
@@ -95,19 +98,18 @@ export function storeFoundJS(scriptNodeMaybe) {
       FOUND_SCRIPTS.delete('');
     }
 
-    chrome.runtime.sendMessage(
+    sendMessage(
       {
         type: MESSAGE_TYPE.LOAD_MANIFEST,
         leaves: leaves,
-        origin: currentOrigin.val,
+        origin: currentOrigin.val as Origin,
         otherHashes: otherHashes,
-        otherType: otherType,
         rootHash: roothash,
         workaround: scriptNodeMaybe.innerHTML,
         version: version,
       },
       response => {
-        chrome.runtime.sendMessage({
+        sendMessage({
           type: MESSAGE_TYPE.DEBUG,
           log:
             'manifest load response is ' + response
@@ -313,7 +315,7 @@ async function processJSWithSrc(script, origin, version) {
     const packages = sourceText.split('/*FB_PKG_DELIM*/\n');
     const packagePromises = packages.map(jsPackage => {
       return new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(
+        sendMessage(
           {
             type: MESSAGE_TYPE.RAW_JS,
             rawjs: jsPackage.trimStart(),
@@ -368,7 +370,7 @@ export const processFoundJS = async (origin, version) => {
             updateCurrentState(STATES.INVALID);
           }
         }
-        chrome.runtime.sendMessage({
+        sendMessage({
           type: MESSAGE_TYPE.DEBUG,
           log:
             'processed JS with SRC, ' +
@@ -378,11 +380,10 @@ export const processFoundJS = async (origin, version) => {
         });
       });
     } else {
-      chrome.runtime.sendMessage(
+      sendMessage(
         {
           type: script.type,
           rawjs: script.rawjs.trimStart(),
-          lookupKey: script.lookupKey,
           origin: origin,
           version: version,
         },
@@ -405,7 +406,7 @@ export const processFoundJS = async (origin, version) => {
               updateCurrentState(STATES.INVALID);
             }
           }
-          chrome.runtime.sendMessage({
+          sendMessage({
             type: MESSAGE_TYPE.DEBUG,
             log:
               'processed the RAW_JS, response is ' +
@@ -449,16 +450,17 @@ function isPathnameExcluded(excludedPathnames) {
 }
 
 export function startFor(origin, excludedPathnames = []) {
-  chrome.runtime
-    .sendMessage({
+  sendMessage(
+    {
       type: MESSAGE_TYPE.CONTENT_SCRIPT_START,
       origin,
-    })
-    .then(resp => {
+    },
+    resp => {
       if (isFbOrMsgrOrigin(currentOrigin.val)) {
         checkCSPHeaders(resp.cspHeader, resp.cspReportHeader);
       }
-    });
+    },
+  );
   if (isPathnameExcluded(excludedPathnames)) {
     updateCurrentState(STATES.IGNORE);
     return;
@@ -498,3 +500,10 @@ chrome.runtime.onMessage.addListener(function (request) {
     updateCurrentState(STATES.INVALID);
   }
 });
+
+function sendMessage<R = any>(
+  message: MessagePayload,
+  callback?: (response: R) => void,
+): void {
+  chrome.runtime.sendMessage(message, callback);
+}
