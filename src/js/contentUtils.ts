@@ -31,6 +31,19 @@ export const FOUND_SCRIPTS = new Map([['', []]]);
 let currentFilterType = '';
 let manifestTimeoutID: string | number = '';
 
+export type RawManifestOtherHashes = {
+  combined_hash: string;
+  longtail: string;
+  main: string;
+};
+type RawManifest = {
+  manifest: Array<string>;
+  manifest_hashes: RawManifestOtherHashes;
+  leaves: Array<string>;
+  root: string;
+  version: string;
+};
+
 export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement) {
   if (window != window.top) {
     // this means that content utils is running in an iframe - disable timer and call processFoundJS on manifest processed in top level frame
@@ -56,7 +69,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement) {
       return;
     }
 
-    let rawManifest: string | any = '';
+    let rawManifest: RawManifest | null = null;
     try {
       rawManifest = JSON.parse(scriptNodeMaybe.textContent);
     } catch (manifestParseError) {
@@ -68,7 +81,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement) {
     }
 
     let leaves = rawManifest.leaves;
-    let otherHashes: any = '';
+    let otherHashes: RawManifestOtherHashes = null;
     let otherType = '';
     let roothash = rawManifest.root;
     let version = rawManifest.version;
