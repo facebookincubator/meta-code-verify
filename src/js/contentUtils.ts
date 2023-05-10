@@ -26,7 +26,20 @@ import isPathnameExcluded from './content/isPathNameExcluded';
 
 const SOURCE_SCRIPTS = new Map();
 const INLINE_SCRIPTS = [];
-export const FOUND_SCRIPTS = new Map([['', []]]);
+
+type ScriptDetailsWithSrc = {
+  otherType: string;
+  src: string;
+};
+type ScriptDetailsRaw = {
+  type: typeof MESSAGE_TYPE.RAW_JS;
+  rawjs: string;
+  lookupKey: string;
+  otherType: string;
+};
+type ScriptDetails = ScriptDetailsRaw | ScriptDetailsWithSrc;
+
+export const FOUND_SCRIPTS = new Map<string, Array<ScriptDetails>>([['', []]]);
 
 let currentFilterType = '';
 let manifestTimeoutID: string | number = '';
@@ -44,7 +57,7 @@ type RawManifest = {
   version: string;
 };
 
-export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement) {
+export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
   if (window != window.top) {
     // this means that content utils is running in an iframe - disable timer and call processFoundJS on manifest processed in top level frame
     clearTimeout(manifestTimeoutID);
@@ -114,7 +127,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement) {
       {
         type: MESSAGE_TYPE.LOAD_MANIFEST,
         leaves: leaves,
-        origin: currentOrigin.val as Origin,
+        origin: currentOrigin.val,
         otherHashes: otherHashes,
         rootHash: roothash,
         workaround: scriptNodeMaybe.innerHTML,
@@ -198,12 +211,12 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement) {
   updateCurrentState(STATES.PROCESSING);
 }
 
-function checkNodeForViolations(element: Element) {
+function checkNodeForViolations(element: Element): void {
   checkElementForViolatingJSUri(element);
   checkElementForViolatingAttributes(element);
 }
 
-export function hasInvalidScripts(scriptNodeMaybe: Node) {
+export function hasInvalidScripts(scriptNodeMaybe: Node): void {
   // if not an HTMLElement ignore it!
   if (scriptNodeMaybe.nodeType !== 1) {
     return;
@@ -258,7 +271,13 @@ export const scanForScripts = (): void => {
   }
 };
 
-async function processJSWithSrc(script, version) {
+async function processJSWithSrc(
+  script: ScriptDetailsWithSrc,
+  version: string,
+): Promise<{
+  valid: boolean;
+  type?: unknown;
+}> {
   // fetch the script from page context, not the extension context.
   try {
     await alertBackgroundOfImminentFetch(script.src);
@@ -284,7 +303,7 @@ async function processJSWithSrc(script, version) {
           {
             type: MESSAGE_TYPE.RAW_JS,
             rawjs: jsPackage.trimStart(),
-            origin: currentOrigin.val as Origin,
+            origin: currentOrigin.val,
             version: version,
           },
           response => {
@@ -307,7 +326,7 @@ async function processJSWithSrc(script, version) {
   }
 }
 
-export const processFoundJS = async version => {
+export const processFoundJS = async (version: string): Promise<void> => {
   const fullscripts = FOUND_SCRIPTS.get(version).splice(0);
   const scripts = fullscripts.filter(script => {
     if (
@@ -321,7 +340,8 @@ export const processFoundJS = async version => {
   });
   let pendingScriptCount = scripts.length;
   for (const script of scripts) {
-    if (script.src) {
+    if ('src' in script) {
+      // ScriptDetailsWithSrc
       await processJSWithSrc(script, version).then(response => {
         pendingScriptCount--;
         if (response.valid) {
@@ -345,11 +365,12 @@ export const processFoundJS = async version => {
         });
       });
     } else {
+      // ScriptDetailsRaw
       sendMessageToBackground(
         {
           type: script.type,
           rawjs: script.rawjs.trimStart(),
-          origin: currentOrigin.val as Origin,
+          origin: currentOrigin.val,
           version: version,
         },
         response => {
