@@ -43,7 +43,7 @@ const AttributeCheckPairs = [
   {elementName: 'x', attributeName: 'xlink:href'},
 ];
 
-export default function checkElementForViolatingJSUri(element: Element): void {
+export default function checkElementForViolatingJSURI(element: Element): void {
   let checkURL = '';
   const lowerCaseNodeName = element.nodeName.toLowerCase();
   AttributeCheckPairs.forEach(checkPair => {

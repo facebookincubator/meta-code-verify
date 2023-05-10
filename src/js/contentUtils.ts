@@ -13,7 +13,6 @@ import {
   STATES,
   Origin,
 } from './config';
-// import {MessagePayload} from './shared/MessagePayload';
 
 import checkCSPHeaders from './content/checkCSPHeaders';
 import downloadJSArchive from './content/downloadJSArchive';
