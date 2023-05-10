@@ -18,7 +18,7 @@ import checkCSPHeaders from './content/checkCSPHeaders';
 import downloadJSArchive from './content/downloadJSArchive';
 import alertBackgroundOfImminentFetch from './content/alertBackgroundOfImminentFetch';
 import {currentOrigin, updateCurrentState} from './content/updateCurrentState';
-import checkElementForViolatingJSURI from './content/checkElementForViolatingJSURI';
+import checkElementForViolatingJSUri from './content/checkElementForViolatingJSUri';
 import {checkElementForViolatingAttributes} from './content/checkElementForViolatingAttributes';
 import isFbOrMsgrOrigin from './shared/isFbOrMsgrOrigin';
 import {MessagePayload} from './shared/MessagePayload';
@@ -189,7 +189,7 @@ export function storeFoundJS(scriptNodeMaybe) {
 }
 
 function checkNodeForViolations(element: Element) {
-  checkElementForViolatingJSURI(element);
+  checkElementForViolatingJSUri(element);
   checkElementForViolatingAttributes(element);
 }
 
