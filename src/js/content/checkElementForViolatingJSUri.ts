@@ -6,6 +6,7 @@
  */
 
 import {MESSAGE_TYPE, STATES} from '../config';
+import {sendMessageToBackground} from './sendMessageToBackground';
 import {updateCurrentState} from './updateCurrentState';
 
 function getAttributeValue(
@@ -58,7 +59,7 @@ export default function checkElementForViolatingJSUri(element: Element): void {
   if (checkURL !== '') {
     // make sure anchor tags and object tags don't have javascript urls
     if (checkURL.indexOf('javascript') >= 0) {
-      chrome.runtime.sendMessage({
+      sendMessageToBackground({
         type: MESSAGE_TYPE.DEBUG,
         log: 'violating attribute: javascript url',
       });

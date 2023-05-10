@@ -16,6 +16,7 @@ import {
 
 import StateMachine from './StateMachine';
 import FrameStateMachine from './FrameStateMachine';
+import {sendMessageToBackground} from '../../content/sendMessageToBackground';
 
 function getChromeV3Action() {
   if (self.chrome.runtime.getManifest().manifest_version >= 3) {
@@ -85,7 +86,7 @@ export default class TabStateMachine extends StateMachine {
       popup: `popup.html?tab_id=${this._tabId}&state=${state}&origin=${this._origin}`,
     });
     // Broadcast state update for relevant popup to update its contents.
-    chrome.runtime.sendMessage({
+    sendMessageToBackground({
       type: MESSAGE_TYPE.STATE_UPDATED,
       tabId: this._tabId,
       state,

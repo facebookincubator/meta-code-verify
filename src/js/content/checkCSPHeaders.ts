@@ -8,6 +8,7 @@
 import {MESSAGE_TYPE, STATES} from '../config';
 import {updateCurrentState} from './updateCurrentState';
 import alertBackgroundOfImminentFetch from './alertBackgroundOfImminentFetch';
+import {sendMessageToBackground} from './sendMessageToBackground';
 
 function parseCSPString(csp: string): Map<string, Set<string>> {
   const directiveStrings = csp.split(';');
@@ -46,7 +47,7 @@ function scanForCSPEvalReportViolations(): void {
             return;
           }
           updateCurrentState(STATES.INVALID);
-          chrome.runtime.sendMessage({
+          sendMessageToBackground({
             type: MESSAGE_TYPE.DEBUG,
             log: `Caught eval in ${e.sourceFile}`,
           });
@@ -80,7 +81,7 @@ export default function checkCSPHeaders(
     if (cspReportMap.has('script-src')) {
       if (cspReportMap.get('script-src').has("'unsafe-eval'")) {
         updateCurrentState(STATES.INVALID);
-        chrome.runtime.sendMessage({
+        sendMessageToBackground({
           type: MESSAGE_TYPE.DEBUG,
           log: 'Missing unsafe-eval from CSP report-only header',
         });
@@ -90,7 +91,7 @@ export default function checkCSPHeaders(
     if (!cspReportMap.has('script-src') && cspReportMap.has('default-src')) {
       if (cspReportMap.get('default-src').has("'unsafe-eval'")) {
         updateCurrentState(STATES.INVALID);
-        chrome.runtime.sendMessage({
+        sendMessageToBackground({
           type: MESSAGE_TYPE.DEBUG,
           log: 'Missing unsafe-eval from CSP report-only header',
         });
@@ -98,7 +99,7 @@ export default function checkCSPHeaders(
       }
     }
   } else {
-    chrome.runtime.sendMessage({
+    sendMessageToBackground({
       type: MESSAGE_TYPE.DEBUG,
       log: 'Missing CSP report-only header',
     });
