@@ -22,7 +22,7 @@ import setupNoCacheListeners from './background/setupNoCacheListeners';
 import {validateMetaCompanyManifest} from './background/validateMetaCompanyManifest';
 import {validateManifest} from './background/validateManifest';
 import isFbOrMsgrOrigin from './shared/isFbOrMsgrOrigin';
-import {MessagePayload} from './shared/MessagePayload';
+import {MessagePayload, MessageResponse} from './shared/MessageTypes';
 
 const MANIFEST_CACHE = new Map<Origin, Map<string, Manifest>>();
 const CSP_HEADERS = new Map<number, string | undefined>();
@@ -38,20 +38,10 @@ type Manifest = {
   leaves: Array<string>;
 };
 
-type Response = {
-  valid?: boolean;
-  success?: boolean;
-  debugList?: Array<string>;
-  reason?: string;
-  hash?: string;
-  cspHeader?: string;
-  cspReportHeader?: string;
-};
-
 function handleMessages(
   message: MessagePayload,
   sender: chrome.runtime.MessageSender,
-  sendResponse: (_: Response) => void,
+  sendResponse: (_: MessageResponse) => void,
 ): void | boolean {
   console.log('in handle messages ', message);
 

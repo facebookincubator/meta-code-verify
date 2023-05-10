@@ -6,13 +6,14 @@
  */
 
 import {MESSAGE_TYPE, Origin, State} from '../config';
+import {sendMessageToBackground} from './sendMessageToBackground';
 
 export const currentOrigin: {val: string | Origin} = {val: ''};
 
 export function updateCurrentState(state: State) {
-  chrome.runtime.sendMessage({
+  sendMessageToBackground({
     type: MESSAGE_TYPE.UPDATE_STATE,
     state,
-    origin: currentOrigin.val,
+    origin: currentOrigin.val as Origin,
   });
 }

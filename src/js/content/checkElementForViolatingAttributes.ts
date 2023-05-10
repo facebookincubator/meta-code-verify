@@ -6,6 +6,7 @@
  */
 
 import {MESSAGE_TYPE, STATES} from '../config';
+import {sendMessageToBackground} from './sendMessageToBackground';
 import {updateCurrentState} from './updateCurrentState';
 
 function isEventHandlerAttribute(attribute: string): boolean {
@@ -20,7 +21,7 @@ export function checkElementForViolatingAttributes(element: Element): void {
     Array.from(element.attributes).forEach(elementAttribute => {
       // check first for violating attributes
       if (isEventHandlerAttribute(elementAttribute.localName)) {
-        chrome.runtime.sendMessage({
+        sendMessageToBackground({
           type: MESSAGE_TYPE.DEBUG,
           log:
             'violating attribute ' +
@@ -47,7 +48,7 @@ export function checkElementForViolatingAttributes(element: Element): void {
           .toLowerCase()
           .startsWith('javascript')
       ) {
-        chrome.runtime.sendMessage({
+        sendMessageToBackground({
           type: MESSAGE_TYPE.DEBUG,
           log:
             'violating attribute ' +

@@ -21,7 +21,7 @@ import {currentOrigin, updateCurrentState} from './content/updateCurrentState';
 import checkElementForViolatingJSUri from './content/checkElementForViolatingJSUri';
 import {checkElementForViolatingAttributes} from './content/checkElementForViolatingAttributes';
 import isFbOrMsgrOrigin from './shared/isFbOrMsgrOrigin';
-import {MessagePayload} from './shared/MessagePayload';
+import {sendMessageToBackground} from './content/sendMessageToBackground';
 
 const SOURCE_SCRIPTS = new Map();
 const INLINE_SCRIPTS = [];
@@ -48,7 +48,7 @@ export function storeFoundJS(scriptNodeMaybe) {
       scriptNodeMaybe.getAttribute('name') === 'binary-transparency-manifest')
   ) {
     if (scriptNodeMaybe.getAttribute('type') !== 'application/json') {
-      sendMessage({
+      sendMessageToBackground({
         type: MESSAGE_TYPE.DEBUG,
         log: 'Manifest script type is invalid',
       });
@@ -97,7 +97,7 @@ export function storeFoundJS(scriptNodeMaybe) {
       FOUND_SCRIPTS.delete('');
     }
 
-    sendMessage(
+    sendMessageToBackground(
       {
         type: MESSAGE_TYPE.LOAD_MANIFEST,
         leaves: leaves,
@@ -108,7 +108,7 @@ export function storeFoundJS(scriptNodeMaybe) {
         version: version,
       },
       response => {
-        sendMessage({
+        sendMessageToBackground({
           type: MESSAGE_TYPE.DEBUG,
           log:
             'manifest load response is ' + response
@@ -314,7 +314,7 @@ async function processJSWithSrc(script, origin, version) {
     const packages = sourceText.split('/*FB_PKG_DELIM*/\n');
     const packagePromises = packages.map(jsPackage => {
       return new Promise((resolve, reject) => {
-        sendMessage(
+        sendMessageToBackground(
           {
             type: MESSAGE_TYPE.RAW_JS,
             rawjs: jsPackage.trimStart(),
@@ -325,7 +325,7 @@ async function processJSWithSrc(script, origin, version) {
             if (response.valid) {
               resolve(null);
             } else {
-              reject(response.type);
+              reject();
             }
           },
         );
@@ -369,7 +369,7 @@ export const processFoundJS = async (origin, version) => {
             updateCurrentState(STATES.INVALID);
           }
         }
-        sendMessage({
+        sendMessageToBackground({
           type: MESSAGE_TYPE.DEBUG,
           log:
             'processed JS with SRC, ' +
@@ -379,7 +379,7 @@ export const processFoundJS = async (origin, version) => {
         });
       });
     } else {
-      sendMessage(
+      sendMessageToBackground(
         {
           type: script.type,
           rawjs: script.rawjs.trimStart(),
@@ -405,7 +405,7 @@ export const processFoundJS = async (origin, version) => {
               updateCurrentState(STATES.INVALID);
             }
           }
-          sendMessage({
+          sendMessageToBackground({
             type: MESSAGE_TYPE.DEBUG,
             log:
               'processed the RAW_JS, response is ' +
@@ -449,7 +449,7 @@ function isPathnameExcluded(excludedPathnames) {
 }
 
 export function startFor(origin, excludedPathnames = []) {
-  sendMessage(
+  sendMessageToBackground(
     {
       type: MESSAGE_TYPE.CONTENT_SCRIPT_START,
       origin,
@@ -499,10 +499,3 @@ chrome.runtime.onMessage.addListener(function (request) {
     updateCurrentState(STATES.INVALID);
   }
 });
-
-function sendMessage<R = any>(
-  message: MessagePayload,
-  callback?: (response: R) => void,
-): void {
-  chrome.runtime.sendMessage(message, callback);
-}

@@ -36,6 +36,11 @@ export type MessagePayload =
       tabId: number;
     }
   | {
+      type: typeof MESSAGE_TYPE.STATE_UPDATED;
+      tabId: number;
+      state: State;
+    }
+  | {
       type: typeof MESSAGE_TYPE.UPDATE_STATE;
       state: State;
       origin: Origin;
@@ -48,3 +53,13 @@ export type MessagePayload =
       type: typeof MESSAGE_TYPE.UPDATED_CACHED_SCRIPT_URLS;
       url: string;
     };
+
+export type MessageResponse = {
+  valid?: boolean;
+  success?: boolean;
+  debugList?: Array<string>;
+  reason?: string;
+  hash?: string;
+  cspHeader?: string;
+  cspReportHeader?: string;
+};

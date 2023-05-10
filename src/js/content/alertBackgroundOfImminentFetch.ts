@@ -6,12 +6,13 @@
  */
 
 import {MESSAGE_TYPE} from '../config';
+import {sendMessageToBackground} from './sendMessageToBackground';
 
 export default function alertBackgroundOfImminentFetch(
   url: string,
 ): Promise<void> {
   return new Promise(resolve => {
-    chrome.runtime.sendMessage(
+    sendMessageToBackground(
       {
         type: MESSAGE_TYPE.UPDATED_CACHED_SCRIPT_URLS,
         url,
