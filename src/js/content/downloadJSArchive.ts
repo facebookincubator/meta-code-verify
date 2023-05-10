@@ -13,7 +13,7 @@ export default async function downloadJSArchive(
     suggestedName: 'meta_source_files.gz',
   });
 
-  const writableStream: WritableStream = await fileHandle.createWritable();
+  const writableStream = await fileHandle.createWritable();
   // delimiter between files
   const delimPrefix = '\n********** new file: ';
   const delimSuffix = ' **********\n';

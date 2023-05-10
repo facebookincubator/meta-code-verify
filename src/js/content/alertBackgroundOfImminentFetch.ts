@@ -6,7 +6,7 @@
  */
 
 import {MESSAGE_TYPE} from '../config';
-import {sendMessageToBackground} from './sendMessageToBackground';
+import {sendMessageToBackground} from '../shared/sendMessageToBackground';
 
 export default function alertBackgroundOfImminentFetch(
   url: string,

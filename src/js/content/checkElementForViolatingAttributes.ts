@@ -6,7 +6,7 @@
  */
 
 import {MESSAGE_TYPE, STATES} from '../config';
-import {sendMessageToBackground} from './sendMessageToBackground';
+import {sendMessageToBackground} from '../shared/sendMessageToBackground';
 import {updateCurrentState} from './updateCurrentState';
 
 function isEventHandlerAttribute(attribute: string): boolean {
