@@ -8,7 +8,7 @@
 import {MESSAGE_TYPE, Origin, State} from '../config';
 import {sendMessageToBackground} from '../shared/sendMessageToBackground';
 
-export const currentOrigin: {val: string | Origin} = {val: ''};
+export const currentOrigin: {val: Origin} = {val: null};
 
 export function updateCurrentState(state: State) {
   sendMessageToBackground({
