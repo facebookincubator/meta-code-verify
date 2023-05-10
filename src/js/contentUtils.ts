@@ -8,7 +8,6 @@
 import {
   KNOWN_EXTENSION_HASHES,
   MESSAGE_TYPE,
-  ORIGIN_TYPE,
   DOWNLOAD_JS_ENABLED,
   STATES,
   Origin,
@@ -21,7 +20,9 @@ import {currentOrigin, updateCurrentState} from './content/updateCurrentState';
 import checkElementForViolatingJSUri from './content/checkElementForViolatingJSUri';
 import {checkElementForViolatingAttributes} from './content/checkElementForViolatingAttributes';
 import isFbOrMsgrOrigin from './shared/isFbOrMsgrOrigin';
-import {sendMessageToBackground} from './content/sendMessageToBackground';
+import {sendMessageToBackground} from './shared/sendMessageToBackground';
+import genSourceText from './content/genSourceText';
+import isPathnameExcluded from './content/isPathNameExcluded';
 
 const SOURCE_SCRIPTS = new Map();
 const INLINE_SCRIPTS = [];
@@ -30,14 +31,26 @@ export const FOUND_SCRIPTS = new Map([['', []]]);
 let currentFilterType = '';
 let manifestTimeoutID: string | number = '';
 
-export function storeFoundJS(scriptNodeMaybe) {
+export type RawManifestOtherHashes = {
+  combined_hash: string;
+  longtail: string;
+  main: string;
+};
+type RawManifest = {
+  manifest: Array<string>;
+  manifest_hashes: RawManifestOtherHashes;
+  leaves: Array<string>;
+  root: string;
+  version: string;
+};
+
+export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement) {
   if (window != window.top) {
     // this means that content utils is running in an iframe - disable timer and call processFoundJS on manifest processed in top level frame
     clearTimeout(manifestTimeoutID);
     manifestTimeoutID = '';
     window.setTimeout(
-      () =>
-        processFoundJS(currentOrigin.val, FOUND_SCRIPTS.keys().next().value),
+      () => processFoundJS(FOUND_SCRIPTS.keys().next().value),
       0,
     );
   }
@@ -56,7 +69,7 @@ export function storeFoundJS(scriptNodeMaybe) {
       return;
     }
 
-    let rawManifest: string | any = '';
+    let rawManifest: RawManifest | null = null;
     try {
       rawManifest = JSON.parse(scriptNodeMaybe.textContent);
     } catch (manifestParseError) {
@@ -68,7 +81,7 @@ export function storeFoundJS(scriptNodeMaybe) {
     }
 
     let leaves = rawManifest.leaves;
-    let otherHashes: any = '';
+    let otherHashes: RawManifestOtherHashes = null;
     let otherType = '';
     let roothash = rawManifest.root;
     let version = rawManifest.version;
@@ -121,10 +134,7 @@ export function storeFoundJS(scriptNodeMaybe) {
             clearTimeout(manifestTimeoutID);
             manifestTimeoutID = '';
           }
-          window.setTimeout(
-            () => processFoundJS(currentOrigin.val, version),
-            0,
-          );
+          window.setTimeout(() => processFoundJS(version), 0);
         } else {
           if (
             ['ENDPOINT_FAILURE', 'UNKNOWN_ENDPOINT_ISSUE'].includes(
@@ -202,7 +212,7 @@ export function hasInvalidScripts(scriptNodeMaybe: Node) {
   checkNodeForViolations(scriptNodeMaybe as Element);
 
   if (scriptNodeMaybe.nodeName.toLowerCase() === 'script') {
-    storeFoundJS(scriptNodeMaybe);
+    storeFoundJS(scriptNodeMaybe as HTMLScriptElement);
   } else if (scriptNodeMaybe.childNodes.length > 0) {
     scriptNodeMaybe.childNodes.forEach(childNode => {
       hasInvalidScripts(childNode);
@@ -210,14 +220,14 @@ export function hasInvalidScripts(scriptNodeMaybe: Node) {
   }
 }
 
-export const scanForScripts = () => {
+export const scanForScripts = (): void => {
   const allElements = document.getElementsByTagName('*');
 
   Array.from(allElements).forEach(element => {
     checkNodeForViolations(element);
     // next check for existing script elements and if they're violating
     if (element.nodeName.toLowerCase() === 'script') {
-      storeFoundJS(element);
+      storeFoundJS(element as HTMLScriptElement);
     }
   });
 
@@ -248,51 +258,7 @@ export const scanForScripts = () => {
   }
 };
 
-/**
- * Return text from the response object. The main purpose of this method is to
- * extract and parse sourceURL and sourceMappingURL comments from inlined data
- * scripts.
- * Note that this function consumes the response body!
- *
- * @param {Response} response Response will be consumed!
- * @returns string Response text if the sourceURL is valid
- */
-async function genSourceText(response) {
-  const sourceText = await response.text();
-  // Just a normal script tag with a source url
-  if (!response.url.startsWith('data:application/x-javascript')) {
-    return sourceText;
-  }
-
-  // Inlined data-script. We need to extract with optional `//# sourceURL=` and
-  // `//# sourceMappingURL=` comments before sending it over to be hashed...
-  const sourceTextParts = sourceText.trimEnd().split('\n');
-
-  // NOTE: For security reasons, we expect inlined data scripts to *end* with
-  // sourceURL comments. This is because a man-in-the-middle can insert code
-  // after the sourceURL comment, which would execute on the browser but get
-  // stripped away by the extension before getting hashed + verified.
-  // As a result, we're always starting our search from the bottom.
-  if (
-    sourceTextParts[sourceTextParts.length - 1].startsWith('//# sourceURL=')
-  ) {
-    const sourceURL = sourceTextParts.pop().split('//# sourceURL=')[1] ?? '';
-    if (!sourceURL.startsWith('http')) {
-      throw new Error(`Invalid sourceUrl in inlined data script: ${sourceURL}`);
-    }
-  }
-  while (
-    sourceTextParts[sourceTextParts.length - 1] === '\n' ||
-    sourceTextParts[sourceTextParts.length - 1].startsWith(
-      '//# sourceMappingURL=',
-    )
-  ) {
-    sourceTextParts.pop();
-  }
-  return sourceTextParts.join('\n').trim();
-}
-
-async function processJSWithSrc(script, origin, version) {
+async function processJSWithSrc(script, version) {
   // fetch the script from page context, not the extension context.
   try {
     await alertBackgroundOfImminentFetch(script.src);
@@ -318,7 +284,7 @@ async function processJSWithSrc(script, origin, version) {
           {
             type: MESSAGE_TYPE.RAW_JS,
             rawjs: jsPackage.trimStart(),
-            origin: origin,
+            origin: currentOrigin.val as Origin,
             version: version,
           },
           response => {
@@ -341,7 +307,7 @@ async function processJSWithSrc(script, origin, version) {
   }
 }
 
-export const processFoundJS = async (origin, version) => {
+export const processFoundJS = async version => {
   const fullscripts = FOUND_SCRIPTS.get(version).splice(0);
   const scripts = fullscripts.filter(script => {
     if (
@@ -356,7 +322,7 @@ export const processFoundJS = async (origin, version) => {
   let pendingScriptCount = scripts.length;
   for (const script of scripts) {
     if (script.src) {
-      await processJSWithSrc(script, origin, version).then(response => {
+      await processJSWithSrc(script, version).then(response => {
         pendingScriptCount--;
         if (response.valid) {
           if (pendingScriptCount == 0) {
@@ -383,7 +349,7 @@ export const processFoundJS = async (origin, version) => {
         {
           type: script.type,
           rawjs: script.rawjs.trimStart(),
-          origin: origin,
+          origin: currentOrigin.val as Origin,
           version: version,
         },
         response => {
@@ -417,10 +383,13 @@ export const processFoundJS = async (origin, version) => {
       );
     }
   }
-  window.setTimeout(() => processFoundJS(origin, version), 3000);
+  window.setTimeout(() => processFoundJS(version), 3000);
 };
 
-function parseFailedJson(queuedJsonToParse) {
+function parseFailedJson(queuedJsonToParse: {
+  node: Element;
+  retry: number;
+}): void {
   try {
     JSON.parse(queuedJsonToParse.node.textContent);
   } catch (parseError) {
@@ -433,22 +402,10 @@ function parseFailedJson(queuedJsonToParse) {
   }
 }
 
-function isPathnameExcluded(excludedPathnames) {
-  let pathname = location.pathname;
-  if (!pathname.endsWith('/')) {
-    pathname = pathname + '/';
-  }
-  return excludedPathnames.some(rule => {
-    if (typeof rule === 'string') {
-      return pathname === rule;
-    } else {
-      const match = pathname.match(rule);
-      return match != null && match[0] === pathname;
-    }
-  });
-}
-
-export function startFor(origin, excludedPathnames = []) {
+export function startFor(
+  origin: Origin,
+  excludedPathnames: Array<RegExp> = [],
+): void {
   sendMessageToBackground(
     {
       type: MESSAGE_TYPE.CONTENT_SCRIPT_START,
@@ -465,7 +422,7 @@ export function startFor(origin, excludedPathnames = []) {
     return;
   }
   let isUserLoggedIn = false;
-  if ([ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(origin)) {
+  if (isFbOrMsgrOrigin(origin)) {
     const cookies = document.cookie.split(';');
     cookies.forEach(cookie => {
       const pair = cookie.split('=');

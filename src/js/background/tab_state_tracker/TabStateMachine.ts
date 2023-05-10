@@ -16,7 +16,7 @@ import {
 
 import StateMachine from './StateMachine';
 import FrameStateMachine from './FrameStateMachine';
-import {sendMessageToBackground} from '../../content/sendMessageToBackground';
+import {sendMessageToBackground} from '../../shared/sendMessageToBackground';
 
 function getChromeV3Action() {
   if (self.chrome.runtime.getManifest().manifest_version >= 3) {

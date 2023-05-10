@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {MessagePayload, MessageResponse} from '../shared/MessageTypes';
+import {MessagePayload, MessageResponse} from './MessageTypes';
 
 export function sendMessageToBackground(
   message: MessagePayload,

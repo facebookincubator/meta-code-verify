@@ -6,17 +6,14 @@
  */
 
 import {MESSAGE_TYPE, Origin, State} from '../config';
+import {RawManifestOtherHashes} from '../contentUtils';
 
 export type MessagePayload =
   | {
       type: typeof MESSAGE_TYPE.LOAD_MANIFEST;
       origin: Origin;
       rootHash: string;
-      otherHashes: {
-        combined_hash: string;
-        longtail: string;
-        main: string;
-      };
+      otherHashes: RawManifestOtherHashes;
       leaves: Array<string>;
       version: string;
       workaround: string;

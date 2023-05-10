@@ -19,6 +19,11 @@ declare global {
     CompressionStream: {
       new (format?: CompressionFormat): CompressionStream;
     };
-    showSaveFilePicker: (_: {suggestedName: string}) => Promise<any>;
+    showSaveFilePicker: (_: {
+      suggestedName: string;
+    }) => Promise<FileSystemFileHandle>;
+  }
+  interface FileSystemFileHandle {
+    createWritable: () => Promise<WritableStream>;
   }
 }

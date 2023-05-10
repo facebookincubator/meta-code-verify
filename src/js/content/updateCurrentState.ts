@@ -6,7 +6,7 @@
  */
 
 import {MESSAGE_TYPE, Origin, State} from '../config';
-import {sendMessageToBackground} from './sendMessageToBackground';
+import {sendMessageToBackground} from '../shared/sendMessageToBackground';
 
 export const currentOrigin: {val: string | Origin} = {val: ''};
 

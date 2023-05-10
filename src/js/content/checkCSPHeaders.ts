@@ -8,7 +8,7 @@
 import {MESSAGE_TYPE, STATES} from '../config';
 import {updateCurrentState} from './updateCurrentState';
 import alertBackgroundOfImminentFetch from './alertBackgroundOfImminentFetch';
-import {sendMessageToBackground} from './sendMessageToBackground';
+import {sendMessageToBackground} from '../shared/sendMessageToBackground';
 
 function parseCSPString(csp: string): Map<string, Set<string>> {
   const directiveStrings = csp.split(';');
