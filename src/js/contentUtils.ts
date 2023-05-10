@@ -11,27 +11,33 @@ import {
   ORIGIN_TYPE,
   DOWNLOAD_JS_ENABLED,
   STATES,
+  Origin,
 } from './config';
 
-import {checkCSPHeaders} from './content/checkCSPHeaders';
-import {downloadJSArchive} from './content/downloadJSArchive';
+import checkCSPHeaders from './content/checkCSPHeaders';
+import downloadJSArchive from './content/downloadJSArchive';
 import alertBackgroundOfImminentFetch from './content/alertBackgroundOfImminentFetch';
 import {currentOrigin, updateCurrentState} from './content/updateCurrentState';
+import checkElementForViolatingJSUri from './content/checkElementForViolatingJSUri';
+import {checkElementForViolatingAttributes} from './content/checkElementForViolatingAttributes';
+import isFbOrMsgrOrigin from './shared/isFbOrMsgrOrigin';
+import {MessagePayload} from './shared/MessagePayload';
 
-const sourceScripts = new Map();
-const inlineScripts = [];
-const foundScripts = new Map();
-foundScripts.set('', []);
+const SOURCE_SCRIPTS = new Map();
+const INLINE_SCRIPTS = [];
+export const FOUND_SCRIPTS = new Map([['', []]]);
+
 let currentFilterType = '';
-let manifestTimeoutID = '';
+let manifestTimeoutID: string | number = '';
 
-export function storeFoundJS(scriptNodeMaybe, scriptList) {
+export function storeFoundJS(scriptNodeMaybe) {
   if (window != window.top) {
     // this means that content utils is running in an iframe - disable timer and call processFoundJS on manifest processed in top level frame
     clearTimeout(manifestTimeoutID);
     manifestTimeoutID = '';
     window.setTimeout(
-      () => processFoundJS(currentOrigin.val, foundScripts.keys().next().value),
+      () =>
+        processFoundJS(currentOrigin.val, FOUND_SCRIPTS.keys().next().value),
       0,
     );
   }
@@ -42,7 +48,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
       scriptNodeMaybe.getAttribute('name') === 'binary-transparency-manifest')
   ) {
     if (scriptNodeMaybe.getAttribute('type') !== 'application/json') {
-      chrome.runtime.sendMessage({
+      sendMessage({
         type: MESSAGE_TYPE.DEBUG,
         log: 'Manifest script type is invalid',
       });
@@ -50,7 +56,7 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
       return;
     }
 
-    let rawManifest = '';
+    let rawManifest: string | any = '';
     try {
       rawManifest = JSON.parse(scriptNodeMaybe.textContent);
     } catch (manifestParseError) {
@@ -62,14 +68,12 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     }
 
     let leaves = rawManifest.leaves;
-    let otherHashes = '';
+    let otherHashes: any = '';
     let otherType = '';
     let roothash = rawManifest.root;
     let version = rawManifest.version;
 
-    if (
-      [ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(currentOrigin.val)
-    ) {
+    if (isFbOrMsgrOrigin(currentOrigin.val)) {
       leaves = rawManifest.manifest;
       otherHashes = rawManifest.manifest_hashes;
       otherType = scriptNodeMaybe.getAttribute('data-manifest-type');
@@ -88,24 +92,23 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
       currentFilterType = 'BOTH';
     }
     // now that we know the actual version of the scripts, transfer the ones we know about.
-    if (foundScripts.has('')) {
-      foundScripts.set(version, foundScripts.get(''));
-      foundScripts.delete('');
+    if (FOUND_SCRIPTS.has('')) {
+      FOUND_SCRIPTS.set(version, FOUND_SCRIPTS.get(''));
+      FOUND_SCRIPTS.delete('');
     }
 
-    chrome.runtime.sendMessage(
+    sendMessage(
       {
         type: MESSAGE_TYPE.LOAD_MANIFEST,
         leaves: leaves,
-        origin: currentOrigin.val,
+        origin: currentOrigin.val as Origin,
         otherHashes: otherHashes,
-        otherType: otherType,
         rootHash: roothash,
         workaround: scriptNodeMaybe.innerHTML,
         version: version,
       },
       response => {
-        chrome.runtime.sendMessage({
+        sendMessage({
           type: MESSAGE_TYPE.DEBUG,
           log:
             'manifest load response is ' + response
@@ -162,8 +165,8 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
   const otherType = dataBtManifest == null ? '' : dataBtManifest.split('_')[1];
   // need to get the src of the JS
   if (scriptNodeMaybe.src != null && scriptNodeMaybe.src !== '') {
-    if (scriptList.size === 1) {
-      scriptList.get(scriptList.keys().next().value).push({
+    if (FOUND_SCRIPTS.size === 1) {
+      FOUND_SCRIPTS.get(FOUND_SCRIPTS.keys().next().value).push({
         src: scriptNodeMaybe.src,
         otherType: otherType, // TODO: read from DOM when available
       });
@@ -173,8 +176,8 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
     const hashLookupAttribute =
       scriptNodeMaybe.attributes['data-binary-transparency-hash-key'];
     const hashLookupKey = hashLookupAttribute && hashLookupAttribute.value;
-    if (scriptList.size === 1) {
-      scriptList.get(scriptList.keys().next().value).push({
+    if (FOUND_SCRIPTS.size === 1) {
+      FOUND_SCRIPTS.get(FOUND_SCRIPTS.keys().next().value).push({
         type: MESSAGE_TYPE.RAW_JS,
         rawjs: scriptNodeMaybe.innerHTML,
         lookupKey: hashLookupKey,
@@ -185,136 +188,24 @@ export function storeFoundJS(scriptNodeMaybe, scriptList) {
   updateCurrentState(STATES.PROCESSING);
 }
 
-function getAttributeValue(
-  nodeName,
-  checkNode,
-  htmlElement,
-  attributeName,
-  currentAttributeValue,
-) {
-  if (
-    nodeName.toLowerCase() === checkNode &&
-    htmlElement.hasAttribute(attributeName)
-  ) {
-    return htmlElement.getAttribute(attributeName).toLowerCase();
-  }
-  return currentAttributeValue;
+function checkNodeForViolations(element: Element) {
+  checkElementForViolatingJSUri(element);
+  checkElementForViolatingAttributes(element);
 }
 
-const AttributeCheckPairs = [
-  {nodeName: 'a', attributeName: 'href'},
-  {nodeName: 'iframe', attributeName: 'src'},
-  {nodeName: 'iframe', attributeName: 'srcdoc'},
-  {nodeName: 'form', attributeName: 'action'},
-  {nodeName: 'input', attributeName: 'formaction'},
-  {nodeName: 'button', attributeName: 'formaction'},
-  {nodeName: 'a', attributeName: 'xlink:href'},
-  {nodeName: 'ncc', attributeName: 'href'},
-  {nodeName: 'embed', attributeName: 'src'},
-  {nodeName: 'object', attributeName: 'data'},
-  {nodeName: 'animate', attributeName: 'xlink:href'},
-  {nodeName: 'script', attributeName: 'xlink:href'},
-  {nodeName: 'use', attributeName: 'href'},
-  {nodeName: 'use', attributeName: 'xlink:href'},
-  {nodeName: 'x', attributeName: 'href'},
-  {nodeName: 'x', attributeName: 'xlink:href'},
-];
-
-export function hasViolatingJavaScriptURI(htmlElement) {
-  let checkURL = '';
-  const lowerCaseNodeName = htmlElement.nodeName.toLowerCase();
-  AttributeCheckPairs.forEach(checkPair => {
-    checkURL = getAttributeValue(
-      lowerCaseNodeName,
-      checkPair.nodeName,
-      htmlElement,
-      checkPair.attributeName,
-      checkURL,
-    );
-  });
-  if (checkURL !== '') {
-    // make sure anchor tags and object tags don't have javascript urls
-    if (checkURL.indexOf('javascript') >= 0) {
-      chrome.runtime.sendMessage({
-        type: MESSAGE_TYPE.DEBUG,
-        log: 'violating attribute: javascript url',
-      });
-      updateCurrentState(STATES.INVALID);
-    }
-  }
-}
-
-function isEventHandlerAttribute(attribute) {
-  return attribute.indexOf('on') === 0;
-}
-
-export function hasInvalidAttributes(htmlElement) {
-  if (
-    typeof htmlElement.attributes === 'object' &&
-    Object.keys(htmlElement.attributes).length >= 1
-  ) {
-    Array.from(htmlElement.attributes).forEach(elementAttribute => {
-      // check first for violating attributes
-      if (isEventHandlerAttribute(elementAttribute.localName)) {
-        chrome.runtime.sendMessage({
-          type: MESSAGE_TYPE.DEBUG,
-          log:
-            'violating attribute ' +
-            elementAttribute.localName +
-            ' from element ' +
-            htmlElement.outerHTML,
-        });
-        updateCurrentState(STATES.INVALID);
-      }
-    });
-  }
-  // if the element is a math element, check all the attributes of the child node to ensure that there are on href or xlink:href attributes with javascript urls
-
-  if (
-    htmlElement.tagName.toLowerCase() === 'math' &&
-    Object.keys(htmlElement.attributes).length >= 1
-  ) {
-    Array.from(htmlElement.attributes).forEach(elementAttribute => {
-      if (
-        (elementAttribute.localName === 'href' ||
-          elementAttribute.localName === 'xlink:href') &&
-        htmlElement
-          .getAttribute(elementAttribute.localName)
-          .toLowerCase()
-          .startsWith('javascript')
-      ) {
-        chrome.runtime.sendMessage({
-          type: MESSAGE_TYPE.DEBUG,
-          log:
-            'violating attribute ' +
-            elementAttribute.localName +
-            ' from element ' +
-            htmlElement.outerHTML,
-        });
-        updateCurrentState(STATES.INVALID);
-      }
-    });
-  }
-}
-
-function checkNodeForViolations(element) {
-  hasViolatingJavaScriptURI(element);
-  hasInvalidAttributes(element);
-}
-
-export function hasInvalidScripts(scriptNodeMaybe, scriptList) {
+export function hasInvalidScripts(scriptNodeMaybe: Node) {
   // if not an HTMLElement ignore it!
   if (scriptNodeMaybe.nodeType !== 1) {
     return;
   }
 
-  checkNodeForViolations(scriptNodeMaybe);
+  checkNodeForViolations(scriptNodeMaybe as Element);
 
   if (scriptNodeMaybe.nodeName.toLowerCase() === 'script') {
-    storeFoundJS(scriptNodeMaybe, scriptList);
+    storeFoundJS(scriptNodeMaybe);
   } else if (scriptNodeMaybe.childNodes.length > 0) {
     scriptNodeMaybe.childNodes.forEach(childNode => {
-      hasInvalidScripts(childNode, scriptList);
+      hasInvalidScripts(childNode);
     });
   }
 }
@@ -326,7 +217,7 @@ export const scanForScripts = () => {
     checkNodeForViolations(element);
     // next check for existing script elements and if they're violating
     if (element.nodeName.toLowerCase() === 'script') {
-      storeFoundJS(element, foundScripts);
+      storeFoundJS(element);
     }
   });
 
@@ -336,19 +227,13 @@ export const scanForScripts = () => {
       mutationsList.forEach(mutation => {
         if (mutation.type === 'childList') {
           Array.from(mutation.addedNodes).forEach(checkScript => {
-            hasInvalidScripts(checkScript, foundScripts);
+            hasInvalidScripts(checkScript);
           });
         } else if (
           mutation.type === 'attributes' &&
-          checkNodeForViolations(mutation.target, false)
+          mutation.target.nodeType === 1
         ) {
-          updateCurrentState(STATES.INVALID);
-          chrome.runtime.sendMessage({
-            type: MESSAGE_TYPE.DEBUG,
-            log:
-              'Processed DOM mutation and invalid attribute added or changed ' +
-              mutation.target,
-          });
+          checkNodeForViolations(mutation.target as Element);
         }
       });
     });
@@ -417,7 +302,7 @@ async function processJSWithSrc(script, origin, version) {
     if (DOWNLOAD_JS_ENABLED) {
       const fileNameArr = script.src.split('/');
       const fileName = fileNameArr[fileNameArr.length - 1].split('?')[0];
-      sourceScripts.set(
+      SOURCE_SCRIPTS.set(
         fileName,
         sourceResponse
           .clone()
@@ -429,7 +314,7 @@ async function processJSWithSrc(script, origin, version) {
     const packages = sourceText.split('/*FB_PKG_DELIM*/\n');
     const packagePromises = packages.map(jsPackage => {
       return new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(
+        sendMessage(
           {
             type: MESSAGE_TYPE.RAW_JS,
             rawjs: jsPackage.trimStart(),
@@ -438,7 +323,7 @@ async function processJSWithSrc(script, origin, version) {
           },
           response => {
             if (response.valid) {
-              resolve();
+              resolve(null);
             } else {
               reject(response.type);
             }
@@ -457,8 +342,7 @@ async function processJSWithSrc(script, origin, version) {
 }
 
 export const processFoundJS = async (origin, version) => {
-  // foundScripts
-  const fullscripts = foundScripts.get(version).splice(0);
+  const fullscripts = FOUND_SCRIPTS.get(version).splice(0);
   const scripts = fullscripts.filter(script => {
     if (
       script.otherType === currentFilterType ||
@@ -466,7 +350,7 @@ export const processFoundJS = async (origin, version) => {
     ) {
       return true;
     } else {
-      foundScripts.get(version).push(script);
+      FOUND_SCRIPTS.get(version).push(script);
     }
   });
   let pendingScriptCount = scripts.length;
@@ -485,7 +369,7 @@ export const processFoundJS = async (origin, version) => {
             updateCurrentState(STATES.INVALID);
           }
         }
-        chrome.runtime.sendMessage({
+        sendMessage({
           type: MESSAGE_TYPE.DEBUG,
           log:
             'processed JS with SRC, ' +
@@ -495,34 +379,33 @@ export const processFoundJS = async (origin, version) => {
         });
       });
     } else {
-      chrome.runtime.sendMessage(
+      sendMessage(
         {
           type: script.type,
           rawjs: script.rawjs.trimStart(),
-          lookupKey: script.lookupKey,
           origin: origin,
           version: version,
         },
         response => {
           pendingScriptCount--;
-          let inlineScriptMap = new Map();
+          const inlineScriptMap = new Map();
           if (response.valid) {
             inlineScriptMap.set(response.hash, script.rawjs);
-            inlineScripts.push(inlineScriptMap);
+            INLINE_SCRIPTS.push(inlineScriptMap);
             if (pendingScriptCount == 0) {
               updateCurrentState(STATES.VALID);
             }
           } else {
             // using an array of maps, as we're using the same key for inline scripts - this will eventually be removed, once inline scripts are removed from the page load
             inlineScriptMap.set('hash not in manifest', script.rawjs);
-            inlineScripts.push(inlineScriptMap);
+            INLINE_SCRIPTS.push(inlineScriptMap);
             if (KNOWN_EXTENSION_HASHES.includes(response.hash)) {
               updateCurrentState(STATES.RISK);
             } else {
               updateCurrentState(STATES.INVALID);
             }
           }
-          chrome.runtime.sendMessage({
+          sendMessage({
             type: MESSAGE_TYPE.DEBUG,
             log:
               'processed the RAW_JS, response is ' +
@@ -566,20 +449,17 @@ function isPathnameExcluded(excludedPathnames) {
 }
 
 export function startFor(origin, excludedPathnames = []) {
-  chrome.runtime
-    .sendMessage({
+  sendMessage(
+    {
       type: MESSAGE_TYPE.CONTENT_SCRIPT_START,
       origin,
-    })
-    .then(resp => {
-      if (
-        [ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(
-          currentOrigin.val,
-        )
-      ) {
+    },
+    resp => {
+      if (isFbOrMsgrOrigin(currentOrigin.val)) {
         checkCSPHeaders(resp.cspHeader, resp.cspReportHeader);
       }
-    });
+    },
+  );
   if (isPathnameExcluded(excludedPathnames)) {
     updateCurrentState(STATES.IGNORE);
     return;
@@ -588,7 +468,7 @@ export function startFor(origin, excludedPathnames = []) {
   if ([ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(origin)) {
     const cookies = document.cookie.split(';');
     cookies.forEach(cookie => {
-      let pair = cookie.split('=');
+      const pair = cookie.split('=');
       // c_user contains the user id of the user logged in
       if (pair[0].indexOf('c_user') >= 0) {
         isUserLoggedIn = true;
@@ -604,7 +484,7 @@ export function startFor(origin, excludedPathnames = []) {
     scanForScripts();
     // set the timeout once, in case there's an iframe and contentUtils sets another manifest timer
     if (manifestTimeoutID === '') {
-      manifestTimeoutID = setTimeout(() => {
+      manifestTimeoutID = window.setTimeout(() => {
         // Manifest failed to load, flag a warning to the user.
         updateCurrentState(STATES.TIMEOUT);
       }, 45000);
@@ -614,8 +494,15 @@ export function startFor(origin, excludedPathnames = []) {
 
 chrome.runtime.onMessage.addListener(function (request) {
   if (request.greeting === 'downloadSource' && DOWNLOAD_JS_ENABLED) {
-    downloadJSArchive(sourceScripts, inlineScripts);
+    downloadJSArchive(SOURCE_SCRIPTS, INLINE_SCRIPTS);
   } else if (request.greeting === 'nocacheHeaderFound') {
     updateCurrentState(STATES.INVALID);
   }
 });
+
+function sendMessage<R = any>(
+  message: MessagePayload,
+  callback?: (response: R) => void,
+): void {
+  chrome.runtime.sendMessage(message, callback);
+}

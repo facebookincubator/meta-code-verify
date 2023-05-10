@@ -19,7 +19,7 @@
     "test": "yarn lint && node --experimental-vm-modules --no-warnings node_modules/jest/bin/jest.js"
   },
   "devDependencies": {
-    "@rollup/plugin-eslint": "^8.0.2",
+    "@rollup/plugin-eslint": "^9.0.3",
     "@rollup/plugin-typescript": "^11.0.0",
     "@types/chrome": "^0.0.213",
     "@types/jest": "^29.4.0",

@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {MESSAGE_TYPE, State} from '../config';
+import {MESSAGE_TYPE, Origin, State} from '../config';
 
-export const currentOrigin = {val: ''};
+export const currentOrigin: {val: string | Origin} = {val: ''};
 
 export function updateCurrentState(state: State) {
   chrome.runtime.sendMessage({

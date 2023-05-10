@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type {MessageType, Origin} from './config';
-import {MESSAGE_TYPE, ORIGIN_HOST, ORIGIN_TIMEOUT, ORIGIN_TYPE} from './config';
+import type {Origin} from './config';
+import {MESSAGE_TYPE, ORIGIN_HOST, ORIGIN_TIMEOUT} from './config';
 
 import {
   recordContentScriptStart,
@@ -21,24 +21,23 @@ import setupCSPListener from './background/setupCSPListener';
 import setupNoCacheListeners from './background/setupNoCacheListeners';
 import {validateMetaCompanyManifest} from './background/validateMetaCompanyManifest';
 import {validateManifest} from './background/validateManifest';
+import isFbOrMsgrOrigin from './shared/isFbOrMsgrOrigin';
+import {MessagePayload} from './shared/MessagePayload';
 
-const manifestCache = new Map<Origin, Map<string, Manifest>>();
-const cspHeaders = new Map<number, string | undefined>();
-const cspReportHeaders = new Map<number, string | undefined>();
+const MANIFEST_CACHE = new Map<Origin, Map<string, Manifest>>();
+const CSP_HEADERS = new Map<number, string | undefined>();
+const CSP_REPORT_HEADERS = new Map<number, string | undefined>();
 
 // Keeps track of scripts `fetch`-ed by the extension to ensure they are all
 // resolved from browser cache
-const cachedScriptsUrls = new Map<number, Set<string>>();
+const CACHED_SCRIPTS_URLS = new Map<number, Set<string>>();
 
 type Manifest = {
   root: string;
   start: number;
   leaves: Array<string>;
 };
-type MessagePayload = {
-  type: MessageType;
-  [key: string]: any;
-};
+
 type Response = {
   valid?: boolean;
   success?: boolean;
@@ -58,9 +57,7 @@ function handleMessages(
 
   if (message.type == MESSAGE_TYPE.LOAD_MANIFEST) {
     // validate manifest
-    if (
-      [ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].includes(message.origin)
-    ) {
+    if (isFbOrMsgrOrigin(message.origin)) {
       validateMetaCompanyManifest(
         message.rootHash,
         message.otherHashes,
@@ -68,10 +65,10 @@ function handleMessages(
       ).then(valid => {
         console.log('result is ', valid);
         if (valid) {
-          let origin = manifestCache.get(message.origin);
+          let origin = MANIFEST_CACHE.get(message.origin);
           if (origin == null) {
             origin = new Map();
-            manifestCache.set(message.origin, origin);
+            MANIFEST_CACHE.set(message.origin, origin);
           }
           // roll through the existing manifests and remove expired ones
           if (ORIGIN_TIMEOUT[message.origin] > 0) {
@@ -115,10 +112,10 @@ function handleMessages(
       ).then(validationResult => {
         if (validationResult.valid) {
           // store manifest to subsequently validate JS
-          let origin = manifestCache.get(message.origin);
+          let origin = MANIFEST_CACHE.get(message.origin);
           if (origin == null) {
             origin = new Map();
-            manifestCache.set(message.origin, origin);
+            MANIFEST_CACHE.set(message.origin, origin);
           }
           // roll through the existing manifests and remove expired ones
           if (ORIGIN_TIMEOUT[message.origin] > 0) {
@@ -142,7 +139,7 @@ function handleMessages(
     }
     return true;
   } else if (message.type == MESSAGE_TYPE.RAW_JS) {
-    const origin = manifestCache.get(message.origin);
+    const origin = MANIFEST_CACHE.get(message.origin);
     if (!origin) {
       addDebugLog(
         sender.tab.id,
@@ -215,14 +212,14 @@ function handleMessages(
     recordContentScriptStart(sender, message.origin);
     sendResponse({
       success: true,
-      cspHeader: cspHeaders.get(sender.tab.id),
-      cspReportHeader: cspReportHeaders.get(sender.tab.id),
+      cspHeader: CSP_HEADERS.get(sender.tab.id),
+      cspReportHeader: CSP_REPORT_HEADERS.get(sender.tab.id),
     });
   } else if (message.type === MESSAGE_TYPE.UPDATED_CACHED_SCRIPT_URLS) {
-    if (!cachedScriptsUrls.has(sender.tab.id)) {
-      cachedScriptsUrls.set(sender.tab.id, new Set());
+    if (!CACHED_SCRIPTS_URLS.has(sender.tab.id)) {
+      CACHED_SCRIPTS_URLS.set(sender.tab.id, new Set());
     }
-    cachedScriptsUrls.get(sender.tab.id).add(message.url);
+    CACHED_SCRIPTS_URLS.get(sender.tab.id).add(message.url);
     sendResponse({success: true});
     return true;
   }
@@ -230,8 +227,8 @@ function handleMessages(
 
 chrome.runtime.onMessage.addListener(handleMessages);
 
-setupCSPListener(cspHeaders, cspReportHeaders);
-setupNoCacheListeners(cachedScriptsUrls);
+setupCSPListener(CSP_HEADERS, CSP_REPORT_HEADERS);
+setupNoCacheListeners(CACHED_SCRIPTS_URLS);
 setupDebugLogListener();
 
 // Emulate PageActions
