@@ -16,8 +16,9 @@ import setupCSPListener from './background/setupCSPListener';
 import setupNoCacheListeners from './background/setupNoCacheListeners';
 import {validateMetaCompanyManifest} from './background/validateMetaCompanyManifest';
 import {validateManifest} from './background/validateManifest';
-import isFbOrMsgrOrigin from './shared/isFbOrMsgrOrigin';
+import isFbMsgrOrIgOrigin from './shared/isFbMsgrOrIgOrigin';
 import {MessagePayload, MessageResponse} from './shared/MessageTypes';
+// import {updateCurrentState} from './content/updateCurrentState';
 
 const MANIFEST_CACHE = new Map<Origin, Map<string, Manifest>>();
 
@@ -62,7 +63,7 @@ function handleMessages(
   logReceivedMessage(message);
   if (message.type == MESSAGE_TYPE.LOAD_MANIFEST) {
     // validate manifest
-    if (isFbOrMsgrOrigin(message.origin)) {
+    if (isFbMsgrOrIgOrigin(message.origin)) {
       validateMetaCompanyManifest(
         message.rootHash,
         message.otherHashes,

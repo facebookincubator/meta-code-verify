@@ -38,7 +38,11 @@ export default function setupCSPListener(
     },
     {
       types: ['main_frame', 'sub_frame'],
-      urls: ['*://*.facebook.com/*', '*://*.messenger.com/*'],
+      urls: [
+        '*://*.facebook.com/*',
+        '*://*.messenger.com/*',
+        '*://*.instagram.com/*',
+      ],
     },
     ['responseHeaders'],
   );

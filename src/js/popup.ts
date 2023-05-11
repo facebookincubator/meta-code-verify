@@ -41,6 +41,12 @@ const ORIGIN_TO_LEARN_MORE_PAGES = {
     risk: chrome.i18n.getMessage('possible_risk_detected_faq_url_wa'),
     timeout: chrome.i18n.getMessage('network_timeout_faq_url_wa'),
   },
+  [ORIGIN_TYPE.INSTAGRAM]: {
+    about: chrome.i18n.getMessage('about_code_verify_faq_url_ig'),
+    failure: chrome.i18n.getMessage('validation_failure_faq_url_ig'),
+    risk: chrome.i18n.getMessage('possible_risk_detected_faq_url_ig'),
+    timeout: chrome.i18n.getMessage('network_timeout_faq_url_ig'),
+  },
 };
 
 // doing this so we can add support for i18n using messages.json

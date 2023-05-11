@@ -8,6 +8,9 @@
 	"about_code_verify_faq_url_fb": {
 		"message": "https://www.facebook.com/help/728172628487328"
 	},
+	"about_code_verify_faq_url_ig": {
+		"message": "https://help.instagram.com/198632106142837"
+	},
 	"validation_failure_faq_url_msgr": {
 		"message": "https://www.messenger.com/help/799550494558955?ref=learn_more#validationfailure"
 	},
@@ -16,6 +19,9 @@
 	},
 	"validation_failure_faq_url_fb": {
 		"message": "https://www.facebook.com/help/728172628487328?ref=learn_more#validationfailure"
+	},
+	"validation_failure_faq_url_ig": {
+		"message": "https://help.instagram.com/198632106142837?ref=learn_more#validationfailure"
 	},
 	"possible_risk_detected_faq_url_msgr": {
 		"message": "https://www.messenger.com/help/799550494558955?ref=learn_more#possibleriskdetected"
@@ -26,6 +32,9 @@
 	"possible_risk_detected_faq_url_fb": {
 		"message": "https://www.facebook.com/help/728172628487328?ref=learn_more#possibleriskdetected"
 	},
+	"possible_risk_detected_faq_url_ig": {
+		"message": "https://help.instagram.com/198632106142837?ref=learn_more#possibleriskdetected"
+	},
 	"network_timeout_faq_url_msgr": {
 		"message": "https://www.messenger.com/help/799550494558955?ref=learn_more#networktimedout"
 	},
@@ -34,6 +43,9 @@
 	},
 	"network_timeout_faq_url_fb": {
 		"message": "https://www.facebook.com/help/728172628487328?ref=learn_more#networktimedout"
+	},
+	"network_timeout_faq_url_ig": {
+		"message": "https://help.instagram.com/198632106142837?ref=learn_more#networktimedout"
 	},
 	"i18nValidatedStatusHeader": {
 		"message": "Validated"

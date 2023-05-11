@@ -98,18 +98,21 @@ export const ORIGIN_HOST = {
   FACEBOOK: 'facebook.com',
   WHATSAPP: 'whatsapp.com',
   MESSENGER: 'messenger.com',
+  INSTAGRAM: 'instagram.com',
 };
 
 export const ORIGIN_TIMEOUT = {
   FACEBOOK: 176400000,
   WHATSAPP: 0,
   MESSENGER: 0,
+  INSTAGRAM: 0,
 };
 
 export const ORIGIN_TYPE = Object.freeze({
   FACEBOOK: 'FACEBOOK',
   WHATSAPP: 'WHATSAPP',
   MESSENGER: 'MESSENGER',
+  INSTAGRAM: 'INSTAGRAM',
 });
 
 export type Origin = keyof typeof ORIGIN_TYPE;

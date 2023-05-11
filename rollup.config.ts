@@ -65,6 +65,20 @@ const config: Array<RollupOptions> = [
         plugins: [typescript(), prettierSrc(), eslint()],
     },
     {
+        input: 'src/js/detectIGMeta.ts',
+        output: [{
+            file: 'dist/chrome/contentIG.js',
+            format: 'iife'
+        }, {
+            file: 'dist/edge/contentIG.js',
+            format: 'iife'
+        }, {
+            file: 'dist/firefox/contentIG.js',
+            format: 'iife'
+        }],
+        plugins: [typescript(), prettierSrc(), eslint()],
+    },
+    {
         input: 'src/js/background.ts',
         output: [{
             file: 'dist/chrome/background.js',

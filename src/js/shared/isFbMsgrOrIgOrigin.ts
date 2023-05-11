@@ -7,6 +7,10 @@
 
 import {ORIGIN_TYPE} from '../config';
 
-export default function isFbOrMsgrOrigin(origin: string): boolean {
-  return [ORIGIN_TYPE.FACEBOOK, ORIGIN_TYPE.MESSENGER].some(e => e === origin);
+export default function isFbMsgrOrIgOrigin(origin: string): boolean {
+  return [
+    ORIGIN_TYPE.FACEBOOK,
+    ORIGIN_TYPE.MESSENGER,
+    ORIGIN_TYPE.INSTAGRAM,
+  ].some(e => e === origin);
 }

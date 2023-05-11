@@ -36,6 +36,13 @@
             "run_at": "document_start"
         },
         {
+            "matches": ["*://*.instagram.com/*"],
+            "all_frames": true,
+            "match_about_blank": true,
+            "js": ["contentIG.js"],
+            "run_at": "document_start"
+        },
+        {
             "matches": ["*://*.whatsapp.com/*"],
             "all_frames": true,
             "match_about_blank": true,
@@ -54,6 +61,7 @@
         "https://static.xx.fbcdn.net/",
         "*://*.messenger.com/*",
         "*://*.facebook.com/*",
+        "*://*.instagram.com/*",
         "*://*.whatsapp.com/*"
     ]
 }

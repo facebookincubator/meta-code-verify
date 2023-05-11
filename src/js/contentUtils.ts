@@ -11,6 +11,7 @@ import {
   DOWNLOAD_JS_ENABLED,
   STATES,
   Origin,
+  ORIGIN_TYPE,
 } from './config';
 
 import {checkCSPHeaders} from './content/checkCSPHeaders';
@@ -19,7 +20,7 @@ import alertBackgroundOfImminentFetch from './content/alertBackgroundOfImminentF
 import {currentOrigin, updateCurrentState} from './content/updateCurrentState';
 import checkElementForViolatingJSUri from './content/checkElementForViolatingJSUri';
 import {checkElementForViolatingAttributes} from './content/checkElementForViolatingAttributes';
-import isFbOrMsgrOrigin from './shared/isFbOrMsgrOrigin';
+import isFbMsgrOrIgOrigin from './shared/isFbMsgrOrIgOrigin';
 import {sendMessageToBackground} from './shared/sendMessageToBackground';
 import parseFailedJSON from './content/parseFailedJSON';
 import genSourceText from './content/genSourceText';
@@ -64,8 +65,19 @@ type RawManifest = {
   version: string;
 };
 
+function isTopWindow(): boolean {
+  return window == window.top;
+}
+function isSameDomainAsTopWindow(): boolean {
+  try {
+    return window.location.origin === window.top.location.origin;
+  } catch {
+    return false;
+  }
+}
+
 export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
-  if (window != window.top) {
+  if (!isTopWindow() && isSameDomainAsTopWindow()) {
     // this means that content utils is running in an iframe - disable timer and call processFoundJS on manifest processed in top level frame
     clearTimeout(manifestTimeoutID);
     manifestTimeoutID = '';
@@ -75,7 +87,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
   }
   // check if it's the manifest node
   if (
-    window == window.top &&
+    (isTopWindow() || !isSameDomainAsTopWindow()) &&
     (scriptNodeMaybe.id === 'binary-transparency-manifest' ||
       scriptNodeMaybe.getAttribute('name') === 'binary-transparency-manifest')
   ) {
@@ -100,8 +112,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
     let otherType = '';
     let roothash = rawManifest.root;
     let version = rawManifest.version;
-
-    if (isFbOrMsgrOrigin(currentOrigin.val)) {
+    if (isFbMsgrOrIgOrigin(currentOrigin.val)) {
       leaves = rawManifest.manifest;
       otherHashes = rawManifest.manifest_hashes;
       otherType = scriptNodeMaybe.getAttribute('data-manifest-type');
@@ -179,7 +190,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
     scriptNodeMaybe.src.indexOf('blob:') === 0
   ) {
     // TODO: try to process the blob. For now, flag as warning.
-    updateCurrentState(STATES.INVALID);
+    updateCurrentState(STATES.INVALID, 'blob: src');
     return;
   }
 
@@ -241,7 +252,6 @@ export function hasInvalidScripts(scriptNodeMaybe: Node): void {
 
 export const scanForScripts = (): void => {
   const allElements = document.getElementsByTagName('*');
-
   Array.from(allElements).forEach(element => {
     checkNodeForViolations(element);
     // next check for existing script elements and if they're violating
@@ -273,7 +283,7 @@ export const scanForScripts = (): void => {
       subtree: true,
     });
   } catch (_UnknownError) {
-    updateCurrentState(STATES.INVALID);
+    updateCurrentState(STATES.INVALID, 'unknown');
   }
 };
 
@@ -358,7 +368,7 @@ export const processFoundJS = async (version: string): Promise<void> => {
           if (response.type === 'EXTENSION') {
             updateCurrentState(STATES.RISK);
           } else {
-            updateCurrentState(STATES.INVALID);
+            updateCurrentState(STATES.INVALID, 'Invalid ScriptDetailsWithSrc');
           }
         }
         sendMessageToBackground({
@@ -394,7 +404,7 @@ export const processFoundJS = async (version: string): Promise<void> => {
             if (KNOWN_EXTENSION_HASHES.includes(response.hash)) {
               updateCurrentState(STATES.RISK);
             } else {
-              updateCurrentState(STATES.INVALID);
+              updateCurrentState(STATES.INVALID, 'Invalid ScriptDetailsRaw');
             }
           }
           sendMessageToBackground({
@@ -422,7 +432,7 @@ export function startFor(
       origin,
     },
     resp => {
-      if (isFbOrMsgrOrigin(currentOrigin.val)) {
+      if (isFbMsgrOrIgOrigin(currentOrigin.val)) {
         checkCSPHeaders(resp.cspHeaders, resp.cspReportHeaders);
       }
     },
@@ -432,12 +442,14 @@ export function startFor(
     return;
   }
   let isUserLoggedIn = false;
-  if (isFbOrMsgrOrigin(origin)) {
+  if (isFbMsgrOrIgOrigin(origin)) {
+    // ds_user_id / c_user contains the user id of the user logged in
+    const cookieName =
+      origin === ORIGIN_TYPE.INSTAGRAM ? 'ds_user_id' : 'c_user';
     const cookies = document.cookie.split(';');
     cookies.forEach(cookie => {
       const pair = cookie.split('=');
-      // c_user contains the user id of the user logged in
-      if (pair[0].indexOf('c_user') >= 0) {
+      if (pair[0].indexOf(cookieName) >= 0) {
         isUserLoggedIn = true;
       }
     });
