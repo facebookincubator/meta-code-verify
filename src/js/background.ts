@@ -25,8 +25,11 @@ import isFbOrMsgrOrigin from './shared/isFbOrMsgrOrigin';
 import {MessagePayload, MessageResponse} from './shared/MessageTypes';
 
 const MANIFEST_CACHE = new Map<Origin, Map<string, Manifest>>();
-const CSP_HEADERS = new Map<number, string | undefined>();
-const CSP_REPORT_HEADERS = new Map<number, string | undefined>();
+
+// TabID -> FrameID -> CSP Header Values
+export type CSPHeaderMap = Map<number, Map<number, string | undefined>>;
+const CSP_HEADERS: CSPHeaderMap = new Map();
+const CSP_REPORT_HEADERS: CSPHeaderMap = new Map();
 
 // Keeps track of scripts `fetch`-ed by the extension to ensure they are all
 // resolved from browser cache
@@ -202,8 +205,10 @@ function handleMessages(
     recordContentScriptStart(sender, message.origin);
     sendResponse({
       success: true,
-      cspHeader: CSP_HEADERS.get(sender.tab.id),
-      cspReportHeader: CSP_REPORT_HEADERS.get(sender.tab.id),
+      cspHeader: CSP_HEADERS?.get(sender.tab.id)?.get(sender.frameId),
+      cspReportHeader: CSP_REPORT_HEADERS?.get(sender.tab.id)?.get(
+        sender.frameId,
+      ),
     });
   } else if (message.type === MESSAGE_TYPE.UPDATED_CACHED_SCRIPT_URLS) {
     if (!CACHED_SCRIPTS_URLS.has(sender.tab.id)) {
