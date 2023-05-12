@@ -10,10 +10,11 @@ import {sendMessageToBackground} from '../shared/sendMessageToBackground';
 
 export const currentOrigin: {val: Origin} = {val: null};
 
-export function updateCurrentState(state: State) {
+export function updateCurrentState(state: State, details?: string) {
   sendMessageToBackground({
     type: MESSAGE_TYPE.UPDATE_STATE,
     state,
     origin: currentOrigin.val as Origin,
+    details,
   });
 }

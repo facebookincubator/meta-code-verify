@@ -5,8 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {MESSAGE_TYPE, STATES} from '../config';
-import {sendMessageToBackground} from '../shared/sendMessageToBackground';
+import {STATES} from '../config';
 import {updateCurrentState} from './updateCurrentState';
 
 function isEventHandlerAttribute(attribute: string): boolean {
@@ -21,15 +20,10 @@ export function checkElementForViolatingAttributes(element: Element): void {
     Array.from(element.attributes).forEach(elementAttribute => {
       // check first for violating attributes
       if (isEventHandlerAttribute(elementAttribute.localName)) {
-        sendMessageToBackground({
-          type: MESSAGE_TYPE.DEBUG,
-          log:
-            'violating attribute ' +
-            elementAttribute.localName +
-            ' from element ' +
-            element.outerHTML,
-        });
-        updateCurrentState(STATES.INVALID);
+        updateCurrentState(
+          STATES.INVALID,
+          `violating attribute ${elementAttribute.localName} from element ${element.outerHTML}`,
+        );
       }
     });
   }
@@ -48,15 +42,10 @@ export function checkElementForViolatingAttributes(element: Element): void {
           .toLowerCase()
           .startsWith('javascript')
       ) {
-        sendMessageToBackground({
-          type: MESSAGE_TYPE.DEBUG,
-          log:
-            'violating attribute ' +
-            elementAttribute.localName +
-            ' from element ' +
-            element.outerHTML,
-        });
-        updateCurrentState(STATES.INVALID);
+        updateCurrentState(
+          STATES.INVALID,
+          `violating attribute ${elementAttribute.localName} from element ${element.outerHTML}`,
+        );
       }
     });
   }

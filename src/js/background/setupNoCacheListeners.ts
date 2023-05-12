@@ -15,9 +15,11 @@ export default function setupNoCacheListeners(
         !response.fromCache &&
         cachedScriptsUrls.get(response.tabId)?.has(response.url)
       ) {
-        console.log(`Detected uncached script ${response.url}`);
         chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-          chrome.tabs.sendMessage(tabs[0].id, {greeting: 'nocacheHeaderFound'});
+          chrome.tabs.sendMessage(tabs[0].id, {
+            greeting: 'nocacheHeaderFound',
+            uncachedUrl: response.url,
+          });
         });
       }
       cachedScriptsUrls.get(response.tabId)?.delete(response.url);

@@ -5,18 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type {Origin} from './config';
+import {Origin, STATES} from './config';
 import {MESSAGE_TYPE, ORIGIN_HOST, ORIGIN_TIMEOUT} from './config';
 
 import {
   recordContentScriptStart,
   updateContentScriptState,
 } from './background/tab_state_tracker/tabStateTracker';
-import {
-  addDebugLog,
-  getDebugLog,
-  setupDebugLogListener,
-} from './background/debugUtils';
 import setupCSPListener from './background/setupCSPListener';
 import setupNoCacheListeners from './background/setupNoCacheListeners';
 import {validateMetaCompanyManifest} from './background/validateMetaCompanyManifest';
@@ -41,13 +36,29 @@ type Manifest = {
   leaves: Array<string>;
 };
 
+function logReceivedMessage(message: MessagePayload): void {
+  let logger = console.log;
+  switch (message.type) {
+    case MESSAGE_TYPE.UPDATE_STATE:
+      if (message.state === STATES.INVALID) {
+        logger = console.error;
+      } else if (message.state === STATES.PROCESSING) {
+        logger = null;
+      }
+      break;
+    case MESSAGE_TYPE.DEBUG:
+      logger = console.debug;
+      break;
+  }
+  logger?.('background, handleMessages', message);
+}
+
 function handleMessages(
   message: MessagePayload,
   sender: chrome.runtime.MessageSender,
   sendResponse: (_: MessageResponse) => void,
 ): void | boolean {
-  console.log('in handle messages ', message);
-
+  logReceivedMessage(message);
   if (message.type == MESSAGE_TYPE.LOAD_MANIFEST) {
     // validate manifest
     if (isFbOrMsgrOrigin(message.origin)) {
@@ -56,7 +67,6 @@ function handleMessages(
         message.otherHashes,
         message.leaves,
       ).then(valid => {
-        console.log('result is ', valid);
         if (valid) {
           let origin = MANIFEST_CACHE.get(message.origin);
           if (origin == null) {
@@ -118,7 +128,6 @@ function handleMessages(
               }
             }
           }
-          console.log('result is ', validationResult.valid);
           origin.set(message.version, {
             leaves: slicedLeaves,
             root: slicedHash,
@@ -134,23 +143,12 @@ function handleMessages(
   } else if (message.type == MESSAGE_TYPE.RAW_JS) {
     const origin = MANIFEST_CACHE.get(message.origin);
     if (!origin) {
-      addDebugLog(
-        sender.tab.id,
-        'Error: RAW_JS had no matching origin ' + message.origin,
-      );
       sendResponse({valid: false, reason: 'no matching origin'});
       return;
     }
     const manifestObj = origin.get(message.version);
     const manifest = manifestObj && manifestObj.leaves;
     if (!manifest) {
-      addDebugLog(
-        sender.tab.id,
-        'Error: JS with SRC had no matching manifest. origin: ' +
-          message.origin +
-          ' version: ' +
-          message.version,
-      );
       sendResponse({valid: false, reason: 'no matching manifest'});
       return;
     }
@@ -168,16 +166,6 @@ function handleMessages(
       if (manifestObj.leaves.includes(jsHash)) {
         sendResponse({valid: true});
       } else {
-        console.log('generate hash is ', jsHash);
-        addDebugLog(
-          sender.tab.id,
-          'Error: hash does not match ' +
-            message.origin +
-            ', ' +
-            message.version +
-            ', unmatched JS is ' +
-            message.rawjs.substring(0, 500),
-        );
         sendResponse({
           valid: false,
           hash: jsHash,
@@ -192,12 +180,6 @@ function handleMessages(
       }
     });
     return true;
-  } else if (message.type == MESSAGE_TYPE.DEBUG) {
-    addDebugLog(sender.tab.id, message.log);
-  } else if (message.type == MESSAGE_TYPE.GET_DEBUG) {
-    const debuglist = getDebugLog(message.tabId);
-    console.log('debug list is ', message.tabId, debuglist);
-    sendResponse({valid: true, debugList: debuglist});
   } else if (message.type === MESSAGE_TYPE.UPDATE_STATE) {
     updateContentScriptState(sender, message.state, message.origin);
     sendResponse({success: true});
@@ -224,7 +206,6 @@ chrome.runtime.onMessage.addListener(handleMessages);
 
 setupCSPListener(CSP_HEADERS, CSP_REPORT_HEADERS);
 setupNoCacheListeners(CACHED_SCRIPTS_URLS);
-setupDebugLogListener();
 
 // Emulate PageActions
 chrome.runtime.onInstalled.addListener(() => {

@@ -83,7 +83,6 @@ export const KNOWN_EXTENSION_HASHES = [
 
 export const MESSAGE_TYPE = Object.freeze({
   DEBUG: 'DEBUG',
-  GET_DEBUG: 'GET_DEBUG',
   LOAD_MANIFEST: 'LOAD_MANIFEST',
   POPUP_STATE: 'POPUP_STATE',
   RAW_JS: 'RAW_JS',

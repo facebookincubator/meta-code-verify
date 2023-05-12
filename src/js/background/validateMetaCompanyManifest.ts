@@ -42,7 +42,5 @@ export async function validateMetaCompanyManifest(
     return false;
   }
 
-  // ensure result matches root, return.
-  console.log('combined hash is ', combinedHash, rootHash);
   return combinedHash === rootHash;
 }
