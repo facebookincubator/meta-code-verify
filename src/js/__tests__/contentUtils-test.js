@@ -117,7 +117,7 @@ describe('contentUtils', () => {
         tagName: 'div',
       };
       checkElementForViolatingAttributes(fakeElement);
-      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(2);
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
   });
   describe('hasInvalidScripts', () => {

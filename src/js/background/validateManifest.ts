@@ -42,7 +42,7 @@ export async function validateManifest(
   // does rootHash match what was published?
   const cfResponse = await getCFHashWorkaroundFunction(host, version).catch(
     cfError => {
-      console.log('error fetching hash from CF', cfError);
+      console.error('error fetching hash from CF', cfError);
       return {
         valid: false,
         reason: 'ENDPOINT_FAILURE',
@@ -63,7 +63,7 @@ export async function validateManifest(
   }
   // validate
   if (rootHash !== cfRootHash) {
-    console.log('hash mismatch with CF ', rootHash, cfRootHash);
+    console.warn('hash mismatch with CF ', rootHash, cfRootHash);
 
     // secondary hash to mitigate accidental build issue.
     const encoder = new TextEncoder();
@@ -74,7 +74,7 @@ export async function validateManifest(
     const backupHash = backupHashArray
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
-    console.log(
+    console.warn(
       'secondary hashing of CF value fails too ',
       rootHash,
       backupHash,
@@ -114,25 +114,10 @@ export async function validateManifest(
     if (bonus !== null) {
       oldhashes.push(bonus);
     }
-    console.log(
-      'layer hex is ',
-      oldhashes.map(hash => {
-        return Array.from(new Uint8Array(hash))
-          .map(b => b.toString(16).padStart(2, ''))
-          .join('');
-      }),
-    );
     newhashes = [];
     bonus = null;
-    console.log(
-      'in loop hashes.length is',
-      oldhashes.length,
-      rootHash,
-      oldhashes,
-    );
   }
   const lastHash = toHexString(new Uint8Array(oldhashes[0]));
-  console.log('before return comparison', rootHash, lastHash);
   if (lastHash === rootHash) {
     return {
       valid: true,

@@ -5,8 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {MESSAGE_TYPE, STATES} from '../config';
-import {sendMessageToBackground} from '../shared/sendMessageToBackground';
+import {STATES} from '../config';
 import {updateCurrentState} from './updateCurrentState';
 
 function getAttributeValue(
@@ -59,11 +58,10 @@ export default function checkElementForViolatingJSUri(element: Element): void {
   if (checkURL !== '') {
     // make sure anchor tags and object tags don't have javascript urls
     if (checkURL.indexOf('javascript') >= 0) {
-      sendMessageToBackground({
-        type: MESSAGE_TYPE.DEBUG,
-        log: 'violating attribute: javascript url',
-      });
-      updateCurrentState(STATES.INVALID);
+      updateCurrentState(
+        STATES.INVALID,
+        `violating attribute: javascript url ${checkURL}`,
+      );
     }
   }
 }

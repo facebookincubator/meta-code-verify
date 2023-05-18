@@ -29,10 +29,6 @@ export type MessagePayload =
       log: string;
     }
   | {
-      type: typeof MESSAGE_TYPE.GET_DEBUG;
-      tabId: number;
-    }
-  | {
       type: typeof MESSAGE_TYPE.STATE_UPDATED;
       tabId: number;
       state: State;
@@ -41,6 +37,7 @@ export type MessagePayload =
       type: typeof MESSAGE_TYPE.UPDATE_STATE;
       state: State;
       origin: Origin;
+      details?: string;
     }
   | {
       type: typeof MESSAGE_TYPE.CONTENT_SCRIPT_START;

@@ -5,10 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {MESSAGE_TYPE, STATES} from '../config';
+import {STATES} from '../config';
 import {updateCurrentState} from './updateCurrentState';
 import alertBackgroundOfImminentFetch from './alertBackgroundOfImminentFetch';
-import {sendMessageToBackground} from '../shared/sendMessageToBackground';
 
 function parseCSPString(csp: string): Map<string, Set<string>> {
   const directiveStrings = csp.split(';');
@@ -46,11 +45,7 @@ function scanForCSPEvalReportViolations(): void {
           ) {
             return;
           }
-          updateCurrentState(STATES.INVALID);
-          sendMessageToBackground({
-            type: MESSAGE_TYPE.DEBUG,
-            log: `Caught eval in ${e.sourceFile}`,
-          });
+          updateCurrentState(STATES.INVALID, `Caught eval in ${e.sourceFile}`);
         });
     });
   });
@@ -80,30 +75,24 @@ export default function checkCSPHeaders(
     const cspReportMap = parseCSPString(cspReportHeader);
     if (cspReportMap.has('script-src')) {
       if (cspReportMap.get('script-src').has("'unsafe-eval'")) {
-        updateCurrentState(STATES.INVALID);
-        sendMessageToBackground({
-          type: MESSAGE_TYPE.DEBUG,
-          log: 'Missing unsafe-eval from CSP report-only header',
-        });
+        updateCurrentState(
+          STATES.INVALID,
+          'Missing unsafe-eval from CSP report-only header',
+        );
         return;
       }
     }
     if (!cspReportMap.has('script-src') && cspReportMap.has('default-src')) {
       if (cspReportMap.get('default-src').has("'unsafe-eval'")) {
-        updateCurrentState(STATES.INVALID);
-        sendMessageToBackground({
-          type: MESSAGE_TYPE.DEBUG,
-          log: 'Missing unsafe-eval from CSP report-only header',
-        });
+        updateCurrentState(
+          STATES.INVALID,
+          'Missing unsafe-eval from CSP report-only header',
+        );
         return;
       }
     }
   } else {
-    sendMessageToBackground({
-      type: MESSAGE_TYPE.DEBUG,
-      log: 'Missing CSP report-only header',
-    });
-    updateCurrentState(STATES.INVALID);
+    updateCurrentState(STATES.INVALID, 'Missing CSP report-only header');
     return;
   }
 

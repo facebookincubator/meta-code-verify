@@ -74,11 +74,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
       scriptNodeMaybe.getAttribute('name') === 'binary-transparency-manifest')
   ) {
     if (scriptNodeMaybe.getAttribute('type') !== 'application/json') {
-      sendMessageToBackground({
-        type: MESSAGE_TYPE.DEBUG,
-        log: 'Manifest script type is invalid',
-      });
-      updateCurrentState(STATES.INVALID);
+      updateCurrentState(STATES.INVALID, 'Manifest script type is invalid');
       return;
     }
 
@@ -134,13 +130,6 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
         version: version,
       },
       response => {
-        sendMessageToBackground({
-          type: MESSAGE_TYPE.DEBUG,
-          log:
-            'manifest load response is ' + response
-              ? JSON.stringify(response).substring(0, 500)
-              : '',
-        });
         // then start processing of it's JS
         if (response.valid) {
           if (manifestTimeoutID !== '') {
@@ -474,6 +463,9 @@ chrome.runtime.onMessage.addListener(function (request) {
   if (request.greeting === 'downloadSource' && DOWNLOAD_JS_ENABLED) {
     downloadJSArchive(SOURCE_SCRIPTS, INLINE_SCRIPTS);
   } else if (request.greeting === 'nocacheHeaderFound') {
-    updateCurrentState(STATES.INVALID);
+    updateCurrentState(
+      STATES.INVALID,
+      `Detected uncached script ${request.uncachedUrl}`,
+    );
   }
 });
