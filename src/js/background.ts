@@ -13,7 +13,7 @@ import {
   updateContentScriptState,
 } from './background/tab_state_tracker/tabStateTracker';
 import setupCSPListener from './background/setupCSPListener';
-import setupNoCacheListeners from './background/setupNoCacheListeners';
+import setUpWebRequestsListener from './background/setUpWebRequestsListener';
 import {validateMetaCompanyManifest} from './background/validateMetaCompanyManifest';
 import {validateManifest} from './background/validateManifest';
 import isFbMsgrOrIgOrigin from './shared/isFbMsgrOrIgOrigin';
@@ -38,7 +38,10 @@ type Manifest = {
   leaves: Array<string>;
 };
 
-function logReceivedMessage(message: MessagePayload): void {
+function logReceivedMessage(
+  message: MessagePayload,
+  sender: chrome.runtime.MessageSender,
+): void {
   let logger = console.log;
   switch (message.type) {
     case MESSAGE_TYPE.UPDATE_STATE:
@@ -52,7 +55,7 @@ function logReceivedMessage(message: MessagePayload): void {
       logger = console.debug;
       break;
   }
-  logger?.('background, handleMessages', message);
+  logger?.(`handleMessages from tab:${sender.tab.id}`, message);
 }
 
 function handleMessages(
@@ -60,7 +63,7 @@ function handleMessages(
   sender: chrome.runtime.MessageSender,
   sendResponse: (_: MessageResponse) => void,
 ): void | boolean {
-  logReceivedMessage(message);
+  logReceivedMessage(message, sender);
   if (message.type == MESSAGE_TYPE.LOAD_MANIFEST) {
     // validate manifest
     if (isFbMsgrOrIgOrigin(message.origin)) {
@@ -207,7 +210,7 @@ function handleMessages(
 chrome.runtime.onMessage.addListener(handleMessages);
 
 setupCSPListener(CSP_HEADERS, CSP_REPORT_HEADERS);
-setupNoCacheListeners(CACHED_SCRIPTS_URLS);
+setUpWebRequestsListener(CACHED_SCRIPTS_URLS);
 
 // Emulate PageActions
 chrome.runtime.onInstalled.addListener(() => {

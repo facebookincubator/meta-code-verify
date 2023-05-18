@@ -36,6 +36,7 @@ const INLINE_SCRIPTS: Array<Map<string, string>> = [];
 
 // Map<version, Array<ScriptDetails>>
 export const FOUND_SCRIPTS = new Map<string, Array<ScriptDetails>>([['', []]]);
+const ALL_FOUND_SCRIPT_TAGS = new Set();
 
 type ScriptDetailsWithSrc = {
   otherType: string;
@@ -204,6 +205,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
       src: scriptNodeMaybe.src,
       otherType, // TODO: read from DOM when available
     };
+    ALL_FOUND_SCRIPT_TAGS.add(scriptNodeMaybe.src);
   } else {
     // no src, access innerHTML for the code
     const hashLookupAttribute =
@@ -368,16 +370,18 @@ export const processFoundJS = async (version: string): Promise<void> => {
           if (response.type === 'EXTENSION') {
             updateCurrentState(STATES.RISK);
           } else {
-            updateCurrentState(STATES.INVALID, 'Invalid ScriptDetailsWithSrc');
+            updateCurrentState(
+              STATES.INVALID,
+              `Invalid ScriptDetailsWithSrc ${script.src}`,
+            );
           }
         }
         sendMessageToBackground({
           type: MESSAGE_TYPE.DEBUG,
           log:
-            'processed JS with SRC, ' +
-            script.src +
-            ',response is ' +
+            'processed JS with SRC response is ' +
             JSON.stringify(response).substring(0, 500),
+          src: script.src,
         });
       });
     } else {
@@ -471,13 +475,37 @@ export function startFor(
   }
 }
 
-chrome.runtime.onMessage.addListener(function (request) {
+chrome.runtime.onMessage.addListener(request => {
   if (request.greeting === 'downloadSource' && DOWNLOAD_JS_ENABLED) {
     downloadJSArchive(SOURCE_SCRIPTS, INLINE_SCRIPTS);
   } else if (request.greeting === 'nocacheHeaderFound') {
     updateCurrentState(
       STATES.INVALID,
       `Detected uncached script ${request.uncachedUrl}`,
+    );
+  } else if (request.greeting === 'checkIfScriptWasProcessed') {
+    if (!ALL_FOUND_SCRIPT_TAGS.has(request.response.url)) {
+      if (
+        'serviceWorker' in navigator &&
+        navigator.serviceWorker.controller?.scriptURL === request.response.url
+      ) {
+        return;
+      }
+      sendMessageToBackground({
+        type: MESSAGE_TYPE.DEBUG,
+        log: `Tab is processing ${request.response.url}`,
+      });
+      ALL_FOUND_SCRIPT_TAGS.add(request.response.url);
+      FOUND_SCRIPTS.get(FOUND_SCRIPTS.keys().next().value).push({
+        src: request.response.url,
+        otherType: currentFilterType,
+      });
+      updateCurrentState(STATES.PROCESSING);
+    }
+  } else if (request.greeting === 'sniffableMimeTypeResource') {
+    updateCurrentState(
+      STATES.INVALID,
+      `Sniffable MIME type resource: ${request.src}`,
     );
   }
 });
