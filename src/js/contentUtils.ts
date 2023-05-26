@@ -26,8 +26,13 @@ import isPathnameExcluded from './content/isPathNameExcluded';
 import {parseFailedJSON} from './content/parseFailedJSON';
 
 const SOURCE_SCRIPTS = new Map<string, ReadableStream>();
-const INLINE_SCRIPTS: Array<Map<string, string>> = [];
 const FOUND_SCRIPTS: Array<ScriptDetails> = [];
+/**
+ * using an array of maps, as we're using the same key for inline scripts
+ * this will eventually be removed, once inline scripts are removed from the
+ * page load
+ * */
+const INLINE_SCRIPTS: Array<Map<string, string>> = [];
 
 type ScriptDetailsWithSrc = {
   otherType: string;
@@ -296,7 +301,6 @@ export const processFoundJS = async (): Promise<void> => {
               updateCurrentState(STATES.VALID);
             }
           } else {
-            // using an array of maps, as we're using the same key for inline scripts - this will eventually be removed, once inline scripts are removed from the page load
             inlineScriptMap.set('hash not in manifest', script.rawjs);
             INLINE_SCRIPTS.push(inlineScriptMap);
             if (KNOWN_EXTENSION_HASHES.includes(response.hash)) {
