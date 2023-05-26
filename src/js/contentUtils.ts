@@ -24,8 +24,9 @@ import {sendMessageToBackground} from './shared/sendMessageToBackground';
 import genSourceText from './content/genSourceText';
 import isPathnameExcluded from './content/isPathNameExcluded';
 
-const SOURCE_SCRIPTS = new Map();
-const INLINE_SCRIPTS = [];
+const SOURCE_SCRIPTS = new Map<string, ReadableStream>();
+const INLINE_SCRIPTS: Array<Map<string, string>> = [];
+const FOUND_SCRIPTS: Array<ScriptDetails> = [];
 
 type ScriptDetailsWithSrc = {
   otherType: string;
@@ -39,9 +40,8 @@ type ScriptDetailsRaw = {
 };
 type ScriptDetails = ScriptDetailsRaw | ScriptDetailsWithSrc;
 
-export const FOUND_SCRIPTS = new Map<string, Array<ScriptDetails>>([['', []]]);
-
 let currentFilterType = '';
+let currentVersion = '';
 let manifestTimeoutID: string | number = '';
 
 export type RawManifestOtherHashes = {
@@ -62,10 +62,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
     // this means that content utils is running in an iframe - disable timer and call processFoundJS on manifest processed in top level frame
     clearTimeout(manifestTimeoutID);
     manifestTimeoutID = '';
-    window.setTimeout(
-      () => processFoundJS(FOUND_SCRIPTS.keys().next().value),
-      0,
-    );
+    window.setTimeout(() => processFoundJS(), 0);
   }
   // check if it's the manifest node
   if (
@@ -93,30 +90,23 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
     let otherHashes: RawManifestOtherHashes = null;
     let otherType = '';
     let roothash = rawManifest.root;
-    let version = rawManifest.version;
+    currentVersion = rawManifest.version;
 
     if (isFbOrMsgrOrigin(currentOrigin.val)) {
       leaves = rawManifest.manifest;
       otherHashes = rawManifest.manifest_hashes;
       otherType = scriptNodeMaybe.getAttribute('data-manifest-type');
       roothash = otherHashes.combined_hash;
-      version = scriptNodeMaybe.getAttribute('data-manifest-rev');
+      currentVersion = scriptNodeMaybe.getAttribute('data-manifest-rev');
 
-      if (currentFilterType != '') {
-        currentFilterType = 'BOTH';
-      }
       if (currentFilterType === '') {
         currentFilterType = otherType;
+      } else {
+        currentFilterType = 'BOTH';
       }
-    }
-    // for whatsapp
-    else {
+    } else {
+      // for whatsapp
       currentFilterType = 'BOTH';
-    }
-    // now that we know the actual version of the scripts, transfer the ones we know about.
-    if (FOUND_SCRIPTS.has('')) {
-      FOUND_SCRIPTS.set(version, FOUND_SCRIPTS.get(''));
-      FOUND_SCRIPTS.delete('');
     }
 
     sendMessageToBackground(
@@ -127,7 +117,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
         otherHashes: otherHashes,
         rootHash: roothash,
         workaround: scriptNodeMaybe.innerHTML,
-        version: version,
+        version: currentVersion,
       },
       response => {
         // then start processing of it's JS
@@ -136,7 +126,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
             clearTimeout(manifestTimeoutID);
             manifestTimeoutID = '';
           }
-          window.setTimeout(() => processFoundJS(version), 0);
+          window.setTimeout(() => processFoundJS(), 0);
         } else {
           if (
             ['ENDPOINT_FAILURE', 'UNKNOWN_ENDPOINT_ISSUE'].includes(
@@ -177,25 +167,21 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
   const otherType = dataBtManifest == null ? '' : dataBtManifest.split('_')[1];
   // need to get the src of the JS
   if (scriptNodeMaybe.src != null && scriptNodeMaybe.src !== '') {
-    if (FOUND_SCRIPTS.size === 1) {
-      FOUND_SCRIPTS.get(FOUND_SCRIPTS.keys().next().value).push({
-        src: scriptNodeMaybe.src,
-        otherType: otherType, // TODO: read from DOM when available
-      });
-    }
+    FOUND_SCRIPTS.push({
+      src: scriptNodeMaybe.src,
+      otherType: otherType, // TODO: read from DOM when available
+    });
   } else {
     // no src, access innerHTML for the code
     const hashLookupAttribute =
       scriptNodeMaybe.attributes['data-binary-transparency-hash-key'];
     const hashLookupKey = hashLookupAttribute && hashLookupAttribute.value;
-    if (FOUND_SCRIPTS.size === 1) {
-      FOUND_SCRIPTS.get(FOUND_SCRIPTS.keys().next().value).push({
-        type: MESSAGE_TYPE.RAW_JS,
-        rawjs: scriptNodeMaybe.innerHTML,
-        lookupKey: hashLookupKey,
-        otherType: otherType, // TODO: read from DOM when available
-      });
-    }
+    FOUND_SCRIPTS.push({
+      type: MESSAGE_TYPE.RAW_JS,
+      rawjs: scriptNodeMaybe.innerHTML,
+      lookupKey: hashLookupKey,
+      otherType: otherType, // TODO: read from DOM when available
+    });
   }
   updateCurrentState(STATES.PROCESSING);
 }
@@ -260,10 +246,7 @@ export const scanForScripts = (): void => {
   }
 };
 
-async function processJSWithSrc(
-  script: ScriptDetailsWithSrc,
-  version: string,
-): Promise<{
+async function processJSWithSrc(script: ScriptDetailsWithSrc): Promise<{
   valid: boolean;
   type?: unknown;
 }> {
@@ -293,7 +276,7 @@ async function processJSWithSrc(
             type: MESSAGE_TYPE.RAW_JS,
             rawjs: jsPackage.trimStart(),
             origin: currentOrigin.val,
-            version: version,
+            version: currentVersion,
           },
           response => {
             if (response.valid) {
@@ -315,8 +298,8 @@ async function processJSWithSrc(
   }
 }
 
-export const processFoundJS = async (version: string): Promise<void> => {
-  const fullscripts = FOUND_SCRIPTS.get(version).splice(0);
+export const processFoundJS = async (): Promise<void> => {
+  const fullscripts = FOUND_SCRIPTS.splice(0);
   const scripts = fullscripts.filter(script => {
     if (
       script.otherType === currentFilterType ||
@@ -324,14 +307,14 @@ export const processFoundJS = async (version: string): Promise<void> => {
     ) {
       return true;
     } else {
-      FOUND_SCRIPTS.get(version).push(script);
+      FOUND_SCRIPTS.push(script);
     }
   });
   let pendingScriptCount = scripts.length;
   for (const script of scripts) {
     if ('src' in script) {
       // ScriptDetailsWithSrc
-      await processJSWithSrc(script, version).then(response => {
+      await processJSWithSrc(script).then(response => {
         pendingScriptCount--;
         if (response.valid) {
           if (pendingScriptCount == 0) {
@@ -360,7 +343,7 @@ export const processFoundJS = async (version: string): Promise<void> => {
           type: script.type,
           rawjs: script.rawjs.trimStart(),
           origin: currentOrigin.val,
-          version: version,
+          version: currentVersion,
         },
         response => {
           pendingScriptCount--;
@@ -393,7 +376,7 @@ export const processFoundJS = async (version: string): Promise<void> => {
       );
     }
   }
-  window.setTimeout(() => processFoundJS(version), 3000);
+  window.setTimeout(() => processFoundJS(), 3000);
 };
 
 function parseFailedJson(queuedJsonToParse: {
@@ -469,3 +452,7 @@ chrome.runtime.onMessage.addListener(function (request) {
     );
   }
 });
+
+export function testOnly_getFoundScripts() {
+  return FOUND_SCRIPTS;
+}

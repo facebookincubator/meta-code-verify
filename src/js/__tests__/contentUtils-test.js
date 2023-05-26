@@ -12,7 +12,7 @@ import {MESSAGE_TYPE} from '../config';
 import {
   hasInvalidScripts,
   scanForScripts,
-  FOUND_SCRIPTS,
+  testOnly_getFoundScripts,
   storeFoundJS,
 } from '../contentUtils';
 import {checkElementForViolatingAttributes} from '../content/checkElementForViolatingAttributes';
@@ -20,8 +20,7 @@ import {checkElementForViolatingAttributes} from '../content/checkElementForViol
 describe('contentUtils', () => {
   beforeEach(() => {
     window.chrome.runtime.sendMessage = jest.fn(() => {});
-    FOUND_SCRIPTS.clear();
-    FOUND_SCRIPTS.set('version', []);
+    testOnly_getFoundScripts().splice(0);
   });
   describe('storeFoundJS', () => {
     it('should handle scripts with src correctly', () => {
@@ -31,8 +30,8 @@ describe('contentUtils', () => {
         getAttribute: () => {},
       };
       storeFoundJS(fakeScriptNode);
-      expect(FOUND_SCRIPTS.get('version').length).toEqual(1);
-      expect(FOUND_SCRIPTS.get('version')[0].src).toEqual(fakeUrl);
+      expect(testOnly_getFoundScripts().length).toEqual(1);
+      expect(testOnly_getFoundScripts()[0].src).toEqual(fakeUrl);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
     it('should handle inline scripts correctly', () => {
@@ -46,9 +45,9 @@ describe('contentUtils', () => {
         innerHTML: fakeInnerHtml,
       };
       storeFoundJS(fakeScriptNode);
-      expect(FOUND_SCRIPTS.get('version').length).toEqual(1);
-      expect(FOUND_SCRIPTS.get('version')[0].rawjs).toEqual(fakeInnerHtml);
-      expect(FOUND_SCRIPTS.get('version')[0].lookupKey).toEqual(fakeLookupKey);
+      expect(testOnly_getFoundScripts().length).toEqual(1);
+      expect(testOnly_getFoundScripts()[0].rawjs).toEqual(fakeInnerHtml);
+      expect(testOnly_getFoundScripts()[0].lookupKey).toEqual(fakeLookupKey);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
     it('should send update icon message if valid', () => {
@@ -150,8 +149,8 @@ describe('contentUtils', () => {
         tagName: 'div',
       };
       hasInvalidScripts(fakeElement);
-      expect(FOUND_SCRIPTS.get('version').length).toBe(1);
-      expect(FOUND_SCRIPTS.get('version')[0].type).toBe(MESSAGE_TYPE.RAW_JS);
+      expect(testOnly_getFoundScripts().length).toBe(1);
+      expect(testOnly_getFoundScripts()[0].type).toBe(MESSAGE_TYPE.RAW_JS);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
       expect(window.chrome.runtime.sendMessage.mock.calls[0][0].type).toBe(
         MESSAGE_TYPE.UPDATE_STATE,
@@ -195,7 +194,7 @@ describe('contentUtils', () => {
         tagName: 'tagName',
       };
       hasInvalidScripts(fakeElement);
-      expect(FOUND_SCRIPTS.get('version').length).toBe(0);
+      expect(testOnly_getFoundScripts().length).toBe(0);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
     });
     it('should store any script element direct children', () => {
@@ -237,8 +236,8 @@ describe('contentUtils', () => {
         tagName: 'tagName',
       };
       hasInvalidScripts(fakeElement);
-      expect(FOUND_SCRIPTS.get('version').length).toBe(1);
-      expect(FOUND_SCRIPTS.get('version')[0].type).toBe(MESSAGE_TYPE.RAW_JS);
+      expect(testOnly_getFoundScripts().length).toBe(1);
+      expect(testOnly_getFoundScripts()[0].type).toBe(MESSAGE_TYPE.RAW_JS);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
       expect(window.chrome.runtime.sendMessage.mock.calls[0][0].type).toBe(
         MESSAGE_TYPE.UPDATE_STATE,
@@ -308,7 +307,7 @@ describe('contentUtils', () => {
         tagName: 'tagName',
       };
       hasInvalidScripts(fakeElement);
-      expect(FOUND_SCRIPTS.get('version').length).toBe(2);
+      expect(testOnly_getFoundScripts().length).toBe(2);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(2);
     });
   });
