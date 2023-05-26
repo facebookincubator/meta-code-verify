@@ -23,6 +23,7 @@ import isFbOrMsgrOrigin from './shared/isFbOrMsgrOrigin';
 import {sendMessageToBackground} from './shared/sendMessageToBackground';
 import genSourceText from './content/genSourceText';
 import isPathnameExcluded from './content/isPathNameExcluded';
+import {parseFailedJSON} from './content/parseFailedJSON';
 
 const SOURCE_SCRIPTS = new Map<string, ReadableStream>();
 const INLINE_SCRIPTS: Array<Map<string, string>> = [];
@@ -80,7 +81,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
       rawManifest = JSON.parse(scriptNodeMaybe.textContent);
     } catch (manifestParseError) {
       setTimeout(
-        () => parseFailedJson({node: scriptNodeMaybe, retry: 5000}),
+        () => parseFailedJSON({node: scriptNodeMaybe, retry: 5000}),
         20,
       );
       return;
@@ -147,7 +148,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
       JSON.parse(scriptNodeMaybe.textContent);
     } catch (parseError) {
       setTimeout(
-        () => parseFailedJson({node: scriptNodeMaybe, retry: 1500}),
+        () => parseFailedJSON({node: scriptNodeMaybe, retry: 1500}),
         20,
       );
     }
@@ -185,66 +186,6 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
   }
   updateCurrentState(STATES.PROCESSING);
 }
-
-function checkNodeForViolations(element: Element): void {
-  checkElementForViolatingJSUri(element);
-  checkElementForViolatingAttributes(element);
-}
-
-export function hasInvalidScripts(scriptNodeMaybe: Node): void {
-  // if not an HTMLElement ignore it!
-  if (scriptNodeMaybe.nodeType !== 1) {
-    return;
-  }
-
-  checkNodeForViolations(scriptNodeMaybe as Element);
-
-  if (scriptNodeMaybe.nodeName.toLowerCase() === 'script') {
-    storeFoundJS(scriptNodeMaybe as HTMLScriptElement);
-  } else if (scriptNodeMaybe.childNodes.length > 0) {
-    scriptNodeMaybe.childNodes.forEach(childNode => {
-      hasInvalidScripts(childNode);
-    });
-  }
-}
-
-export const scanForScripts = (): void => {
-  const allElements = document.getElementsByTagName('*');
-
-  Array.from(allElements).forEach(element => {
-    checkNodeForViolations(element);
-    // next check for existing script elements and if they're violating
-    if (element.nodeName.toLowerCase() === 'script') {
-      storeFoundJS(element as HTMLScriptElement);
-    }
-  });
-
-  try {
-    // track any new scripts that get loaded in
-    const scriptMutationObserver = new MutationObserver(mutationsList => {
-      mutationsList.forEach(mutation => {
-        if (mutation.type === 'childList') {
-          Array.from(mutation.addedNodes).forEach(checkScript => {
-            hasInvalidScripts(checkScript);
-          });
-        } else if (
-          mutation.type === 'attributes' &&
-          mutation.target.nodeType === 1
-        ) {
-          checkNodeForViolations(mutation.target as Element);
-        }
-      });
-    });
-
-    scriptMutationObserver.observe(document, {
-      attributes: true,
-      childList: true,
-      subtree: true,
-    });
-  } catch (_UnknownError) {
-    updateCurrentState(STATES.INVALID);
-  }
-};
 
 async function processJSWithSrc(script: ScriptDetailsWithSrc): Promise<{
   valid: boolean;
@@ -379,21 +320,64 @@ export const processFoundJS = async (): Promise<void> => {
   window.setTimeout(() => processFoundJS(), 3000);
 };
 
-function parseFailedJson(queuedJsonToParse: {
-  node: Element;
-  retry: number;
-}): void {
-  try {
-    JSON.parse(queuedJsonToParse.node.textContent);
-  } catch (parseError) {
-    if (queuedJsonToParse.retry > 0) {
-      queuedJsonToParse.retry--;
-      setTimeout(() => parseFailedJson(queuedJsonToParse), 20);
-    } else {
-      updateCurrentState(STATES.INVALID);
-    }
+function checkNodeForViolations(element: Element): void {
+  checkElementForViolatingJSUri(element);
+  checkElementForViolatingAttributes(element);
+}
+
+export function hasInvalidScripts(scriptNodeMaybe: Node): void {
+  // if not an HTMLElement ignore it!
+  if (scriptNodeMaybe.nodeType !== 1) {
+    return;
+  }
+
+  checkNodeForViolations(scriptNodeMaybe as Element);
+
+  if (scriptNodeMaybe.nodeName.toLowerCase() === 'script') {
+    storeFoundJS(scriptNodeMaybe as HTMLScriptElement);
+  } else if (scriptNodeMaybe.childNodes.length > 0) {
+    scriptNodeMaybe.childNodes.forEach(childNode => {
+      hasInvalidScripts(childNode);
+    });
   }
 }
+export const scanForScripts = (): void => {
+  const allElements = document.getElementsByTagName('*');
+
+  Array.from(allElements).forEach(element => {
+    checkNodeForViolations(element);
+    // next check for existing script elements and if they're violating
+    if (element.nodeName.toLowerCase() === 'script') {
+      storeFoundJS(element as HTMLScriptElement);
+    }
+  });
+
+  try {
+    // track any new scripts that get loaded in
+    const scriptMutationObserver = new MutationObserver(mutationsList => {
+      mutationsList.forEach(mutation => {
+        if (mutation.type === 'childList') {
+          Array.from(mutation.addedNodes).forEach(checkScript => {
+            hasInvalidScripts(checkScript);
+          });
+        } else if (
+          mutation.type === 'attributes' &&
+          mutation.target.nodeType === 1
+        ) {
+          checkNodeForViolations(mutation.target as Element);
+        }
+      });
+    });
+
+    scriptMutationObserver.observe(document, {
+      attributes: true,
+      childList: true,
+      subtree: true,
+    });
+  } catch (_UnknownError) {
+    updateCurrentState(STATES.INVALID);
+  }
+};
 
 export function startFor(
   origin: Origin,

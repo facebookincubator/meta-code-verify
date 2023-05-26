@@ -15,7 +15,6 @@ import {
   testOnly_getFoundScripts,
   storeFoundJS,
 } from '../contentUtils';
-import {checkElementForViolatingAttributes} from '../content/checkElementForViolatingAttributes';
 
 describe('contentUtils', () => {
   beforeEach(() => {
@@ -63,60 +62,6 @@ describe('contentUtils', () => {
     });
     it.skip('storeFoundJS keeps existing icon if not valid', () => {
       // TODO: come back to this after testing processFoundJS
-    });
-  });
-  describe('checkElementForViolatingAttributes', () => {
-    it('should not execute if element has no attributes', () => {
-      // no hasAttribute function
-      let fakeElement = {
-        childNodes: [],
-        tagName: 'tagName',
-      };
-      checkElementForViolatingAttributes(fakeElement);
-      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
-
-      // hasAttribute is a function, but has no attributes
-      fakeElement = {
-        hasAttribute: () => {
-          return false;
-        },
-        childNodes: [],
-        tagName: 'tagName',
-      };
-      checkElementForViolatingAttributes(fakeElement);
-      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
-    });
-    it('should not update the icon if no violating attributes are found', () => {
-      const fakeElement = {
-        attributes: [
-          {localName: 'background'},
-          {localName: 'height'},
-          {localName: 'width'},
-        ],
-        hasAttribute: () => {
-          return true;
-        },
-        childNodes: [],
-        tagName: 'div',
-      };
-      checkElementForViolatingAttributes(fakeElement);
-      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
-    });
-    it('should update the icon if violating attributes are found', () => {
-      const fakeElement = {
-        attributes: [
-          {localName: 'onclick'},
-          {localName: 'height'},
-          {localName: 'width'},
-        ],
-        hasAttributes: () => {
-          return true;
-        },
-        childNodes: [],
-        tagName: 'div',
-      };
-      checkElementForViolatingAttributes(fakeElement);
-      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
   });
   describe('hasInvalidScripts', () => {
