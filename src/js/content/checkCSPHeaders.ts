@@ -52,11 +52,11 @@ function scanForCSPEvalReportViolations(): void {
 }
 
 export default function checkCSPHeaders(
-  cspHeader: string | undefined,
-  cspReportHeader: string | undefined,
+  cspHeaders: Array<string>,
+  cspReportHeaders: Array<string>,
 ) {
-  // If CSP is enforcing on evals we don't need to do extra checks
-  if (cspHeader != null) {
+  for (const cspHeader of cspHeaders) {
+    // If CSP is enforcing on evals we don't need to do extra checks
     const cspMap = parseCSPString(cspHeader);
     if (cspMap.has('script-src')) {
       if (!cspMap.get('script-src').has("'unsafe-eval'")) {
@@ -70,32 +70,35 @@ export default function checkCSPHeaders(
     }
   }
 
-  // If CSP is not reporting on evals we cannot catch them
-  if (cspReportHeader != null) {
-    const cspReportMap = parseCSPString(cspReportHeader);
-    if (cspReportMap.has('script-src')) {
-      if (cspReportMap.get('script-src').has("'unsafe-eval'")) {
-        updateCurrentState(
-          STATES.INVALID,
-          'Missing unsafe-eval from CSP report-only header',
-        );
-        return;
-      }
-    }
-    if (!cspReportMap.has('script-src') && cspReportMap.has('default-src')) {
-      if (cspReportMap.get('default-src').has("'unsafe-eval'")) {
-        updateCurrentState(
-          STATES.INVALID,
-          'Missing unsafe-eval from CSP report-only header',
-        );
-        return;
-      }
-    }
-  } else {
+  if (cspReportHeaders.length === 0) {
     updateCurrentState(STATES.INVALID, 'Missing CSP report-only header');
     return;
   }
 
+  // Check if at least one header has the correct report setup
+  const hasValidReportHeader = cspReportHeaders.some(cspReportHeader => {
+    // If CSP is not reporting on evals we cannot catch them via event listeners
+    const cspReportMap = parseCSPString(cspReportHeader);
+    if (cspReportMap.has('script-src')) {
+      if (cspReportMap.get('script-src').has("'unsafe-eval'")) {
+        return false;
+      }
+    }
+    if (!cspReportMap.has('script-src') && cspReportMap.has('default-src')) {
+      if (cspReportMap.get('default-src').has("'unsafe-eval'")) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  if (!hasValidReportHeader) {
+    updateCurrentState(
+      STATES.INVALID,
+      'Missing unsafe-eval from CSP report-only header',
+    );
+    return;
+  }
   // Check for evals
   scanForCSPEvalReportViolations();
 }

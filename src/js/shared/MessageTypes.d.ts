@@ -54,6 +54,6 @@ export type MessageResponse = {
   debugList?: Array<string>;
   reason?: string;
   hash?: string;
-  cspHeader?: string;
-  cspReportHeader?: string;
+  cspHeaders?: Array<string>;
+  cspReportHeaders?: Array<string>;
 };

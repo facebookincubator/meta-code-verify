@@ -8,28 +8,32 @@
 import {CSPHeaderMap} from '../background';
 
 export default function setupCSPListener(
-  cspHeaders: CSPHeaderMap,
-  cspReportHeaders: CSPHeaderMap,
+  cspHeadersMap: CSPHeaderMap,
+  cspReportHeadersMap: CSPHeaderMap,
 ): void {
   chrome.webRequest.onHeadersReceived.addListener(
     details => {
       if (details.responseHeaders) {
-        const cspHeader = details.responseHeaders.find(
+        const cspHeaders = details.responseHeaders.filter(
           header => header.name === 'content-security-policy',
         );
-        const cspReportHeader = details.responseHeaders.find(
+        const cspReportHeaders = details.responseHeaders.filter(
           header => header.name === 'content-security-policy-report-only',
         );
-        if (!cspHeaders.has(details.tabId)) {
-          cspHeaders.set(details.tabId, new Map());
+        if (!cspHeadersMap.has(details.tabId)) {
+          cspHeadersMap.set(details.tabId, new Map());
         }
-        if (!cspReportHeaders.has(details.tabId)) {
-          cspReportHeaders.set(details.tabId, new Map());
+        if (!cspReportHeadersMap.has(details.tabId)) {
+          cspReportHeadersMap.set(details.tabId, new Map());
         }
-        cspHeaders.get(details.tabId).set(details.frameId, cspHeader?.value);
-        cspReportHeaders
-          .get(details.tabId)
-          .set(details.frameId, cspReportHeader?.value);
+        cspHeadersMap.get(details.tabId).set(
+          details.frameId,
+          cspHeaders.map(h => h.value),
+        );
+        cspReportHeadersMap.get(details.tabId).set(
+          details.frameId,
+          cspReportHeaders.map(h => h.value),
+        );
       }
     },
     {

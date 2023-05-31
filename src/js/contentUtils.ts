@@ -423,7 +423,7 @@ export function startFor(
     },
     resp => {
       if (isFbOrMsgrOrigin(currentOrigin.val)) {
-        checkCSPHeaders(resp.cspHeader, resp.cspReportHeader);
+        checkCSPHeaders(resp.cspHeaders, resp.cspReportHeaders);
       }
     },
   );
