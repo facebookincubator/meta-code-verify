@@ -101,7 +101,7 @@ describe('checkCSPHeaders', () => {
     );
     expect(isValid).toBeTruthy();
   });
-  it('Should be valid if one of the policies is enforcing, both script-src', () => {
+  it('Should be valid if one of the policies is enforcing, both default-src', () => {
     const isValid = checkCSPHeaders(
       [
         `default-src *.facebook.com *.fbcdn.net blob: data: 'self' 'unsafe-eval';`,
@@ -131,7 +131,7 @@ describe('checkCSPHeaders', () => {
     );
     expect(isValid).toBeTruthy();
   });
-  it('Should be valid if one of the policies is enforcing, script-src precedence', () => {
+  it('Should be valid if one of the policies is enforcing, default-src precedence', () => {
     const isValid = checkCSPHeaders(
       [
         ``,
@@ -173,7 +173,7 @@ describe('checkCSPHeaders', () => {
     );
     expect(isValid).toBeTruthy();
   });
-  it('Should be valid if one of the policies is reporting, both script-src', () => {
+  it('Should be valid if one of the policies is reporting, both default-src', () => {
     const isValid = checkCSPHeaders(
       [],
       [
@@ -185,11 +185,11 @@ describe('checkCSPHeaders', () => {
   });
   it('Should be valid if one of the policies is reporting, script-src precedence', () => {
     const isValid = checkCSPHeaders(
+      [],
       [
         `default-src 'unsafe-eval';`,
         `script-src *.facebook.com *.fbcdn.net blob: data: 'self';`,
       ],
-      [],
     );
     expect(isValid).toBeTruthy();
   });
@@ -200,7 +200,7 @@ describe('checkCSPHeaders', () => {
     );
     expect(isValid).toBeTruthy();
   });
-  it('Should be valid if one of the policies is reporting, script-src precedence', () => {
+  it('Should be valid if one of the policies is reporting, default-src precedence', () => {
     const isValid = checkCSPHeaders(
       [],
       [``, `default-src *.facebook.com *.fbcdn.net blob: data: 'self';`],
