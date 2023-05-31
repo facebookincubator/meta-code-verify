@@ -51,54 +51,78 @@ function scanForCSPEvalReportViolations(): void {
   });
 }
 
-export default function checkCSPHeaders(
-  cspHeaders: Array<string>,
-  cspReportHeaders: Array<string>,
-) {
-  for (const cspHeader of cspHeaders) {
-    // If CSP is enforcing on evals we don't need to do extra checks
+function getIsValidDefaultSrc(cspHeaders: Array<string>): boolean {
+  return cspHeaders.some(cspHeader => {
     const cspMap = parseCSPString(cspHeader);
-    if (cspMap.has('script-src')) {
-      if (!cspMap.get('script-src').has("'unsafe-eval'")) {
-        return;
-      }
-    }
     if (!cspMap.has('script-src') && cspMap.has('default-src')) {
       if (!cspMap.get('default-src').has("'unsafe-eval'")) {
-        return;
+        return true;
       }
+    }
+    return false;
+  });
+}
+
+function getIsValidScriptSrcAndHasScriptSrcDirective(
+  cspHeaders: Array<string>,
+): [boolean, boolean] {
+  let hasScriptSrcDirective = false;
+  const isValidScriptSrc = cspHeaders.some(cspHeader => {
+    const cspMap = parseCSPString(cspHeader);
+    if (cspMap.has('script-src')) {
+      hasScriptSrcDirective = true;
+      if (!cspMap.get('script-src').has("'unsafe-eval'")) {
+        return true;
+      }
+    }
+    return false;
+  });
+  return [isValidScriptSrc, hasScriptSrcDirective];
+}
+
+export function checkCSPHeaders(
+  cspHeaders: Array<string>,
+  cspReportHeaders: Array<string>,
+): boolean {
+  // If CSP is enforcing on evals we don't need to do extra checks
+
+  // Check `script-src` across all headers first since it takes precedence
+  // across multiple headers
+  const [hasValidScriptSrcEnforcement, hasScriptSrcDirectiveForEnforce] =
+    getIsValidScriptSrcAndHasScriptSrcDirective(cspHeaders);
+  if (hasValidScriptSrcEnforcement) {
+    return true;
+  }
+
+  if (!hasScriptSrcDirectiveForEnforce) {
+    if (getIsValidDefaultSrc(cspHeaders)) {
+      return true;
     }
   }
 
   if (cspReportHeaders.length === 0) {
     updateCurrentState(STATES.INVALID, 'Missing CSP report-only header');
-    return;
+    return false;
   }
 
   // Check if at least one header has the correct report setup
-  const hasValidReportHeader = cspReportHeaders.some(cspReportHeader => {
-    // If CSP is not reporting on evals we cannot catch them via event listeners
-    const cspReportMap = parseCSPString(cspReportHeader);
-    if (cspReportMap.has('script-src')) {
-      if (cspReportMap.get('script-src').has("'unsafe-eval'")) {
-        return false;
-      }
-    }
-    if (!cspReportMap.has('script-src') && cspReportMap.has('default-src')) {
-      if (cspReportMap.get('default-src').has("'unsafe-eval'")) {
-        return false;
-      }
-    }
-    return true;
-  });
+  // If CSP is not reporting on evals we cannot catch them via event listeners
+  const [hasValidScriptSrcReport, hasScriptSrcDirectiveForReport] =
+    getIsValidScriptSrcAndHasScriptSrcDirective(cspReportHeaders);
 
-  if (!hasValidReportHeader) {
+  let hasValidDefaultSrcReport = false;
+  if (!hasScriptSrcDirectiveForReport) {
+    hasValidDefaultSrcReport = getIsValidDefaultSrc(cspReportHeaders);
+  }
+
+  if (!hasValidScriptSrcReport && !hasValidDefaultSrcReport) {
     updateCurrentState(
       STATES.INVALID,
       'Missing unsafe-eval from CSP report-only header',
     );
-    return;
+    return false;
   }
   // Check for evals
   scanForCSPEvalReportViolations();
+  return true;
 }
