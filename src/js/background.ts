@@ -21,8 +21,9 @@ import {MessagePayload, MessageResponse} from './shared/MessageTypes';
 
 const MANIFEST_CACHE = new Map<Origin, Map<string, Manifest>>();
 
-// TabID -> FrameID -> CSP Header Values
-export type CSPHeaderMap = Map<number, Map<number, string | undefined>>;
+// TabID -> FrameID -> Array<CSP Header Values>
+// There might be multiple CSP policy headers per response
+export type CSPHeaderMap = Map<number, Map<number, Array<string>>>;
 const CSP_HEADERS: CSPHeaderMap = new Map();
 const CSP_REPORT_HEADERS: CSPHeaderMap = new Map();
 
@@ -187,8 +188,8 @@ function handleMessages(
     recordContentScriptStart(sender, message.origin);
     sendResponse({
       success: true,
-      cspHeader: CSP_HEADERS?.get(sender.tab.id)?.get(sender.frameId),
-      cspReportHeader: CSP_REPORT_HEADERS?.get(sender.tab.id)?.get(
+      cspHeaders: CSP_HEADERS?.get(sender.tab.id)?.get(sender.frameId),
+      cspReportHeaders: CSP_REPORT_HEADERS?.get(sender.tab.id)?.get(
         sender.frameId,
       ),
     });

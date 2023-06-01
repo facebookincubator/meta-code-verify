@@ -13,7 +13,7 @@ import {
   Origin,
 } from './config';
 
-import checkCSPHeaders from './content/checkCSPHeaders';
+import {checkCSPHeaders} from './content/checkCSPHeaders';
 import downloadJSArchive from './content/downloadJSArchive';
 import alertBackgroundOfImminentFetch from './content/alertBackgroundOfImminentFetch';
 import {currentOrigin, updateCurrentState} from './content/updateCurrentState';
@@ -423,7 +423,7 @@ export function startFor(
     },
     resp => {
       if (isFbOrMsgrOrigin(currentOrigin.val)) {
-        checkCSPHeaders(resp.cspHeader, resp.cspReportHeader);
+        checkCSPHeaders(resp.cspHeaders, resp.cspReportHeaders);
       }
     },
   );

@@ -16,7 +16,7 @@
     "watch": "yarn build -w",
     "lint": "yarn beautify && yarn run eslint src/js/**",
     "beautify": "yarn run prettier --write \"src/**/*.(ts|js)\" \"build/**/*.ts\"",
-    "test": "yarn lint && node --experimental-vm-modules --no-warnings node_modules/jest/bin/jest.js"
+    "test": "node --experimental-vm-modules --no-warnings node_modules/jest/bin/jest.js"
   },
   "devDependencies": {
     "@rollup/plugin-eslint": "^9.0.3",
