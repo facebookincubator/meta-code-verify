@@ -21,11 +21,20 @@ import checkElementForViolatingJSUri from './content/checkElementForViolatingJSU
 import {checkElementForViolatingAttributes} from './content/checkElementForViolatingAttributes';
 import isFbOrMsgrOrigin from './shared/isFbOrMsgrOrigin';
 import {sendMessageToBackground} from './shared/sendMessageToBackground';
+import parseFailedJSON from './content/parseFailedJSON';
 import genSourceText from './content/genSourceText';
 import isPathnameExcluded from './content/isPathNameExcluded';
 
 const SOURCE_SCRIPTS = new Map();
-const INLINE_SCRIPTS = [];
+/**
+ * using an array of maps, as we're using the same key for inline scripts
+ * this will eventually be removed, once inline scripts are removed from the
+ * page load
+ * */
+const INLINE_SCRIPTS: Array<Map<string, string>> = [];
+
+// Map<version, Array<ScriptDetails>>
+export const FOUND_SCRIPTS = new Map<string, Array<ScriptDetails>>([['', []]]);
 
 type ScriptDetailsWithSrc = {
   otherType: string;
@@ -38,8 +47,6 @@ type ScriptDetailsRaw = {
   otherType: string;
 };
 type ScriptDetails = ScriptDetailsRaw | ScriptDetailsWithSrc;
-
-export const FOUND_SCRIPTS = new Map<string, Array<ScriptDetails>>([['', []]]);
 
 let currentFilterType = '';
 let manifestTimeoutID: string | number = '';
@@ -62,10 +69,9 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
     // this means that content utils is running in an iframe - disable timer and call processFoundJS on manifest processed in top level frame
     clearTimeout(manifestTimeoutID);
     manifestTimeoutID = '';
-    window.setTimeout(
-      () => processFoundJS(FOUND_SCRIPTS.keys().next().value),
-      0,
-    );
+    FOUND_SCRIPTS.forEach((_val, key) => {
+      window.setTimeout(() => processFoundJS(key), 0);
+    });
   }
   // check if it's the manifest node
   if (
@@ -83,7 +89,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
       rawManifest = JSON.parse(scriptNodeMaybe.textContent);
     } catch (manifestParseError) {
       setTimeout(
-        () => parseFailedJson({node: scriptNodeMaybe, retry: 5000}),
+        () => parseFailedJSON({node: scriptNodeMaybe, retry: 5000}),
         20,
       );
       return;
@@ -102,21 +108,22 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
       roothash = otherHashes.combined_hash;
       version = scriptNodeMaybe.getAttribute('data-manifest-rev');
 
-      if (currentFilterType != '') {
-        currentFilterType = 'BOTH';
-      }
       if (currentFilterType === '') {
         currentFilterType = otherType;
+      } else {
+        currentFilterType = 'BOTH';
       }
-    }
-    // for whatsapp
-    else {
+    } else {
+      // for whatsapp
       currentFilterType = 'BOTH';
     }
     // now that we know the actual version of the scripts, transfer the ones we know about.
     if (FOUND_SCRIPTS.has('')) {
       FOUND_SCRIPTS.set(version, FOUND_SCRIPTS.get(''));
       FOUND_SCRIPTS.delete('');
+    } else if (!FOUND_SCRIPTS.has(version)) {
+      // New version is being loaded in
+      FOUND_SCRIPTS.set(version, []);
     }
 
     sendMessageToBackground(
@@ -157,7 +164,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
       JSON.parse(scriptNodeMaybe.textContent);
     } catch (parseError) {
       setTimeout(
-        () => parseFailedJson({node: scriptNodeMaybe, retry: 1500}),
+        () => parseFailedJSON({node: scriptNodeMaybe, retry: 1500}),
         20,
       );
     }
@@ -174,27 +181,34 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
   }
 
   const dataBtManifest = scriptNodeMaybe.getAttribute('data-btmanifest');
+  const version = dataBtManifest == null ? '' : dataBtManifest.split('_')[0];
   const otherType = dataBtManifest == null ? '' : dataBtManifest.split('_')[1];
   // need to get the src of the JS
+  let scriptDetails = null;
   if (scriptNodeMaybe.src != null && scriptNodeMaybe.src !== '') {
-    if (FOUND_SCRIPTS.size === 1) {
-      FOUND_SCRIPTS.get(FOUND_SCRIPTS.keys().next().value).push({
-        src: scriptNodeMaybe.src,
-        otherType: otherType, // TODO: read from DOM when available
-      });
-    }
+    scriptDetails = {
+      src: scriptNodeMaybe.src,
+      otherType, // TODO: read from DOM when available
+    };
   } else {
     // no src, access innerHTML for the code
     const hashLookupAttribute =
       scriptNodeMaybe.attributes['data-binary-transparency-hash-key'];
     const hashLookupKey = hashLookupAttribute && hashLookupAttribute.value;
-    if (FOUND_SCRIPTS.size === 1) {
-      FOUND_SCRIPTS.get(FOUND_SCRIPTS.keys().next().value).push({
-        type: MESSAGE_TYPE.RAW_JS,
-        rawjs: scriptNodeMaybe.innerHTML,
-        lookupKey: hashLookupKey,
-        otherType: otherType, // TODO: read from DOM when available
-      });
+    scriptDetails = {
+      type: MESSAGE_TYPE.RAW_JS,
+      rawjs: scriptNodeMaybe.innerHTML,
+      lookupKey: hashLookupKey,
+      otherType, // TODO: read from DOM when available
+    };
+  }
+  if (FOUND_SCRIPTS.has(version)) {
+    FOUND_SCRIPTS.get(version).push(scriptDetails);
+  } else {
+    if (version != '') {
+      FOUND_SCRIPTS.set(version, [scriptDetails]);
+    } else {
+      FOUND_SCRIPTS.get(FOUND_SCRIPTS.keys().next().value).push(scriptDetails);
     }
   }
   updateCurrentState(STATES.PROCESSING);
@@ -372,7 +386,6 @@ export const processFoundJS = async (version: string): Promise<void> => {
               updateCurrentState(STATES.VALID);
             }
           } else {
-            // using an array of maps, as we're using the same key for inline scripts - this will eventually be removed, once inline scripts are removed from the page load
             inlineScriptMap.set('hash not in manifest', script.rawjs);
             INLINE_SCRIPTS.push(inlineScriptMap);
             if (KNOWN_EXTENSION_HASHES.includes(response.hash)) {
@@ -395,22 +408,6 @@ export const processFoundJS = async (version: string): Promise<void> => {
   }
   window.setTimeout(() => processFoundJS(version), 3000);
 };
-
-function parseFailedJson(queuedJsonToParse: {
-  node: Element;
-  retry: number;
-}): void {
-  try {
-    JSON.parse(queuedJsonToParse.node.textContent);
-  } catch (parseError) {
-    if (queuedJsonToParse.retry > 0) {
-      queuedJsonToParse.retry--;
-      setTimeout(() => parseFailedJson(queuedJsonToParse), 20);
-    } else {
-      updateCurrentState(STATES.INVALID);
-    }
-  }
-}
 
 export function startFor(
   origin: Origin,
