@@ -114,5 +114,6 @@ export const ORIGIN_TYPE = Object.freeze({
 
 export type Origin = keyof typeof ORIGIN_TYPE;
 
-// Firefox and Safari currently do not support CompressionStream
-export const DOWNLOAD_JS_ENABLED = 'CompressionStream' in window;
+// Firefox and Safari currently do not support CompressionStream/showSaveFilePicker
+export const DOWNLOAD_JS_ENABLED =
+  'CompressionStream' in window && 'showSaveFilePicker' in window;
