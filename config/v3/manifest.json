@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Code Verify",
-    "version": "2.1.1",
+    "version": "3.0.0",
     "default_locale": "en",
     "description": "An extension to verify the code running in your browser matches what was published.",
     "action": {
@@ -35,6 +35,13 @@
             "run_at": "document_start"
         },
         {
+            "matches": ["*://*.instagram.com/*"],
+            "all_frames": true,
+            "match_about_blank": true,
+            "js": ["contentIG.js"],
+            "run_at": "document_start"
+        },
+        {
             "matches": ["*://*.whatsapp.com/*"],
             "all_frames": true,
             "match_about_blank": true,
@@ -55,6 +62,7 @@
         "https://static.xx.fbcdn.net/",
         "*://*.messenger.com/*",
         "*://*.facebook.com/*",
+        "*://*.instagram.com/*",
         "*://*.whatsapp.com/*"
     ]
 }
