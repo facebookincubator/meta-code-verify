@@ -60,6 +60,7 @@
     "host_permissions": [
         "https://*.privacy-auditability.cloudflare.com/",
         "https://static.xx.fbcdn.net/",
+        "https://static.cdninstagram.com/",
         "*://*.messenger.com/*",
         "*://*.facebook.com/*",
         "*://*.instagram.com/*",

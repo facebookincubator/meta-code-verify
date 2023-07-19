@@ -27,6 +27,7 @@ export type MessagePayload =
   | {
       type: typeof MESSAGE_TYPE.DEBUG;
       log: string;
+      src?: string;
     }
   | {
       type: typeof MESSAGE_TYPE.STATE_UPDATED;
