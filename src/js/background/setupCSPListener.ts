@@ -15,10 +15,11 @@ export default function setupCSPListener(
     details => {
       if (details.responseHeaders) {
         const cspHeaders = details.responseHeaders.filter(
-          header => header.name === 'content-security-policy',
+          header => header.name.toLowerCase() === 'content-security-policy',
         );
         const cspReportHeaders = details.responseHeaders.filter(
-          header => header.name === 'content-security-policy-report-only',
+          header =>
+            header.name.toLowerCase() === 'content-security-policy-report-only',
         );
         if (!cspHeadersMap.has(details.tabId)) {
           cspHeadersMap.set(details.tabId, new Map());
