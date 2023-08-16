@@ -149,7 +149,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
         otherHashes: otherHashes,
         rootHash: roothash,
         workaround: scriptNodeMaybe.innerHTML,
-        version: version,
+        version,
       },
       response => {
         // then start processing of it's JS
@@ -160,11 +160,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
           }
           window.setTimeout(() => processFoundJS(version), 0);
         } else {
-          if (
-            ['ENDPOINT_FAILURE', 'UNKNOWN_ENDPOINT_ISSUE'].includes(
-              response.reason,
-            )
-          ) {
+          if ('UNKNOWN_ENDPOINT_ISSUE' === response.reason) {
             updateCurrentState(STATES.TIMEOUT);
             return;
           }

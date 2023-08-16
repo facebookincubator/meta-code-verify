@@ -18,7 +18,6 @@ import {validateMetaCompanyManifest} from './background/validateMetaCompanyManif
 import {validateManifest} from './background/validateManifest';
 import isFbMsgrOrIgOrigin from './shared/isFbMsgrOrIgOrigin';
 import {MessagePayload, MessageResponse} from './shared/MessageTypes';
-// import {updateCurrentState} from './content/updateCurrentState';
 
 const MANIFEST_CACHE = new Map<Origin, Map<string, Manifest>>();
 
@@ -37,6 +36,24 @@ type Manifest = {
   start: number;
   leaves: Array<string>;
 };
+
+function getManifestMapForOrigin(origin: Origin): Map<string, Manifest> {
+  // store manifest to subsequently validate JS
+  let manifestMap = MANIFEST_CACHE.get(origin);
+  if (manifestMap == null) {
+    manifestMap = new Map();
+    MANIFEST_CACHE.set(origin, manifestMap);
+  }
+  // roll through the existing manifests and remove expired ones
+  if (ORIGIN_TIMEOUT[origin] > 0) {
+    for (const [key, manif] of manifestMap.entries()) {
+      if (manif.start + ORIGIN_TIMEOUT[origin] < Date.now()) {
+        manifestMap.delete(key);
+      }
+    }
+  }
+  return manifestMap;
+}
 
 function logReceivedMessage(
   message: MessagePayload,
@@ -71,30 +88,19 @@ function handleMessages(
         message.rootHash,
         message.otherHashes,
         message.leaves,
-      ).then(valid => {
-        if (valid) {
-          let origin = MANIFEST_CACHE.get(message.origin);
-          if (origin == null) {
-            origin = new Map();
-            MANIFEST_CACHE.set(message.origin, origin);
-          }
-          // roll through the existing manifests and remove expired ones
-          if (ORIGIN_TIMEOUT[message.origin] > 0) {
-            for (const [key, manif] of origin.entries()) {
-              if (manif.start + ORIGIN_TIMEOUT[message.origin] < Date.now()) {
-                origin.delete(key);
-              }
-            }
-          }
-
-          let manifest = origin.get(message.version);
+        ORIGIN_HOST[message.origin],
+        message.version,
+      ).then(validationResult => {
+        if (validationResult.valid) {
+          const manifestMap = getManifestMapForOrigin(message.origin);
+          let manifest = manifestMap.get(message.version);
           if (!manifest) {
             manifest = {
               leaves: [],
               root: message.rootHash,
               start: Date.now(),
             };
-            origin.set(message.version, manifest);
+            manifestMap.set(message.version, manifest);
           }
           message.leaves.forEach(leaf => {
             if (!manifest.leaves.includes(leaf)) {
@@ -103,7 +109,7 @@ function handleMessages(
           });
           sendResponse({valid: true});
         } else {
-          sendResponse({valid: false});
+          sendResponse(validationResult);
         }
       });
     } else {
@@ -119,21 +125,8 @@ function handleMessages(
         message.workaround,
       ).then(validationResult => {
         if (validationResult.valid) {
-          // store manifest to subsequently validate JS
-          let origin = MANIFEST_CACHE.get(message.origin);
-          if (origin == null) {
-            origin = new Map();
-            MANIFEST_CACHE.set(message.origin, origin);
-          }
-          // roll through the existing manifests and remove expired ones
-          if (ORIGIN_TIMEOUT[message.origin] > 0) {
-            for (const [key, manif] of origin.entries()) {
-              if (manif.start + ORIGIN_TIMEOUT[message.origin] < Date.now()) {
-                origin.delete(key);
-              }
-            }
-          }
-          origin.set(message.version, {
+          const manifestMap = getManifestMapForOrigin(message.origin);
+          manifestMap.set(message.version, {
             leaves: slicedLeaves,
             root: slicedHash,
             start: Date.now(),
