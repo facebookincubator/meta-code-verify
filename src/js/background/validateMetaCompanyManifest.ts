@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import {getCFRootHash} from './getCFRootHash';
+
 export async function validateMetaCompanyManifest(
   rootHash: string,
   otherHashes: {
@@ -13,7 +15,25 @@ export async function validateMetaCompanyManifest(
     main: string;
   },
   leaves: Array<string>,
-): Promise<boolean> {
+  host: string,
+  version: string,
+): Promise<{valid: boolean; reason?: string}> {
+  const cfResponse = await getCFRootHash(host, version);
+  if (!(cfResponse instanceof Response)) {
+    return {
+      valid: false,
+      reason: 'UNKNOWN_ENDPOINT_ISSUE',
+    };
+  }
+  const cfPayload = await cfResponse.json();
+  const cfRootHash = cfPayload.root_hash;
+  if (rootHash !== cfRootHash) {
+    return {
+      valid: false,
+      reason: 'ROOT_HASH_VERFIY_FAIL_3RD_PARTY',
+    };
+  }
+
   // merge all the hashes into one
   const megaHash = JSON.stringify(leaves);
   // hash it
@@ -39,8 +59,8 @@ export async function validateMetaCompanyManifest(
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
   } else {
-    return false;
+    return {valid: false};
   }
 
-  return combinedHash === rootHash;
+  return {valid: combinedHash === rootHash};
 }

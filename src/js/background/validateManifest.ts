@@ -5,32 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import {getCFRootHash} from './getCFRootHash';
+
 const fromHexString = (hexString: string): Uint8Array =>
   new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
 
 const toHexString = (bytes: Uint8Array): string =>
   bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
-
-function getCFHashWorkaroundFunction(
-  host: string,
-  version: string,
-): Promise<Response> {
-  return new Promise((resolve, reject) => {
-    fetch(
-      'https://staging-api.privacy-auditability.cloudflare.com/v1/hash/' +
-        encodeURIComponent(host) +
-        '/' +
-        encodeURIComponent(version),
-      {method: 'GET'},
-    )
-      .then(response => {
-        resolve(response);
-      })
-      .catch(response => {
-        reject(response);
-      });
-  });
-}
 
 export async function validateManifest(
   rootHash: string,
@@ -40,23 +21,14 @@ export async function validateManifest(
   workaround: string,
 ): Promise<{valid: boolean; reason?: string}> {
   // does rootHash match what was published?
-  const cfResponse = await getCFHashWorkaroundFunction(host, version).catch(
-    cfError => {
-      console.error('error fetching hash from CF', cfError);
-      return {
-        valid: false,
-        reason: 'ENDPOINT_FAILURE',
-        error: cfError,
-      };
-    },
-  );
-  if (cfResponse == null || !('json' in cfResponse)) {
+  const cfHash = await getCFRootHash(host, version);
+  if (!(cfHash instanceof Response)) {
     return {
       valid: false,
       reason: 'UNKNOWN_ENDPOINT_ISSUE',
     };
   }
-  const cfPayload = await cfResponse.json();
+  const cfPayload = await cfHash.json();
   let cfRootHash = cfPayload.root_hash;
   if (cfPayload.root_hash.startsWith('0x')) {
     cfRootHash = cfPayload.root_hash.slice(2);
@@ -119,9 +91,7 @@ export async function validateManifest(
   }
   const lastHash = toHexString(new Uint8Array(oldhashes[0]));
   if (lastHash === rootHash) {
-    return {
-      valid: true,
-    };
+    return {valid: true};
   }
   return {
     valid: false,
