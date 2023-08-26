@@ -422,6 +422,7 @@ export const processFoundJS = async (version: string): Promise<void> => {
   window.setTimeout(() => processFoundJS(version), 3000);
 };
 
+let isUserLoggedIn = false;
 export function startFor(
   origin: Origin,
   excludedPathnames: Array<RegExp> = [],
@@ -441,7 +442,6 @@ export function startFor(
     updateCurrentState(STATES.IGNORE);
     return;
   }
-  let isUserLoggedIn = false;
   if (isFbMsgrOrIgOrigin(origin)) {
     // ds_user_id / c_user contains the user id of the user logged in
     const cookieName =
@@ -454,7 +454,7 @@ export function startFor(
       }
     });
   } else {
-    // only doing this check for FB and MSGR
+    // only doing this check for FB, MSGR, and IG
     isUserLoggedIn = true;
   }
   if (isUserLoggedIn) {
@@ -480,7 +480,7 @@ chrome.runtime.onMessage.addListener(request => {
       `Detected uncached script ${request.uncachedUrl}`,
     );
   } else if (request.greeting === 'checkIfScriptWasProcessed') {
-    if (!ALL_FOUND_SCRIPT_TAGS.has(request.response.url)) {
+    if (isUserLoggedIn && !ALL_FOUND_SCRIPT_TAGS.has(request.response.url)) {
       if (
         'serviceWorker' in navigator &&
         navigator.serviceWorker.controller?.scriptURL === request.response.url

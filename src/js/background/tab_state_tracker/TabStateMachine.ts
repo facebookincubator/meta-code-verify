@@ -61,11 +61,12 @@ export default class TabStateMachine extends StateMachine {
   }
 
   updateStateIfValid(newState: State) {
-    // Only update the tab's state to VALID if all of it's frames are VALID
+    // Only update the tab's state to VALID if all of it's frames are VALID or just starting
     if (
       newState === STATES.VALID &&
       !Object.values(this._frameStates).every(
-        fsm => fsm.getState() === STATES.VALID,
+        fsm =>
+          fsm.getState() === STATES.VALID || fsm.getState() === STATES.START,
       )
     ) {
       return;
