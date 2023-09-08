@@ -132,7 +132,10 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
     // now that we know the actual version of the scripts, transfer the ones we know about.
     if (FOUND_SCRIPTS.has('')) {
       FOUND_SCRIPTS.set(version, [
-        ...FOUND_SCRIPTS.get(''),
+        ...FOUND_SCRIPTS.get('').map(s => ({
+          ...s,
+          otherType: currentFilterType,
+        })),
         ...(FOUND_SCRIPTS.get(version) ?? []),
       ]);
       FOUND_SCRIPTS.delete('');
