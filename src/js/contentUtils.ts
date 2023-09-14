@@ -130,6 +130,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
       currentFilterType = 'BOTH';
     }
     // now that we know the actual version of the scripts, transfer the ones we know about.
+    // also set the correct manifest type, "otherType" for already collected scripts
     if (FOUND_SCRIPTS.has('')) {
       FOUND_SCRIPTS.set(version, [
         ...FOUND_SCRIPTS.get('').map(s => ({
@@ -195,28 +196,51 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
   }
 
   const dataBtManifest = scriptNodeMaybe.getAttribute('data-btmanifest');
-  const version = dataBtManifest == null ? '' : dataBtManifest.split('_')[0];
-  const otherType = dataBtManifest == null ? '' : dataBtManifest.split('_')[1];
-  // need to get the src of the JS
+
+  // Need to get the src of the JS
   let scriptDetails = null;
-  if (scriptNodeMaybe.src != null && scriptNodeMaybe.src !== '') {
+  let version = '';
+
+  if (
+    isFbMsgrOrIgOrigin(currentOrigin.val) &&
+    (scriptNodeMaybe.src !== '' || scriptNodeMaybe.innerHTML !== '')
+  ) {
+    if (dataBtManifest == null) {
+      // All src specified scripts should have a manifest atribution
+      updateCurrentState(
+        STATES.INVALID,
+        `No data-btmanifest attribute found on script ${scriptNodeMaybe.src}`,
+      );
+    }
+
+    version = dataBtManifest.split('_')[0];
+    const otherType = dataBtManifest.split('_')[1];
     scriptDetails = {
       src: scriptNodeMaybe.src,
-      otherType, // TODO: read from DOM when available
+      otherType,
     };
     ALL_FOUND_SCRIPT_TAGS.add(scriptNodeMaybe.src);
   } else {
-    // no src, access innerHTML for the code
-    const hashLookupAttribute =
-      scriptNodeMaybe.attributes['data-binary-transparency-hash-key'];
-    const hashLookupKey = hashLookupAttribute && hashLookupAttribute.value;
-    scriptDetails = {
-      type: MESSAGE_TYPE.RAW_JS,
-      rawjs: scriptNodeMaybe.innerHTML,
-      lookupKey: hashLookupKey,
-      otherType, // TODO: read from DOM when available
-    };
+    if (scriptNodeMaybe.src != null && scriptNodeMaybe.src !== '') {
+      scriptDetails = {
+        src: scriptNodeMaybe.src,
+        otherType: currentFilterType,
+      };
+      ALL_FOUND_SCRIPT_TAGS.add(scriptNodeMaybe.src);
+    } else {
+      // no src, access innerHTML for the code
+      const hashLookupAttribute =
+        scriptNodeMaybe.attributes['data-binary-transparency-hash-key'];
+      const hashLookupKey = hashLookupAttribute && hashLookupAttribute.value;
+      scriptDetails = {
+        type: MESSAGE_TYPE.RAW_JS,
+        rawjs: scriptNodeMaybe.innerHTML,
+        lookupKey: hashLookupKey,
+        otherType: currentFilterType,
+      };
+    }
   }
+
   if (FOUND_SCRIPTS.has(version)) {
     FOUND_SCRIPTS.get(version).push(scriptDetails);
   } else {
