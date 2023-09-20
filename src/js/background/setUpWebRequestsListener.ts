@@ -41,17 +41,19 @@ export default function setUpWebRequestsListener(
   chrome.webRequest.onResponseStarted.addListener(
     response => {
       if (response.tabId === -1) {
+        if (
+          response.url.startsWith('chrome-extension://') ||
+          response.url.startsWith('moz-extension://')
+        ) {
+          return;
+        }
         if (!isMetaInitiatedResponse(response)) {
           return;
         }
         checkResponseMIMEType(response);
 
         // Potential `importScripts` call from Shared or Service Worker
-        if (
-          !response.url.startsWith('chrome-extension://') &&
-          !response.url.startsWith('moz-extension://') &&
-          response.type === 'script'
-        ) {
+        if (response.type === 'script') {
           const origin = response.initiator;
 
           // Send to all tabs of this origin
@@ -70,6 +72,7 @@ export default function setUpWebRequestsListener(
             });
           });
         }
+
         return;
       }
 
