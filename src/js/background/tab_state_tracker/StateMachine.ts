@@ -44,6 +44,7 @@ const STATE_TRANSITIONS: Partial<{
     [STATES.INVALID]: true,
   },
   [STATES.RISK]: {
+    [STATES.INVALID]: true,
     [STATES.RISK]: true,
   },
   [STATES.VALID]: {
