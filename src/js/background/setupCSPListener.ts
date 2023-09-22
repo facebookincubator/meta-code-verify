@@ -6,6 +6,7 @@
  */
 
 import {CSPHeaderMap} from '../background';
+import {getCSPHeadersFromWebRequestResponse} from '../shared/getCSPHeadersFromWebRequestResponse';
 
 export default function setupCSPListener(
   cspHeadersMap: CSPHeaderMap,
@@ -14,12 +15,10 @@ export default function setupCSPListener(
   chrome.webRequest.onHeadersReceived.addListener(
     details => {
       if (details.responseHeaders) {
-        const cspHeaders = details.responseHeaders.filter(
-          header => header.name.toLowerCase() === 'content-security-policy',
-        );
-        const cspReportHeaders = details.responseHeaders.filter(
-          header =>
-            header.name.toLowerCase() === 'content-security-policy-report-only',
+        const cspHeaders = getCSPHeadersFromWebRequestResponse(details);
+        const cspReportHeaders = getCSPHeadersFromWebRequestResponse(
+          details,
+          true,
         );
         if (!cspHeadersMap.has(details.tabId)) {
           cspHeadersMap.set(details.tabId, new Map());
