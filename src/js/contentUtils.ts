@@ -14,7 +14,10 @@ import {
   ORIGIN_TYPE,
 } from './config';
 
-import {checkCSPHeaders} from './content/checkCSPHeaders';
+import {
+  checkDocumentCSPHeaders,
+  getAllowedWorkerCSPs,
+} from './content/checkDocumentCSPHeaders';
 import downloadJSArchive from './content/downloadJSArchive';
 import alertBackgroundOfImminentFetch from './content/alertBackgroundOfImminentFetch';
 import {currentOrigin, updateCurrentState} from './content/updateCurrentState';
@@ -25,6 +28,8 @@ import {sendMessageToBackground} from './shared/sendMessageToBackground';
 import parseFailedJSON from './content/parseFailedJSON';
 import genSourceText from './content/genSourceText';
 import isPathnameExcluded from './content/isPathNameExcluded';
+import {doesWorkerUrlConformToCSP} from './content/doesWorkerUrlConformToCSP';
+import {checkWorkerEndpointCSP} from './content/checkWorkerEndpointCSP';
 
 const SOURCE_SCRIPTS = new Map();
 /**
@@ -450,6 +455,8 @@ export const processFoundJS = async (version: string): Promise<void> => {
 };
 
 let isUserLoggedIn = false;
+let allowedWorkerCSPs: Array<Set<string>> = [];
+
 export function startFor(
   origin: Origin,
   excludedPathnames: Array<RegExp> = [],
@@ -461,7 +468,14 @@ export function startFor(
     },
     resp => {
       if (isFbMsgrOrIgOrigin(currentOrigin.val)) {
-        checkCSPHeaders(resp.cspHeaders, resp.cspReportHeaders);
+        const validCSP = checkDocumentCSPHeaders(
+          resp.cspHeaders,
+          resp.cspReportHeaders,
+          currentOrigin.val,
+        );
+        if (validCSP) {
+          allowedWorkerCSPs = getAllowedWorkerCSPs(resp.cspHeaders);
+        }
       }
     },
   );
@@ -513,6 +527,23 @@ chrome.runtime.onMessage.addListener(request => {
         navigator.serviceWorker.controller?.scriptURL === request.response.url
       ) {
         return;
+      }
+      const hostname = window.location.hostname;
+      const resourceURL = new URL(request.response.url);
+      if (resourceURL.hostname === hostname) {
+        // This can potentially be a worker, check if CSPs allow it as a worker
+        if (
+          allowedWorkerCSPs.every(csp =>
+            doesWorkerUrlConformToCSP(csp, resourceURL.toString()),
+          )
+        ) {
+          // This might be a worker, ensure it's CSP headers are valid
+          checkWorkerEndpointCSP(
+            request.response,
+            allowedWorkerCSPs,
+            currentOrigin.val,
+          );
+        }
       }
       sendMessageToBackground({
         type: MESSAGE_TYPE.DEBUG,

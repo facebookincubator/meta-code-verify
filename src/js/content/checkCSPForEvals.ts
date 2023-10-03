@@ -6,16 +6,9 @@
  */
 
 import {STATES} from '../config';
-import {updateCurrentState} from './updateCurrentState';
 import alertBackgroundOfImminentFetch from './alertBackgroundOfImminentFetch';
-
-function parseCSPString(csp: string): Map<string, Set<string>> {
-  const directiveStrings = csp.split(';');
-  return directiveStrings.reduce((map, directiveString) => {
-    const [directive, ...values] = directiveString.split(' ');
-    return map.set(directive, new Set(values));
-  }, new Map());
-}
+import {parseCSPString} from './parseCSPString';
+import {updateCurrentState} from './updateCurrentState';
 
 function scanForCSPEvalReportViolations(): void {
   document.addEventListener('securitypolicyviolation', e => {
@@ -80,7 +73,7 @@ function getIsValidScriptSrcAndHasScriptSrcDirective(
   return [isValidScriptSrc, hasScriptSrcDirective];
 }
 
-export function checkCSPHeaders(
+export function checkCSPForEvals(
   cspHeaders: Array<string>,
   cspReportHeaders: Array<string>,
 ): boolean {
