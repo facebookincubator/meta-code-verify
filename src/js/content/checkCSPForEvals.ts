@@ -76,7 +76,7 @@ function getIsValidScriptSrcAndHasScriptSrcDirective(
 export function checkCSPForEvals(
   cspHeaders: Array<string>,
   cspReportHeaders: Array<string>,
-) {
+): boolean {
   // If CSP is enforcing on evals we don't need to do extra checks
 
   // Check `script-src` across all headers first since it takes precedence
