@@ -528,21 +528,23 @@ chrome.runtime.onMessage.addListener(request => {
       ) {
         return;
       }
-      const hostname = window.location.hostname;
-      const resourceURL = new URL(request.response.url);
-      if (resourceURL.hostname === hostname) {
-        // This can potentially be a worker, check if CSPs allow it as a worker
-        if (
-          allowedWorkerCSPs.every(csp =>
-            doesWorkerUrlConformToCSP(csp, resourceURL.toString()),
-          )
-        ) {
-          // This might be a worker, ensure it's CSP headers are valid
-          checkWorkerEndpointCSP(
-            request.response,
-            allowedWorkerCSPs,
-            currentOrigin.val,
-          );
+      if (isFbMsgrOrIgOrigin(currentOrigin.val)) {
+        const hostname = window.location.hostname;
+        const resourceURL = new URL(request.response.url);
+        if (resourceURL.hostname === hostname) {
+          // This can potentially be a worker, check if CSPs allow it as a worker
+          if (
+            allowedWorkerCSPs.every(csp =>
+              doesWorkerUrlConformToCSP(csp, resourceURL.toString()),
+            )
+          ) {
+            // This might be a worker, ensure it's CSP headers are valid
+            checkWorkerEndpointCSP(
+              request.response,
+              allowedWorkerCSPs,
+              currentOrigin.val,
+            );
+          }
         }
       }
       sendMessageToBackground({
