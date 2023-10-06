@@ -1,4 +1,3 @@
-dist/chrome
-dist/edge
-dist/firefox
+dist/*
 node_modules
+.DS_Store
