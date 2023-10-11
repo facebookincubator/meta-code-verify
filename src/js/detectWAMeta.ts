@@ -8,4 +8,13 @@
 import {ORIGIN_TYPE} from './config';
 import {startFor} from './contentUtils.js';
 
-startFor(ORIGIN_TYPE.WHATSAPP);
+startFor(
+  ORIGIN_TYPE.WHATSAPP,
+  Object.freeze({
+    scriptsShouldHaveManifestProp: false,
+    checkLoggedInFromCookie: false,
+    enforceCSPHeaders: false,
+    longTailIsLoadedConditionally: false,
+    useCompanyManifest: false,
+  }),
+);

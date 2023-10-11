@@ -16,7 +16,6 @@ import setupCSPListener from './background/setupCSPListener';
 import setUpWebRequestsListener from './background/setUpWebRequestsListener';
 import {validateMetaCompanyManifest} from './background/validateMetaCompanyManifest';
 import {validateManifest} from './background/validateManifest';
-import isFbMsgrOrIgOrigin from './shared/isFbMsgrOrIgOrigin';
 import {MessagePayload, MessageResponse} from './shared/MessageTypes';
 
 const MANIFEST_CACHE = new Map<Origin, Map<string, Manifest>>();
@@ -83,7 +82,7 @@ function handleMessages(
   logReceivedMessage(message, sender);
   if (message.type == MESSAGE_TYPE.LOAD_MANIFEST) {
     // validate manifest
-    if (isFbMsgrOrIgOrigin(message.origin)) {
+    if (message.useCompanyManifest) {
       validateMetaCompanyManifest(
         message.rootHash,
         message.otherHashes,
