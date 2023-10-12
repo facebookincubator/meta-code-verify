@@ -11,6 +11,7 @@ import {RawManifestOtherHashes} from '../contentUtils';
 export type MessagePayload =
   | {
       type: typeof MESSAGE_TYPE.LOAD_MANIFEST;
+      useCompanyManifest: boolean;
       origin: Origin;
       rootHash: string;
       otherHashes: RawManifestOtherHashes;

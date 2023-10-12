@@ -8,4 +8,13 @@
 import {ORIGIN_TYPE} from './config';
 import {startFor} from './contentUtils.js';
 
-startFor(ORIGIN_TYPE.MESSENGER);
+startFor(
+  ORIGIN_TYPE.MESSENGER,
+  Object.freeze({
+    scriptsShouldHaveManifestProp: true,
+    checkLoggedInFromCookie: true,
+    enforceCSPHeaders: true,
+    longTailIsLoadedConditionally: true,
+    useCompanyManifest: true,
+  }),
+);

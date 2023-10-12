@@ -23,13 +23,29 @@ import alertBackgroundOfImminentFetch from './content/alertBackgroundOfImminentF
 import {currentOrigin, updateCurrentState} from './content/updateCurrentState';
 import checkElementForViolatingJSUri from './content/checkElementForViolatingJSUri';
 import {checkElementForViolatingAttributes} from './content/checkElementForViolatingAttributes';
-import isFbMsgrOrIgOrigin from './shared/isFbMsgrOrIgOrigin';
 import {sendMessageToBackground} from './shared/sendMessageToBackground';
 import parseFailedJSON from './content/parseFailedJSON';
 import genSourceText from './content/genSourceText';
 import isPathnameExcluded from './content/isPathNameExcluded';
 import {doesWorkerUrlConformToCSP} from './content/doesWorkerUrlConformToCSP';
 import {checkWorkerEndpointCSP} from './content/checkWorkerEndpointCSP';
+
+type ContentScriptConfig = {
+  scriptsShouldHaveManifestProp: boolean;
+  checkLoggedInFromCookie: boolean;
+  excludedPathnames?: Array<RegExp>;
+  longTailIsLoadedConditionally: boolean;
+  enforceCSPHeaders: boolean;
+  useCompanyManifest: boolean;
+};
+
+let originConfig: ContentScriptConfig = {
+  scriptsShouldHaveManifestProp: false,
+  checkLoggedInFromCookie: false,
+  enforceCSPHeaders: false,
+  longTailIsLoadedConditionally: false,
+  useCompanyManifest: false,
+};
 
 const SOURCE_SCRIPTS = new Map();
 /**
@@ -118,13 +134,16 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
     let otherType = '';
     let roothash = rawManifest.root;
     let version = rawManifest.version;
-    if (isFbMsgrOrIgOrigin(currentOrigin.val)) {
+    if (originConfig.longTailIsLoadedConditionally) {
       leaves = rawManifest.manifest;
       otherHashes = rawManifest.manifest_hashes;
       otherType = scriptNodeMaybe.getAttribute('data-manifest-type');
       roothash = otherHashes.combined_hash;
       version = scriptNodeMaybe.getAttribute('data-manifest-rev');
 
+      // If this is the first manifest we've found, start processing scripts for
+      // that type. If we have encountered a second manifest, we can assume both
+      // main and longtail manifests are present.
       if (currentFilterType === '') {
         currentFilterType = otherType;
       } else {
@@ -153,6 +172,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
     sendMessageToBackground(
       {
         type: MESSAGE_TYPE.LOAD_MANIFEST,
+        useCompanyManifest: originConfig.useCompanyManifest,
         leaves: leaves,
         origin: currentOrigin.val,
         otherHashes: otherHashes,
@@ -200,16 +220,15 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
     return;
   }
 
-  const dataBtManifest = scriptNodeMaybe.getAttribute('data-btmanifest');
-
   // Need to get the src of the JS
   let scriptDetails = null;
   let version = '';
 
   if (
-    isFbMsgrOrIgOrigin(currentOrigin.val) &&
+    originConfig.scriptsShouldHaveManifestProp &&
     (scriptNodeMaybe.src !== '' || scriptNodeMaybe.innerHTML !== '')
   ) {
+    const dataBtManifest = scriptNodeMaybe.getAttribute('data-btmanifest');
     if (dataBtManifest == null) {
       // All src specified scripts should have a manifest atribution
       updateCurrentState(
@@ -457,17 +476,15 @@ export const processFoundJS = async (version: string): Promise<void> => {
 let isUserLoggedIn = false;
 let allowedWorkerCSPs: Array<Set<string>> = [];
 
-export function startFor(
-  origin: Origin,
-  excludedPathnames: Array<RegExp> = [],
-): void {
+export function startFor(origin: Origin, config: ContentScriptConfig): void {
+  originConfig = config;
   sendMessageToBackground(
     {
       type: MESSAGE_TYPE.CONTENT_SCRIPT_START,
       origin,
     },
     resp => {
-      if (isFbMsgrOrIgOrigin(currentOrigin.val)) {
+      if (originConfig.enforceCSPHeaders) {
         const validCSP = checkDocumentCSPHeaders(
           resp.cspHeaders,
           resp.cspReportHeaders,
@@ -479,11 +496,11 @@ export function startFor(
       }
     },
   );
-  if (isPathnameExcluded(excludedPathnames)) {
+  if (isPathnameExcluded(originConfig.excludedPathnames)) {
     updateCurrentState(STATES.IGNORE);
     return;
   }
-  if (isFbMsgrOrIgOrigin(origin)) {
+  if (originConfig.checkLoggedInFromCookie) {
     // ds_user_id / c_user contains the user id of the user logged in
     const cookieName =
       origin === ORIGIN_TYPE.INSTAGRAM ? 'ds_user_id' : 'c_user';
@@ -528,7 +545,7 @@ chrome.runtime.onMessage.addListener(request => {
       ) {
         return;
       }
-      if (isFbMsgrOrIgOrigin(currentOrigin.val)) {
+      if (originConfig.enforceCSPHeaders) {
         const hostname = window.location.hostname;
         const resourceURL = new URL(request.response.url);
         if (resourceURL.hostname === hostname) {

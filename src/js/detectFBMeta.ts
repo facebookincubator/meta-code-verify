@@ -25,4 +25,14 @@ const EXCLUDED_PATHNAMES: Array<RegExp> = [
   /\/v[\d.]+\/plugins\/page.php\/.*$/,
 ];
 
-startFor(ORIGIN_TYPE.FACEBOOK, EXCLUDED_PATHNAMES);
+startFor(
+  ORIGIN_TYPE.FACEBOOK,
+  Object.freeze({
+    scriptsShouldHaveManifestProp: true,
+    checkLoggedInFromCookie: true,
+    excludedPathnames: EXCLUDED_PATHNAMES,
+    enforceCSPHeaders: true,
+    longTailIsLoadedConditionally: true,
+    useCompanyManifest: true,
+  }),
+);
