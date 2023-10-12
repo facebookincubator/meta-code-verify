@@ -20,6 +20,22 @@ export default function setupCSPListener(
           details,
           true,
         );
+        let frameId = details.frameId;
+        const detailsUntyped = details as any;
+        // Missing type definitions in @types/chrome
+        if (
+          detailsUntyped?.documentLifecycle === 'prerender' &&
+          detailsUntyped?.frameType === 'outermost_frame' &&
+          details.type === 'main_frame' &&
+          details.frameId !== 0
+        ) {
+          /**
+           * This seems to be unintended behavior in `webRequest` where
+           * frameId ends up as non-zero for prerendered documents.
+           * Tracking in https://bugs.chromium.org/p/chromium/issues/detail?id=1492006
+           */
+          frameId = 0;
+        }
         if (!cspHeadersMap.has(details.tabId)) {
           cspHeadersMap.set(details.tabId, new Map());
         }
@@ -27,11 +43,11 @@ export default function setupCSPListener(
           cspReportHeadersMap.set(details.tabId, new Map());
         }
         cspHeadersMap.get(details.tabId).set(
-          details.frameId,
+          frameId,
           cspHeaders.map(h => h.value),
         );
         cspReportHeadersMap.get(details.tabId).set(
-          details.frameId,
+          frameId,
           cspReportHeaders.map(h => h.value),
         );
       }
