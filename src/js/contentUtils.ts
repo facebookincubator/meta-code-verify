@@ -31,19 +31,20 @@ import {doesWorkerUrlConformToCSP} from './content/doesWorkerUrlConformToCSP';
 import {checkWorkerEndpointCSP} from './content/checkWorkerEndpointCSP';
 
 type ContentScriptConfig = {
-  scriptsShouldHaveManifestProp: boolean;
   checkLoggedInFromCookie: boolean;
-  excludedPathnames?: Array<RegExp>;
-  longTailIsLoadedConditionally: boolean;
   enforceCSPHeaders: boolean;
+  excludedPathnames: Array<RegExp>;
+  longTailIsLoadedConditionally: boolean;
+  scriptsShouldHaveManifestProp: boolean;
   useCompanyManifest: boolean;
 };
 
 let originConfig: ContentScriptConfig = {
-  scriptsShouldHaveManifestProp: false,
   checkLoggedInFromCookie: false,
   enforceCSPHeaders: false,
+  excludedPathnames: [],
   longTailIsLoadedConditionally: false,
+  scriptsShouldHaveManifestProp: false,
   useCompanyManifest: false,
 };
 

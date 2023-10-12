@@ -11,10 +11,11 @@ import {startFor} from './contentUtils.js';
 startFor(
   ORIGIN_TYPE.INSTAGRAM,
   Object.freeze({
-    scriptsShouldHaveManifestProp: true,
     checkLoggedInFromCookie: true,
     enforceCSPHeaders: true,
+    excludedPathnames: [],
     longTailIsLoadedConditionally: true,
+    scriptsShouldHaveManifestProp: true,
     useCompanyManifest: true,
   }),
 );

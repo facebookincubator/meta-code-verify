@@ -11,10 +11,11 @@ import {startFor} from './contentUtils.js';
 startFor(
   ORIGIN_TYPE.WHATSAPP,
   Object.freeze({
-    scriptsShouldHaveManifestProp: false,
     checkLoggedInFromCookie: false,
     enforceCSPHeaders: false,
+    excludedPathnames: [],
     longTailIsLoadedConditionally: false,
+    scriptsShouldHaveManifestProp: false,
     useCompanyManifest: false,
   }),
 );
