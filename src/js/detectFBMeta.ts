@@ -28,11 +28,11 @@ const EXCLUDED_PATHNAMES: Array<RegExp> = [
 startFor(
   ORIGIN_TYPE.FACEBOOK,
   Object.freeze({
-    scriptsShouldHaveManifestProp: true,
     checkLoggedInFromCookie: true,
-    excludedPathnames: EXCLUDED_PATHNAMES,
     enforceCSPHeaders: true,
+    excludedPathnames: EXCLUDED_PATHNAMES,
     longTailIsLoadedConditionally: true,
+    scriptsShouldHaveManifestProp: true,
     useCompanyManifest: true,
   }),
 );
