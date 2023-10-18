@@ -225,57 +225,62 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
   let scriptDetails = null;
   let version = '';
 
-  if (
-    originConfig.scriptsShouldHaveManifestProp &&
-    (scriptNodeMaybe.src !== '' || scriptNodeMaybe.innerHTML !== '')
-  ) {
-    const dataBtManifest = scriptNodeMaybe.getAttribute('data-btmanifest');
-    if (dataBtManifest == null) {
-      // All src specified scripts should have a manifest atribution
-      updateCurrentState(
-        STATES.INVALID,
-        `No data-btmanifest attribute found on script ${scriptNodeMaybe.src}`,
-      );
-    }
+  if (scriptNodeMaybe.src !== '' || scriptNodeMaybe.innerHTML !== '') {
+    if (originConfig.scriptsShouldHaveManifestProp) {
+      const dataBtManifest = scriptNodeMaybe.getAttribute('data-btmanifest');
+      if (dataBtManifest == null) {
+        // All src specified scripts should have a manifest atribution
+        updateCurrentState(
+          STATES.INVALID,
+          `No data-btmanifest attribute found on script ${scriptNodeMaybe.src}`,
+        );
+      }
 
-    version = dataBtManifest.split('_')[0];
-    const otherType = dataBtManifest.split('_')[1];
-    scriptDetails = {
-      src: scriptNodeMaybe.src,
-      otherType,
-    };
-    ALL_FOUND_SCRIPT_TAGS.add(scriptNodeMaybe.src);
-  } else {
-    if (scriptNodeMaybe.src != null && scriptNodeMaybe.src !== '') {
+      version = dataBtManifest.split('_')[0];
+      const otherType = dataBtManifest.split('_')[1];
       scriptDetails = {
         src: scriptNodeMaybe.src,
-        otherType: currentFilterType,
+        otherType,
       };
       ALL_FOUND_SCRIPT_TAGS.add(scriptNodeMaybe.src);
     } else {
-      // no src, access innerHTML for the code
-      const hashLookupAttribute =
-        scriptNodeMaybe.attributes['data-binary-transparency-hash-key'];
-      const hashLookupKey = hashLookupAttribute && hashLookupAttribute.value;
-      scriptDetails = {
-        type: MESSAGE_TYPE.RAW_JS,
-        rawjs: scriptNodeMaybe.innerHTML,
-        lookupKey: hashLookupKey,
-        otherType: currentFilterType,
-      };
+      console.log(scriptNodeMaybe.src);
+      if (scriptNodeMaybe.src !== '') {
+        scriptDetails = {
+          src: scriptNodeMaybe.src,
+          otherType: currentFilterType,
+        };
+        ALL_FOUND_SCRIPT_TAGS.add(scriptNodeMaybe.src);
+      } else {
+        console.log(scriptNodeMaybe);
+        console.log(scriptNodeMaybe.innerHTML);
+        // no src, access innerHTML for the code
+        const hashLookupAttribute =
+          scriptNodeMaybe.attributes['data-binary-transparency-hash-key'];
+        const hashLookupKey = hashLookupAttribute && hashLookupAttribute.value;
+        scriptDetails = {
+          type: MESSAGE_TYPE.RAW_JS,
+          rawjs: scriptNodeMaybe.innerHTML,
+          lookupKey: hashLookupKey,
+          otherType: currentFilterType,
+        };
+        console.log(scriptDetails);
+      }
     }
-  }
 
-  if (FOUND_SCRIPTS.has(version)) {
-    FOUND_SCRIPTS.get(version).push(scriptDetails);
-  } else {
-    if (version != '') {
-      FOUND_SCRIPTS.set(version, [scriptDetails]);
+    if (FOUND_SCRIPTS.has(version)) {
+      FOUND_SCRIPTS.get(version).push(scriptDetails);
     } else {
-      FOUND_SCRIPTS.get(FOUND_SCRIPTS.keys().next().value).push(scriptDetails);
+      if (version != '') {
+        FOUND_SCRIPTS.set(version, [scriptDetails]);
+      } else {
+        FOUND_SCRIPTS.get(FOUND_SCRIPTS.keys().next().value).push(
+          scriptDetails,
+        );
+      }
     }
+    updateCurrentState(STATES.PROCESSING);
   }
-  updateCurrentState(STATES.PROCESSING);
 }
 
 function checkNodeForViolations(element: Element): void {
