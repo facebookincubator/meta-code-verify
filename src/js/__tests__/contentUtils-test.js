@@ -43,6 +43,7 @@ describe('contentUtils', () => {
         },
         getAttribute: () => {},
         innerHTML: fakeInnerHtml,
+        src: '',
       };
       storeFoundJS(fakeScriptNode);
       expect(FOUND_SCRIPTS.get('version').length).toEqual(1);
@@ -92,7 +93,8 @@ describe('contentUtils', () => {
         childNodes: [],
         nodeName: 'SCRIPT',
         nodeType: 1,
-        tagName: 'div',
+        tagName: 'tagName',
+        src: '',
       };
       hasInvalidScripts(fakeElement);
       expect(FOUND_SCRIPTS.get('version').length).toBe(1);
@@ -172,6 +174,7 @@ describe('contentUtils', () => {
             nodeType: 1,
             childNodes: [],
             tagName: 'tagName',
+            src: '',
           },
         ],
         hasAttribute: () => {
