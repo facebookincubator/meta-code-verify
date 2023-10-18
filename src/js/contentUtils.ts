@@ -244,7 +244,6 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
       };
       ALL_FOUND_SCRIPT_TAGS.add(scriptNodeMaybe.src);
     } else {
-      console.log(scriptNodeMaybe.src);
       if (scriptNodeMaybe.src !== '') {
         scriptDetails = {
           src: scriptNodeMaybe.src,
@@ -252,8 +251,6 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
         };
         ALL_FOUND_SCRIPT_TAGS.add(scriptNodeMaybe.src);
       } else {
-        console.log(scriptNodeMaybe);
-        console.log(scriptNodeMaybe.innerHTML);
         // no src, access innerHTML for the code
         const hashLookupAttribute =
           scriptNodeMaybe.attributes['data-binary-transparency-hash-key'];
@@ -264,7 +261,6 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
           lookupKey: hashLookupKey,
           otherType: currentFilterType,
         };
-        console.log(scriptDetails);
       }
     }
 
@@ -321,7 +317,15 @@ export const scanForScripts = (): void => {
       mutationsList.forEach(mutation => {
         if (mutation.type === 'childList') {
           Array.from(mutation.addedNodes).forEach(checkScript => {
-            hasInvalidScripts(checkScript);
+            // Code within a script tag has changed
+            if (
+              checkScript.nodeType === 3 &&
+              mutation.target.nodeName.toLocaleLowerCase() === 'script'
+            ) {
+              hasInvalidScripts(mutation.target);
+            } else {
+              hasInvalidScripts(checkScript);
+            }
           });
         } else if (
           mutation.type === 'attributes' &&
