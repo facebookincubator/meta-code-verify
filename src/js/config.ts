@@ -56,7 +56,7 @@ export const STATES_TO_ICONS = {
  * Because these extensions are relatively trustworthy, when these scripts fail our
  * regular validation checks we mark the page as "at risk" instead of "invalid".
  *
- * Many extensions vary their scripts from page to page (dynamic scripts) such that this
+ * Many extensions vary their scripts from page load to page load (dynamic scripts) such that this
  * allowlist cannot work. Known instances of dynamic scripts include:
  * - Chrome - StopAll Ads
  * - Chrome - AdLock adblocker & privacy protection v0.1.30
