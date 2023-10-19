@@ -56,7 +56,7 @@ export const KNOWN_EXTENSION_HASHES = [
   '727bfede71f473991faeb7f4b65632c93e7f7d17189f1b3d952cd990cd150808', // Chrome and Edge: Avast Online Security & Privacy v21.0.101
   'c09a2e7b2fa97705c9afe890498e1f620ede4bd2968cfef7421080a8f9f0d8f9', // Chrome: Privacy Badger v2021.11.23.1
   '04c354b90b330f4cac2678ccd311e5d2a6e8b57815510b176ddbed8d52595726', // Chrome: LastPass v4.88.0
-  'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', // Chrome: AdLock - adblocker & privacy protection v0.1.30
+  '', // Chrome: AdLock - adblocker & privacy protection v0.1.30
   '', // Chrome - Dynamic: AdBlocker Ultimate v3.7.15
   '', // Chrome - Dynamic: DuckDuckGo Privacy Essentials v2022.2.22
   '', // Chrome - Dynamic: Crystal Ad block v1.3.9
