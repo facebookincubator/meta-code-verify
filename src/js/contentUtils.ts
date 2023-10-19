@@ -286,7 +286,7 @@ function checkNodeForViolations(element: Element): void {
 
 export function hasInvalidScripts(scriptNodeMaybe: Node): void {
   // if not an HTMLElement ignore it!
-  if (scriptNodeMaybe.nodeType !== 1) {
+  if (scriptNodeMaybe.nodeType !== Node.ELEMENT_NODE) {
     return;
   }
 
@@ -319,7 +319,7 @@ export const scanForScripts = (): void => {
           Array.from(mutation.addedNodes).forEach(checkScript => {
             // Code within a script tag has changed
             if (
-              checkScript.nodeType === 3 &&
+              checkScript.nodeType === Node.TEXT_NODE &&
               mutation.target.nodeName.toLocaleLowerCase() === 'script'
             ) {
               hasInvalidScripts(mutation.target);
@@ -329,7 +329,7 @@ export const scanForScripts = (): void => {
           });
         } else if (
           mutation.type === 'attributes' &&
-          mutation.target.nodeType === 1
+          mutation.target.nodeType === Node.ELEMENT_NODE
         ) {
           checkNodeForViolations(mutation.target as Element);
         }
