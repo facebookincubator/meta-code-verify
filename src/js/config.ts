@@ -91,6 +91,7 @@ export const KNOWN_EXTENSION_HASHES = [
 
 export const MESSAGE_TYPE = Object.freeze({
   DEBUG: 'DEBUG',
+  LOAD_COMPANY_MANIFEST: 'LOAD_COMPANY_MANIFEST',
   LOAD_MANIFEST: 'LOAD_MANIFEST',
   POPUP_STATE: 'POPUP_STATE',
   RAW_JS: 'RAW_JS',
@@ -102,7 +103,7 @@ export const MESSAGE_TYPE = Object.freeze({
 
 export type MessageType = keyof typeof MESSAGE_TYPE;
 
-export const ORIGIN_HOST = {
+export const ORIGIN_HOST: Record<string, string> = {
   FACEBOOK: 'facebook.com',
   WHATSAPP: 'whatsapp.com',
   MESSENGER: 'messenger.com',

@@ -10,10 +10,12 @@
 import {jest} from '@jest/globals';
 import {checkDocumentCSPHeaders} from '../content/checkDocumentCSPHeaders';
 import {ORIGIN_TYPE} from '../config';
+import {setCurrentOrigin} from '../content/updateCurrentState';
 
 describe('checkDocumentCSPHeaders', () => {
   beforeEach(() => {
     window.chrome.runtime.sendMessage = jest.fn(() => {});
+    setCurrentOrigin('FACEBOOK');
   });
   describe('Enforce precedence', () => {
     it('Enforce valid policy from script-src', () => {

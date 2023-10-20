@@ -19,7 +19,7 @@ function getAttributeValue(
     nodeName.toLowerCase() === elementName &&
     element.hasAttribute(attributeName)
   ) {
-    return element.getAttribute(attributeName).toLowerCase();
+    return element.getAttribute(attributeName)!.toLowerCase();
   }
   return currentAttributeValue;
 }

@@ -7,20 +7,26 @@
 
 const isMetaInitiatedResponse = (
   response: chrome.webRequest.WebResponseCacheDetails,
-) =>
-  [
+) => {
+  const initiator = response.initiator;
+  if (!initiator) {
+    return false;
+  }
+
+  return [
     'https://www.facebook.com',
     'https://www.messenger.com',
     'https://www.instagram.com',
     'https://web.whatsapp.com',
-  ].some(v => response.initiator.includes(v));
+  ].some(v => initiator.includes(v));
+};
 
 function checkResponseMIMEType(
   response: chrome.webRequest.WebResponseCacheDetails,
 ): void {
   // Sniffable MIME types are a violation
   if (
-    response.responseHeaders.find(header =>
+    response.responseHeaders?.find(header =>
       header.name.includes('x-content-type-options'),
     )?.value !== 'nosniff'
   ) {
@@ -59,16 +65,18 @@ export default function setUpWebRequestsListener(
           // Send to all tabs of this origin
           chrome.tabs.query({url: `${origin}/*`}, tabs => {
             tabs.forEach(tab => {
-              chrome.tabs.sendMessage(
-                tab.id,
-                {
-                  greeting: 'checkIfScriptWasProcessed',
-                  response,
-                },
-                // Send this to the topframe since child frames
-                // might have a different origin
-                {frameId: 0},
-              );
+              if (tab.id) {
+                chrome.tabs.sendMessage(
+                  tab.id,
+                  {
+                    greeting: 'checkIfScriptWasProcessed',
+                    response,
+                  },
+                  // Send this to the topframe since child frames
+                  // might have a different origin
+                  {frameId: 0},
+                );
+              }
             });
           });
         }

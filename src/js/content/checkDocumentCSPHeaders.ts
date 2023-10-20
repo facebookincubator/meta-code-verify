@@ -34,6 +34,7 @@ function checkCSPForWorkerSrc(
     const cspMap = parseCSPString(cspHeader);
     const workersSrcValues = cspMap.get('worker-src');
     return (
+      workersSrcValues &&
       !workersSrcValues.has('data:') &&
       !workersSrcValues.has('blob:') &&
       /**
@@ -77,5 +78,5 @@ export function getAllowedWorkerCSPs(
 ): Array<Set<string>> {
   return cspHeaders
     .map(header => parseCSPString(header).get('worker-src'))
-    .filter(Boolean);
+    .filter((header): header is Set<string> => !!header);
 }

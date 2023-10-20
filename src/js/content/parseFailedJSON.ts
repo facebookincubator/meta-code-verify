@@ -15,7 +15,7 @@ export default function parseFailedJson(queuedJsonToParse: {
   retry: number;
 }): void {
   try {
-    JSON.parse(queuedJsonToParse.node.textContent);
+    JSON.parse(queuedJsonToParse.node.textContent!);
   } catch (parseError) {
     if (queuedJsonToParse.retry > 0) {
       queuedJsonToParse.retry--;

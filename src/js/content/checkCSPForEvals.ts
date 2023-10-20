@@ -47,8 +47,10 @@ function scanForCSPEvalReportViolations(): void {
 function getIsValidDefaultSrc(cspHeaders: Array<string>): boolean {
   return cspHeaders.some(cspHeader => {
     const cspMap = parseCSPString(cspHeader);
-    if (!cspMap.has('script-src') && cspMap.has('default-src')) {
-      if (!cspMap.get('default-src').has("'unsafe-eval'")) {
+    const defaultSrc = cspMap.get('default-src');
+    const scriptSrc = cspMap.get('script-src');
+    if (!scriptSrc && defaultSrc) {
+      if (!defaultSrc.has("'unsafe-eval'")) {
         return true;
       }
     }
@@ -62,9 +64,10 @@ function getIsValidScriptSrcAndHasScriptSrcDirective(
   let hasScriptSrcDirective = false;
   const isValidScriptSrc = cspHeaders.some(cspHeader => {
     const cspMap = parseCSPString(cspHeader);
-    if (cspMap.has('script-src')) {
+    const scriptSrc = cspMap.get('script-src');
+    if (scriptSrc) {
       hasScriptSrcDirective = true;
-      if (!cspMap.get('script-src').has("'unsafe-eval'")) {
+      if (!scriptSrc.has("'unsafe-eval'")) {
         return true;
       }
     }

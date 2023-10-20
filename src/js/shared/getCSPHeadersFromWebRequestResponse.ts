@@ -9,7 +9,11 @@ export function getCSPHeadersFromWebRequestResponse(
   response: chrome.webRequest.WebResponseHeadersDetails,
   reportHeader = false,
 ): Array<chrome.webRequest.HttpHeader> {
-  return response.responseHeaders.filter(
+  const responseHeaders = response.responseHeaders;
+  if (!responseHeaders) {
+    throw new Error('Request is missing responseHeaders');
+  }
+  return responseHeaders.filter(
     header =>
       header.name.toLowerCase() ===
       (reportHeader

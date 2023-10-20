@@ -10,6 +10,7 @@
 import {jest} from '@jest/globals';
 import {checkWorkerEndpointCSP} from '../content/checkWorkerEndpointCSP';
 import {ORIGIN_TYPE} from '../config';
+import {setCurrentOrigin} from '../content/updateCurrentState';
 
 const CSP_KEY = 'content-security-policy';
 const CSPRO_KEY = 'content-security-policy-report-only';
@@ -17,6 +18,7 @@ const CSPRO_KEY = 'content-security-policy-report-only';
 describe('checkWorkerEndpointCSP', () => {
   beforeEach(() => {
     window.chrome.runtime.sendMessage = jest.fn(() => {});
+    setCurrentOrigin('FACEBOOK');
   });
   it('Invalid if no CSP headers on Worker script', () => {
     expect(

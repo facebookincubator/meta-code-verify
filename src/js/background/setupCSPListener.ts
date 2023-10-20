@@ -7,6 +7,7 @@
 
 import {CSPHeaderMap} from '../background';
 import {getCSPHeadersFromWebRequestResponse} from '../shared/getCSPHeadersFromWebRequestResponse';
+import {setOrUpdateMapInMap} from '../shared/nestedDataHelpers';
 
 export default function setupCSPListener(
   cspHeadersMap: CSPHeaderMap,
@@ -21,11 +22,11 @@ export default function setupCSPListener(
           true,
         );
         let frameId = details.frameId;
-        const detailsUntyped = details as any;
-        // Missing type definitions in @types/chrome
         if (
-          detailsUntyped?.documentLifecycle === 'prerender' &&
-          detailsUntyped?.frameType === 'outermost_frame' &&
+          // @ts-expect-error Missing: type definitions in @types/chrome
+          details?.documentLifecycle === 'prerender' &&
+          // @ts-expect-error Missing: type definitions in @types/chrome
+          details?.frameType === 'outermost_frame' &&
           details.type === 'main_frame' &&
           details.frameId !== 0
         ) {
@@ -36,17 +37,15 @@ export default function setupCSPListener(
            */
           frameId = 0;
         }
-        if (!cspHeadersMap.has(details.tabId)) {
-          cspHeadersMap.set(details.tabId, new Map());
-        }
-        if (!cspReportHeadersMap.has(details.tabId)) {
-          cspReportHeadersMap.set(details.tabId, new Map());
-        }
-        cspHeadersMap.get(details.tabId).set(
+        setOrUpdateMapInMap(
+          cspHeadersMap,
+          details.tabId,
           frameId,
           cspHeaders.map(h => h.value),
         );
-        cspReportHeadersMap.get(details.tabId).set(
+        setOrUpdateMapInMap(
+          cspReportHeadersMap,
+          details.tabId,
           frameId,
           cspReportHeaders.map(h => h.value),
         );

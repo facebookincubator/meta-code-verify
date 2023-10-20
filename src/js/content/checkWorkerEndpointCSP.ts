@@ -18,13 +18,13 @@ export function checkWorkerEndpointCSP(
   origin: string,
 ): boolean {
   const host = ORIGIN_HOST[origin];
-  const cspHeaders = getCSPHeadersFromWebRequestResponse(response).map(
-    h => h.value,
-  );
-  const cspReportHeaders = getCSPHeadersFromWebRequestResponse(
-    response,
-    true,
-  ).map(h => h.value);
+  const cspHeaders = getCSPHeadersFromWebRequestResponse(response)
+    .map(h => h.value)
+    .filter((header): header is string => !!header);
+
+  const cspReportHeaders = getCSPHeadersFromWebRequestResponse(response, true)
+    .map(h => h.value)
+    .filter((header): header is string => !!header);
 
   const hasValidEvalCSPs = checkCSPForEvals(cspHeaders, cspReportHeaders);
 
@@ -104,8 +104,9 @@ function cspValuesExcludeBlobAndData(cspValues: Set<string>): boolean {
 function getIsValidDefaultSrc(cspHeaders: Array<string>): boolean {
   return cspHeaders.some(cspHeader => {
     const cspMap = parseCSPString(cspHeader);
-    if (!cspMap.has('script-src') && cspMap.has('default-src')) {
-      if (cspValuesExcludeBlobAndData(cspMap.get('default-src'))) {
+    const defaultSrc = cspMap.get('default-src');
+    if (!cspMap.has('script-src') && defaultSrc) {
+      if (cspValuesExcludeBlobAndData(defaultSrc)) {
         return true;
       }
     }
@@ -119,9 +120,10 @@ function getIsValidScriptSrcAndHasScriptSrcDirective(
   let hasScriptSrcDirective = false;
   const isValidScriptSrc = cspHeaders.some(cspHeader => {
     const cspMap = parseCSPString(cspHeader);
-    if (cspMap.has('script-src')) {
+    const scriptSrc = cspMap.get('script-src');
+    if (scriptSrc) {
       hasScriptSrcDirective = true;
-      if (cspValuesExcludeBlobAndData(cspMap.get('script-src'))) {
+      if (cspValuesExcludeBlobAndData(scriptSrc)) {
         return true;
       }
     }

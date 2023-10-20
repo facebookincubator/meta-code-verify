@@ -35,7 +35,9 @@ export default async function genSourceText(
   if (
     sourceTextParts[sourceTextParts.length - 1].startsWith('//# sourceURL=')
   ) {
-    const sourceURL = sourceTextParts.pop().split('//# sourceURL=')[1] ?? '';
+    // Assume we always have a final part.
+    const finalpart = sourceTextParts.pop()!;
+    const sourceURL = finalpart.split('//# sourceURL=')[1] ?? '';
     if (!sourceURL.startsWith('http')) {
       throw new Error(`Invalid sourceUrl in inlined data script: ${sourceURL}`);
     }

@@ -8,8 +8,12 @@
 'use strict';
 
 import {checkElementForViolatingAttributes} from '../content/checkElementForViolatingAttributes';
+import {setCurrentOrigin} from '../content/updateCurrentState';
 
 describe('contentUtils', () => {
+  beforeEach(() => {
+    setCurrentOrigin('FACEBOOK');
+  });
   describe('checkElementForViolatingAttributes', () => {
     it('should not execute if element has no attributes', () => {
       // no hasAttribute function
