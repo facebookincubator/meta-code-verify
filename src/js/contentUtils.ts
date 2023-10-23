@@ -274,12 +274,9 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
     if (originConfig.scriptsShouldHaveManifestProp) {
       const dataBtManifest = scriptNodeMaybe.getAttribute('data-btmanifest');
       if (dataBtManifest == null) {
-        // All src specified scripts should have a manifest atribution
-        updateCurrentState(
-          STATES.INVALID,
+        invalidateAndThrow(
           `No data-btmanifest attribute found on script ${scriptNodeMaybe.src}`,
         );
-        invalidateAndThrow('Script is missing `data-btmanifest` prop');
       }
       version = dataBtManifest.split('_')[0];
       const otherType = dataBtManifest.split('_')[1];
