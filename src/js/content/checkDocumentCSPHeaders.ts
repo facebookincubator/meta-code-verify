@@ -64,7 +64,7 @@ function checkCSPForWorkerSrc(
 
 export function checkDocumentCSPHeaders(
   cspHeaders: Array<string>,
-  cspReportHeaders: Array<string>,
+  cspReportHeaders: Array<string> | undefined,
   origin: Origin,
 ): boolean {
   return (

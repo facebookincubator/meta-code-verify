@@ -554,11 +554,6 @@ export function startFor(origin: Origin, config: ContentScriptConfig): void {
             'Expected CSP Headers in CONTENT_SCRIPT_START response',
           );
         }
-        if (!resp.cspReportHeaders) {
-          invalidateAndThrow(
-            'Expected CSP Report Headers in CONTENT_SCRIPT_START response',
-          );
-        }
         const validCSP = checkDocumentCSPHeaders(
           resp.cspHeaders,
           resp.cspReportHeaders,
