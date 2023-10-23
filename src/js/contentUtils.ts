@@ -133,15 +133,14 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
     let rawManifest: RawManifest | null = null;
     try {
       rawManifest = JSON.parse(scriptNodeMaybe.textContent!);
+      if (!rawManifest) {
+        throw new Error('rawManifest is null or empty');
+      }
     } catch (manifestParseError) {
       setTimeout(
         () => parseFailedJSON({node: scriptNodeMaybe, retry: 5000}),
         20,
       );
-      return;
-    }
-
-    if (rawManifest === null) {
       return;
     }
 
