@@ -240,7 +240,6 @@ function handleMessages(
 
       sendResponse({
         success: true,
-        // eslint-disable-next-line
         cspHeaders: CSP_HEADERS.get(validSender.tab.id)?.get(
           validSender.frameId,
         ),
