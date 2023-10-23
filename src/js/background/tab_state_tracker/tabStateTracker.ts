@@ -47,15 +47,3 @@ export function updateContentScriptState(
     newState,
   );
 }
-
-export function invalidateContentScriptStateAndThrow(
-  sender: ValidSender,
-  origin: Origin,
-  error: string,
-): never {
-  getOrCreateTabStateMachine(sender.tab.id, origin).updateStateForFrame(
-    sender.frameId,
-    'INVALID',
-  );
-  throw new Error(error);
-}

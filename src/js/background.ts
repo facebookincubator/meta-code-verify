@@ -11,7 +11,6 @@ import {MESSAGE_TYPE, ORIGIN_HOST, ORIGIN_TIMEOUT} from './config';
 import {
   recordContentScriptStart,
   updateContentScriptState,
-  invalidateContentScriptStateAndThrow,
 } from './background/tab_state_tracker/tabStateTracker';
 import setupCSPListener from './background/setupCSPListener';
 import setUpWebRequestsListener from './background/setUpWebRequestsListener';
@@ -226,16 +225,6 @@ function handleMessages(
         });
 
         return;
-      }
-
-      const cspHeadersByTab = CSP_HEADERS.get(validSender.tab.id);
-      if (!cspHeadersByTab) {
-        // This may indicate that setupCSPListener has failed to fire.
-        invalidateContentScriptStateAndThrow(
-          validSender,
-          message.origin,
-          'No CSP headers have been stored for this tab ID',
-        );
       }
 
       sendResponse({
