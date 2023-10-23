@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {ORIGIN_HOST, STATES} from '../config';
+import {Origin, ORIGIN_HOST, STATES} from '../config';
 import {getCSPHeadersFromWebRequestResponse} from '../shared/getCSPHeadersFromWebRequestResponse';
 import {checkCSPForEvals} from './checkCSPForEvals';
 import {doesWorkerUrlConformToCSP} from './doesWorkerUrlConformToCSP';
@@ -15,7 +15,7 @@ import {updateCurrentState} from './updateCurrentState';
 export function checkWorkerEndpointCSP(
   response: chrome.webRequest.WebResponseCacheDetails,
   documentWorkerCSPs: Array<Set<string>>,
-  origin: string,
+  origin: Origin,
 ): boolean {
   const host = ORIGIN_HOST[origin];
   const cspHeaders = getCSPHeadersFromWebRequestResponse(response)

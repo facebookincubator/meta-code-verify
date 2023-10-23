@@ -5,14 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {ORIGIN_HOST, STATES} from '../config';
+import {Origin, ORIGIN_HOST, STATES} from '../config';
 import {updateCurrentState} from './updateCurrentState';
 import {parseCSPString} from './parseCSPString';
 import {checkCSPForEvals} from './checkCSPForEvals';
 
 function checkCSPForWorkerSrc(
   cspHeaders: Array<string>,
-  origin: string,
+  origin: Origin,
 ): boolean {
   const host = ORIGIN_HOST[origin];
 
@@ -65,7 +65,7 @@ function checkCSPForWorkerSrc(
 export function checkDocumentCSPHeaders(
   cspHeaders: Array<string>,
   cspReportHeaders: Array<string>,
-  origin: string,
+  origin: Origin,
 ): boolean {
   return (
     checkCSPForEvals(cspHeaders, cspReportHeaders) &&

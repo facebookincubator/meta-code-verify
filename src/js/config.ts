@@ -103,7 +103,7 @@ export const MESSAGE_TYPE = Object.freeze({
 
 export type MessageType = keyof typeof MESSAGE_TYPE;
 
-export const ORIGIN_HOST: Record<string, string> = {
+export const ORIGIN_HOST: Record<Origin, string> = {
   FACEBOOK: 'facebook.com',
   WHATSAPP: 'whatsapp.com',
   MESSENGER: 'messenger.com',
