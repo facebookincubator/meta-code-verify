@@ -187,15 +187,14 @@ function attachListeners(origin: string | null): void {
 function updateDisplay(state: string | null): void {
   const popupState = STATE_TO_POPUP_STATE[state!] || state;
   Array.from(document.getElementsByClassName('state_boundary')).forEach(
-    // @ts-ignore: getElementsByClassName returns HTMLCollectionOf<Element>
-    // where HTMLElement extends Element. Unclear when this would return
-    // non-HTMLElement.
-    (element: HTMLElement) => {
-      if (element.id == popupState) {
-        element.style.display = 'flex';
-        document.body.className = popupState + '_body';
-      } else {
-        element.style.display = 'none';
+    (element: Element) => {
+      if (element instanceof HTMLElement) {
+        if (element.id == popupState) {
+          element.style.display = 'flex';
+          document.body.className = popupState + '_body';
+        } else {
+          element.style.display = 'none';
+        }
       }
     },
   );
