@@ -12,9 +12,9 @@ import {State, STATES} from '../../config';
 //   (a) a boolean indicating if the transition to that state is valid
 //   (b) another state to transition to should a transition to the 'from' state
 //       is attempted.
-const STATE_TRANSITIONS: Partial<{
+const STATE_TRANSITIONS: {
   [key in State]: Partial<{[key in State]: boolean | State}>;
-}> = {
+} = {
   [STATES.START]: {
     [STATES.START]: true,
     [STATES.PROCESSING]: true,

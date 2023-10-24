@@ -7,6 +7,7 @@
 
 import {Origin, State} from '../../config';
 import TabStateMachine from './TabStateMachine';
+import {ValidSender} from '../validateSender';
 
 const tabStateTracker = new Map<number, TabStateMachine>();
 
@@ -18,16 +19,15 @@ chrome.tabs.onReplaced.addListener((_addedTabId, removedTabId: number) => {
 });
 
 function getOrCreateTabStateMachine(tabId: number, origin: Origin) {
+  const tabState =
+    tabStateTracker.get(tabId) ?? new TabStateMachine(tabId, origin);
   if (!tabStateTracker.has(tabId)) {
-    tabStateTracker.set(tabId, new TabStateMachine(tabId, origin));
+    tabStateTracker.set(tabId, tabState);
   }
-  return tabStateTracker.get(tabId);
+  return tabState;
 }
 
-export function recordContentScriptStart(
-  sender: chrome.runtime.MessageSender,
-  origin: Origin,
-) {
+export function recordContentScriptStart(sender: ValidSender, origin: Origin) {
   // This is a top-level frame initializing
   if (sender.frameId === 0) {
     tabStateTracker.delete(sender.tab.id);
@@ -38,7 +38,7 @@ export function recordContentScriptStart(
 }
 
 export function updateContentScriptState(
-  sender: chrome.runtime.MessageSender,
+  sender: ValidSender,
   newState: State,
   origin: Origin,
 ) {

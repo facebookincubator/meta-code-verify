@@ -53,6 +53,7 @@ export default class TabStateMachine extends StateMachine {
 
   updateStateForFrame(frameId: number, newState: State): void {
     if (!(frameId in this._frameStates)) {
+      this._frameStates[frameId].updateStateIfValid('INVALID');
       throw new Error(
         `State machine for frame: ${frameId} does not exist for tab: ${this._tabId}`,
       );

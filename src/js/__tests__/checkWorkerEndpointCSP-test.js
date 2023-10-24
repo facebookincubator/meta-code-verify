@@ -10,6 +10,7 @@
 import {jest} from '@jest/globals';
 import {checkWorkerEndpointCSP} from '../content/checkWorkerEndpointCSP';
 import {ORIGIN_TYPE} from '../config';
+import {setCurrentOrigin} from '../content/updateCurrentState';
 
 const CSP_KEY = 'content-security-policy';
 const CSPRO_KEY = 'content-security-policy-report-only';
@@ -17,9 +18,10 @@ const CSPRO_KEY = 'content-security-policy-report-only';
 describe('checkWorkerEndpointCSP', () => {
   beforeEach(() => {
     window.chrome.runtime.sendMessage = jest.fn(() => {});
+    setCurrentOrigin('FACEBOOK');
   });
   it('Invalid if no CSP headers on Worker script', () => {
-    expect(
+    expect(() =>
       checkWorkerEndpointCSP(
         {
           responseHeaders: [],
@@ -27,10 +29,10 @@ describe('checkWorkerEndpointCSP', () => {
         [new Set()],
         ORIGIN_TYPE.FACEBOOK,
       ),
-    ).toBeFalsy();
+    ).toThrow(new Error('Missing CSP report-only header'));
   });
   it('Invalid if empty CSP headers on Worker script', () => {
-    expect(
+    expect(() =>
       checkWorkerEndpointCSP(
         {
           responseHeaders: [
@@ -41,14 +43,14 @@ describe('checkWorkerEndpointCSP', () => {
         [new Set()],
         ORIGIN_TYPE.FACEBOOK,
       ),
-    ).toBeFalsy();
+    ).toThrow(new Error('Missing CSP report-only header'));
   });
   /**
    * Evals covered more extensively by checkDocumentCSPHeaders
    * Same logic is used for both CSPs
    */
   it('Invalid if eval allowed by CSP', () => {
-    expect(
+    expect(() =>
       checkWorkerEndpointCSP(
         {
           responseHeaders: [
@@ -65,7 +67,7 @@ describe('checkWorkerEndpointCSP', () => {
         [new Set(['*.facebook.com/worker_url'])],
         ORIGIN_TYPE.FACEBOOK,
       ),
-    ).toBeFalsy();
+    ).toThrow(new Error('Missing CSP report-only header'));
   });
   it('Invalid if blob: allowed by script src', () => {
     expect(

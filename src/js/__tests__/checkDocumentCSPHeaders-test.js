@@ -10,10 +10,12 @@
 import {jest} from '@jest/globals';
 import {checkDocumentCSPHeaders} from '../content/checkDocumentCSPHeaders';
 import {ORIGIN_TYPE} from '../config';
+import {setCurrentOrigin} from '../content/updateCurrentState';
 
 describe('checkDocumentCSPHeaders', () => {
   beforeEach(() => {
     window.chrome.runtime.sendMessage = jest.fn(() => {});
+    setCurrentOrigin('FACEBOOK');
   });
   describe('Enforce precedence', () => {
     it('Enforce valid policy from script-src', () => {
@@ -40,27 +42,29 @@ describe('checkDocumentCSPHeaders', () => {
       expect(isValid).toBeTruthy();
     });
     it('Enforce invalid due to script-src, missing Report policy', () => {
-      const isValid = checkDocumentCSPHeaders(
-        [
-          `default-src data: blob: 'self' *.facebook.com *.fbcdn.net;` +
-            `script-src *.facebook.com *.fbcdn.net blob: data: 'self' 'unsafe-eval';` +
-            'worker-src *.facebook.com/worker_url;',
-        ],
-        [],
-        ORIGIN_TYPE.FACEBOOK,
-      );
-      expect(isValid).toBeFalsy();
+      expect(() =>
+        checkDocumentCSPHeaders(
+          [
+            `default-src data: blob: 'self' *.facebook.com *.fbcdn.net;` +
+              `script-src *.facebook.com *.fbcdn.net blob: data: 'self' 'unsafe-eval';` +
+              'worker-src *.facebook.com/worker_url;',
+          ],
+          [],
+          ORIGIN_TYPE.FACEBOOK,
+        ),
+      ).toThrow(new Error('Missing CSP report-only header'));
     });
     it('Enforce invalid due to default-src, missing Report policy', () => {
-      const isValid = checkDocumentCSPHeaders(
-        [
-          `default-src data: blob: 'self' *.facebook.com *.fbcdn.net 'unsafe-eval';` +
-            'worker-src *.facebook.com/worker_url;',
-        ],
-        [],
-        ORIGIN_TYPE.FACEBOOK,
-      );
-      expect(isValid).toBeFalsy();
+      expect(() =>
+        checkDocumentCSPHeaders(
+          [
+            `default-src data: blob: 'self' *.facebook.com *.fbcdn.net 'unsafe-eval';` +
+              'worker-src *.facebook.com/worker_url;',
+          ],
+          [],
+          ORIGIN_TYPE.FACEBOOK,
+        ),
+      ).toThrow(new Error('Missing CSP report-only header'));
     });
   });
   describe('Report affecting outcome', () => {
@@ -84,25 +88,27 @@ describe('checkDocumentCSPHeaders', () => {
       expect(isValid).toBeTruthy();
     });
     it('Enforce invalid, incorrect Report policy because of script-src', () => {
-      const isValid = checkDocumentCSPHeaders(
-        ['worker-src *.facebook.com/worker_url;'],
-        [
-          `default-src data: blob: 'self' *.facebook.com *.fbcdn.net;` +
-            `script-src *.facebook.com *.fbcdn.net blob: data: 'self' 'unsafe-eval';`,
-        ],
-        ORIGIN_TYPE.FACEBOOK,
-      );
-      expect(isValid).toBeFalsy();
+      expect(() =>
+        checkDocumentCSPHeaders(
+          ['worker-src *.facebook.com/worker_url;'],
+          [
+            `default-src data: blob: 'self' *.facebook.com *.fbcdn.net;` +
+              `script-src *.facebook.com *.fbcdn.net blob: data: 'self' 'unsafe-eval';`,
+          ],
+          ORIGIN_TYPE.FACEBOOK,
+        ),
+      ).toThrow(new Error('Missing unsafe-eval from CSP report-only header'));
     });
     it('Enforce invalid, incorrect Report policy because of default-src', () => {
-      const isValid = checkDocumentCSPHeaders(
-        ['worker-src *.facebook.com/worker_url;'],
-        [
-          `default-src data: blob: 'self' *.facebook.com *.fbcdn.net 'unsafe-eval';`,
-        ],
-        ORIGIN_TYPE.FACEBOOK,
-      );
-      expect(isValid).toBeFalsy();
+      expect(() =>
+        checkDocumentCSPHeaders(
+          ['worker-src *.facebook.com/worker_url;'],
+          [
+            `default-src data: blob: 'self' *.facebook.com *.fbcdn.net 'unsafe-eval';`,
+          ],
+          ORIGIN_TYPE.FACEBOOK,
+        ),
+      ).toThrow(new Error('Missing unsafe-eval from CSP report-only header'));
     });
   });
   describe('Multiple policies, enforcement', () => {
@@ -167,27 +173,29 @@ describe('checkDocumentCSPHeaders', () => {
       expect(isValid).toBeTruthy();
     });
     it('Should be invalid if policy with precedence is not enforcing, script-src precedence', () => {
-      const isValid = checkDocumentCSPHeaders(
-        [
-          `default-src *.facebook.com;`,
-          `script-src *.facebook.com *.fbcdn.net blob: data: 'self' 'unsafe-eval';`,
-        ],
-        [],
-        ORIGIN_TYPE.FACEBOOK,
-      );
-      expect(isValid).toBeFalsy();
+      expect(() =>
+        checkDocumentCSPHeaders(
+          [
+            `default-src *.facebook.com;`,
+            `script-src *.facebook.com *.fbcdn.net blob: data: 'self' 'unsafe-eval';`,
+          ],
+          [],
+          ORIGIN_TYPE.FACEBOOK,
+        ),
+      ).toThrow(new Error('Missing CSP report-only header'));
     });
     it('Should be invalid if none of the policies are enforcing, script-src precedence', () => {
-      const isValid = checkDocumentCSPHeaders(
-        [
-          `default-src *.facebook.com;` +
-            `script-src *.facebook.com 'unsafe-eval';`,
-          `script-src *.facebook.com *.fbcdn.net blob: data: 'self' 'unsafe-eval';`,
-        ],
-        [],
-        ORIGIN_TYPE.FACEBOOK,
-      );
-      expect(isValid).toBeFalsy();
+      expect(() =>
+        checkDocumentCSPHeaders(
+          [
+            `default-src *.facebook.com;` +
+              `script-src *.facebook.com 'unsafe-eval';`,
+            `script-src *.facebook.com *.fbcdn.net blob: data: 'self' 'unsafe-eval';`,
+          ],
+          [],
+          ORIGIN_TYPE.FACEBOOK,
+        ),
+      ).toThrow(new Error('Missing CSP report-only header'));
     });
     it('Should be invalid if valid policies but missing worker-src', () => {
       const isValid = checkDocumentCSPHeaders(
@@ -252,27 +260,29 @@ describe('checkDocumentCSPHeaders', () => {
       expect(isValid).toBeTruthy();
     });
     it('Should be invalid if policy with precedence is not reporting, script-src precedence', () => {
-      const isValid = checkDocumentCSPHeaders(
-        [],
-        [
-          `default-src *.facebook.com;`,
-          `script-src *.facebook.com *.fbcdn.net blob: data: 'self' 'unsafe-eval';`,
-        ],
-        ORIGIN_TYPE.FACEBOOK,
-      );
-      expect(isValid).toBeFalsy();
+      expect(() =>
+        checkDocumentCSPHeaders(
+          [],
+          [
+            `default-src *.facebook.com;`,
+            `script-src *.facebook.com *.fbcdn.net blob: data: 'self' 'unsafe-eval';`,
+          ],
+          ORIGIN_TYPE.FACEBOOK,
+        ),
+      ).toThrow(new Error('Missing unsafe-eval from CSP report-only header'));
     });
     it('Should be invalid if none of the policies are reporting, script-src precedence', () => {
-      const isValid = checkDocumentCSPHeaders(
-        [],
-        [
-          `default-src *.facebook.com;` +
-            `script-src *.facebook.com 'unsafe-eval';`,
-          `script-src *.facebook.com *.fbcdn.net blob: data: 'self' 'unsafe-eval';`,
-        ],
-        ORIGIN_TYPE.FACEBOOK,
-      );
-      expect(isValid).toBeFalsy();
+      expect(() =>
+        checkDocumentCSPHeaders(
+          [],
+          [
+            `default-src *.facebook.com;` +
+              `script-src *.facebook.com 'unsafe-eval';`,
+            `script-src *.facebook.com *.fbcdn.net blob: data: 'self' 'unsafe-eval';`,
+          ],
+          ORIGIN_TYPE.FACEBOOK,
+        ),
+      ).toThrow(new Error('Missing unsafe-eval from CSP report-only header'));
     });
   });
   describe('Worker CSP', () => {

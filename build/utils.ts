@@ -12,7 +12,7 @@ export async function readDirRecursive(
   dirPath: string,
 ): Promise<Array<string>> {
   const fileNames = await fs.readdir(dirPath);
-  const files = [];
+  const files: string[] = [];
   await Promise.all(
     fileNames.map(async fileName => {
       const stats = await fs.stat(path.resolve(dirPath, fileName));

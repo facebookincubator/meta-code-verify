@@ -16,6 +16,10 @@
     "rules": {
         "@typescript-eslint/no-unused-vars": ["error", {"argsIgnorePattern": "^_"}],
         "@typescript-eslint/no-empty-function": 0,
-        "@typescript-eslint/no-extra-semi": 0
+        "@typescript-eslint/no-extra-semi": 0,
+        "@typescript-eslint/ban-ts-comment": [
+            "error",
+            {"ts-ignore": "allow-with-description"}
+        ]
     }
 }

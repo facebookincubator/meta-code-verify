@@ -5,10 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {STATES} from '../config';
 import alertBackgroundOfImminentFetch from './alertBackgroundOfImminentFetch';
 import {parseCSPString} from './parseCSPString';
-import {updateCurrentState} from './updateCurrentState';
+import {invalidateAndThrow} from './updateCurrentState';
 
 function scanForCSPEvalReportViolations(): void {
   document.addEventListener('securitypolicyviolation', e => {
@@ -38,7 +37,7 @@ function scanForCSPEvalReportViolations(): void {
           ) {
             return;
           }
-          updateCurrentState(STATES.INVALID, `Caught eval in ${e.sourceFile}`);
+          invalidateAndThrow(`Caught eval in ${e.sourceFile}`);
         });
     });
   });
@@ -47,8 +46,10 @@ function scanForCSPEvalReportViolations(): void {
 function getIsValidDefaultSrc(cspHeaders: Array<string>): boolean {
   return cspHeaders.some(cspHeader => {
     const cspMap = parseCSPString(cspHeader);
-    if (!cspMap.has('script-src') && cspMap.has('default-src')) {
-      if (!cspMap.get('default-src').has("'unsafe-eval'")) {
+    const defaultSrc = cspMap.get('default-src');
+    const scriptSrc = cspMap.get('script-src');
+    if (!scriptSrc && defaultSrc) {
+      if (!defaultSrc.has("'unsafe-eval'")) {
         return true;
       }
     }
@@ -62,9 +63,10 @@ function getIsValidScriptSrcAndHasScriptSrcDirective(
   let hasScriptSrcDirective = false;
   const isValidScriptSrc = cspHeaders.some(cspHeader => {
     const cspMap = parseCSPString(cspHeader);
-    if (cspMap.has('script-src')) {
+    const scriptSrc = cspMap.get('script-src');
+    if (scriptSrc) {
       hasScriptSrcDirective = true;
-      if (!cspMap.get('script-src').has("'unsafe-eval'")) {
+      if (!scriptSrc.has("'unsafe-eval'")) {
         return true;
       }
     }
@@ -75,27 +77,41 @@ function getIsValidScriptSrcAndHasScriptSrcDirective(
 
 export function checkCSPForEvals(
   cspHeaders: Array<string>,
-  cspReportHeaders: Array<string>,
+  cspReportHeaders: Array<string> | undefined,
 ): boolean {
-  // If CSP is enforcing on evals we don't need to do extra checks
-
-  // Check `script-src` across all headers first since it takes precedence
-  // across multiple headers
   const [hasValidScriptSrcEnforcement, hasScriptSrcDirectiveForEnforce] =
     getIsValidScriptSrcAndHasScriptSrcDirective(cspHeaders);
+
+  // 1. This means that at least one CSP-header declaration has a script-src
+  // directive that has no `unsafe-eval` keyword. This means the browser will
+  // enforce unsafe eval for us.
   if (hasValidScriptSrcEnforcement) {
     return true;
   }
 
+  // 2. If we have no script-src directives, the browser will fall back to
+  // default-src. If at least one declaration has a default-src directive
+  // with no `unsafe-eval`, the browser will enforce for us.
   if (!hasScriptSrcDirectiveForEnforce) {
     if (getIsValidDefaultSrc(cspHeaders)) {
       return true;
     }
   }
 
-  if (cspReportHeaders.length === 0) {
-    updateCurrentState(STATES.INVALID, 'Missing CSP report-only header');
-    return false;
+  // If we've gotten this far, it either means something is invalid, or this is
+  // an older browser. We want to execute WASM, but still prevent unsafe-eval.
+  // Newer browsers support the wasm-unsafe-eval keyword for this purpose, but
+  // for older browsers we need to hack around this.
+
+  // The technique we're using here involves setting report-only headers that
+  // match the rules we checked above, but for enforce headers. These will not
+  // cause the page to break, but will emit events that we can listen for in
+  // scanForCSPEvalReportViolations.
+
+  // 3. Thus, if we've gotten this far and we have no report headers, the page
+  // should be considered invalid.
+  if (!cspReportHeaders || cspReportHeaders.length === 0) {
+    invalidateAndThrow('Missing CSP report-only header');
   }
 
   // Check if at least one header has the correct report setup
@@ -108,14 +124,16 @@ export function checkCSPForEvals(
     hasValidDefaultSrcReport = getIsValidDefaultSrc(cspReportHeaders);
   }
 
+  // 4. If neither
+  //  a. We have at least one script-src without unsafe eval.
+  //  b. We have no script-src, and at least one default-src without unsafe-eval
+  // Then we must invalidate because there is nothing preventing unsafe-eval.
   if (!hasValidScriptSrcReport && !hasValidDefaultSrcReport) {
-    updateCurrentState(
-      STATES.INVALID,
-      'Missing unsafe-eval from CSP report-only header',
-    );
-    return false;
+    invalidateAndThrow('Missing unsafe-eval from CSP report-only header');
   }
-  // Check for evals
+
+  // 5. If we've gotten here without throwing, we can start scanning for violations
+  // from our report-only headers.
   scanForCSPEvalReportViolations();
   return true;
 }

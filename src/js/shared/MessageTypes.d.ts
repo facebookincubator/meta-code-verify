@@ -10,11 +10,18 @@ import {RawManifestOtherHashes} from '../contentUtils';
 
 export type MessagePayload =
   | {
-      type: typeof MESSAGE_TYPE.LOAD_MANIFEST;
-      useCompanyManifest: boolean;
+      type: typeof MESSAGE_TYPE.LOAD_COMPANY_MANIFEST;
       origin: Origin;
       rootHash: string;
       otherHashes: RawManifestOtherHashes;
+      leaves: Array<string>;
+      version: string;
+      workaround: string;
+    }
+  | {
+      type: typeof MESSAGE_TYPE.LOAD_MANIFEST;
+      origin: Origin;
+      rootHash: string;
       leaves: Array<string>;
       version: string;
       workaround: string;
@@ -43,6 +50,7 @@ export type MessagePayload =
     }
   | {
       type: typeof MESSAGE_TYPE.CONTENT_SCRIPT_START;
+      checkCSPHeaders: boolean;
       origin: Origin;
     }
   | {

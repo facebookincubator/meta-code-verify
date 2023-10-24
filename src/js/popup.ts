@@ -12,7 +12,7 @@ import {
   STATES,
 } from './config.js';
 
-const STATE_TO_POPUP_STATE = {
+const STATE_TO_POPUP_STATE: Record<string, string> = {
   [STATES.START]: 'loading',
   [STATES.PROCESSING]: 'loading',
   [STATES.IGNORE]: 'loading',
@@ -22,7 +22,14 @@ const STATE_TO_POPUP_STATE = {
   [STATES.TIMEOUT]: 'warning_timeout',
 };
 
-const ORIGIN_TO_LEARN_MORE_PAGES = {
+type TranslatedMessages = {
+  about: string;
+  failure: string;
+  risk: string;
+  timeout: string;
+};
+
+const ORIGIN_TO_LEARN_MORE_PAGES: Record<string, TranslatedMessages> = {
   [ORIGIN_TYPE.FACEBOOK]: {
     about: chrome.i18n.getMessage('about_code_verify_faq_url_fb'),
     failure: chrome.i18n.getMessage('validation_failure_faq_url_fb'),
@@ -58,7 +65,7 @@ function attachTextToHtml(): void {
 }
 
 function attachListeners(origin: string | null): void {
-  if (!(origin in ORIGIN_TO_LEARN_MORE_PAGES)) {
+  if (!(origin && origin in ORIGIN_TO_LEARN_MORE_PAGES)) {
     throw new Error(
       `Learn more pages for origin type: ${origin} do not exist!`,
     );
@@ -71,7 +78,7 @@ function attachListeners(origin: string | null): void {
   });
 
   const closeMenuButton = document.getElementById('close_menu');
-  closeMenuButton.addEventListener('click', () => window.close());
+  closeMenuButton!.addEventListener('click', () => window.close());
 
   const menuRowList = document.getElementsByClassName('menu_row');
 
@@ -96,7 +103,7 @@ function attachListeners(origin: string | null): void {
     downloadTextList[0].addEventListener('click', () => {
       chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
         chrome.tabs.sendMessage(
-          tabs[0].id,
+          tabs[0].id!,
           {greeting: 'downloadSource'},
           () => {},
         );
@@ -106,17 +113,17 @@ function attachListeners(origin: string | null): void {
       downloadTextList[0].style.cursor = 'pointer';
     }
 
-    downloadSrcButton.onclick = () => {
+    downloadSrcButton!.onclick = () => {
       chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
         chrome.tabs.sendMessage(
-          tabs[0].id,
+          tabs[0].id!,
           {greeting: 'downloadSource'},
           () => {},
         );
       });
     };
 
-    downloadSrcButton.style.cursor = 'pointer';
+    downloadSrcButton!.style.cursor = 'pointer';
 
     downloadTextList[0].addEventListener('click', () =>
       updateDisplay('download'),
@@ -133,7 +140,7 @@ function attachListeners(origin: string | null): void {
     if (downloadMessagePartTwo != null) {
       downloadMessagePartTwo.remove();
     }
-    downloadSrcButton.remove();
+    downloadSrcButton!.remove();
   }
 
   const learnMoreList = document.getElementsByClassName(
@@ -178,14 +185,16 @@ function attachListeners(origin: string | null): void {
 }
 
 function updateDisplay(state: string | null): void {
-  const popupState = STATE_TO_POPUP_STATE[state] || state;
+  const popupState = STATE_TO_POPUP_STATE[state!] || state;
   Array.from(document.getElementsByClassName('state_boundary')).forEach(
-    (element: HTMLElement) => {
-      if (element.id == popupState) {
-        element.style.display = 'flex';
-        document.body.className = popupState + '_body';
-      } else {
-        element.style.display = 'none';
+    (element: Element) => {
+      if (element instanceof HTMLElement) {
+        if (element.id == popupState) {
+          element.style.display = 'flex';
+          document.body.className = popupState + '_body';
+        } else {
+          element.style.display = 'none';
+        }
       }
     },
   );

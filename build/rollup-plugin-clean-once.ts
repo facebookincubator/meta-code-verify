@@ -39,7 +39,7 @@ export default function rollupPluginCleanOnce(): Plugin {
       const rootDir = process.cwd();
       const dirToDelete = options.dir
         ? path.resolve(rootDir, options.dir)
-        : path.dirname(path.resolve(rootDir, options.file));
+        : path.dirname(path.resolve(rootDir, options.file!));
       // Only delete once.
       if (deletedDirs.has(dirToDelete)) {
         return;

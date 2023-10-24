@@ -1,8 +1,10 @@
 {
   "compilerOptions": {
-    "target": "ES6",
     "esModuleInterop": true,
+    "lib": ["ES2021"],
     "moduleResolution": "node",
-    "lib": ["ES2021"]
+    "noFallthroughCasesInSwitch": true,
+    "strict": true,
+    "target": "ES6"
   }
 }

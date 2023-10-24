@@ -16,7 +16,9 @@ import setupCSPListener from './background/setupCSPListener';
 import setUpWebRequestsListener from './background/setUpWebRequestsListener';
 import {validateMetaCompanyManifest} from './background/validateMetaCompanyManifest';
 import {validateManifest} from './background/validateManifest';
+import {validateSender} from './background/validateSender';
 import {MessagePayload, MessageResponse} from './shared/MessageTypes';
+import {setOrUpdateSetInMap} from './shared/nestedDataHelpers';
 
 const MANIFEST_CACHE = new Map<Origin, Map<string, Manifest>>();
 
@@ -64,14 +66,18 @@ function logReceivedMessage(
       if (message.state === STATES.INVALID) {
         logger = console.error;
       } else if (message.state === STATES.PROCESSING) {
-        logger = null;
+        logger = () => {};
       }
       break;
     case MESSAGE_TYPE.DEBUG:
       logger = console.debug;
       break;
   }
-  logger?.(`handleMessages from tab:${sender.tab.id}`, message);
+  if (sender.tab) {
+    logger(`handleMessages from tab:${sender.tab.id}`, JSON.stringify(message));
+  } else {
+    logger(`handleMessages from unknown tab`, message);
+  }
 }
 
 function handleMessages(
@@ -80,9 +86,25 @@ function handleMessages(
   sendResponse: (_: MessageResponse) => void,
 ): void | boolean {
   logReceivedMessage(message, sender);
-  if (message.type == MESSAGE_TYPE.LOAD_MANIFEST) {
-    // validate manifest
-    if (message.useCompanyManifest) {
+  const validSender = validateSender(sender);
+
+  // There are niche reasons we might receive messages from an unexpected
+  // sender (see validateSender method for details). Our own messages should
+  // never fall into this category, so we can simply ignore them.
+  if (!validSender) {
+    return;
+  }
+
+  switch (message.type) {
+    // Log only
+    case MESSAGE_TYPE.DEBUG:
+      return;
+
+    // Log only
+    case MESSAGE_TYPE.STATE_UPDATED:
+      return;
+
+    case MESSAGE_TYPE.LOAD_COMPANY_MANIFEST: {
       validateMetaCompanyManifest(
         message.rootHash,
         message.otherHashes,
@@ -92,13 +114,12 @@ function handleMessages(
       ).then(validationResult => {
         if (validationResult.valid) {
           const manifestMap = getManifestMapForOrigin(message.origin);
-          let manifest = manifestMap.get(message.version);
-          if (!manifest) {
-            manifest = {
-              leaves: [],
-              root: message.rootHash,
-              start: Date.now(),
-            };
+          const manifest = manifestMap.get(message.version) ?? {
+            leaves: [],
+            root: message.rootHash,
+            start: Date.now(),
+          };
+          if (!manifestMap.has(message.version)) {
             manifestMap.set(message.version, manifest);
           }
           message.leaves.forEach(leaf => {
@@ -111,7 +132,12 @@ function handleMessages(
           sendResponse(validationResult);
         }
       });
-    } else {
+
+      // Indicates that the message will send an async response.
+      return true;
+    }
+
+    case MESSAGE_TYPE.LOAD_MANIFEST: {
       const slicedHash = message.rootHash.slice(2);
       const slicedLeaves = message.leaves.map(leaf => {
         return leaf.slice(2);
@@ -135,67 +161,97 @@ function handleMessages(
           sendResponse(validationResult);
         }
       });
-    }
-    return true;
-  } else if (message.type == MESSAGE_TYPE.RAW_JS) {
-    const origin = MANIFEST_CACHE.get(message.origin);
-    if (!origin) {
-      sendResponse({valid: false, reason: 'no matching origin'});
-      return;
-    }
-    const manifestObj = origin.get(message.version);
-    const manifest = manifestObj && manifestObj.leaves;
-    if (!manifest) {
-      sendResponse({valid: false, reason: 'no matching manifest'});
-      return;
+
+      // Indicates that the message will send an async response.
+      return true;
     }
 
-    // fetch the src
-    const encoder = new TextEncoder();
-    const encodedJS = encoder.encode(message.rawjs);
-    // hash the src
-    crypto.subtle.digest('SHA-256', encodedJS).then(jsHashBuffer => {
-      const jsHashArray = Array.from(new Uint8Array(jsHashBuffer));
-      const jsHash = jsHashArray
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
-
-      if (manifestObj.leaves.includes(jsHash)) {
-        sendResponse({valid: true});
-      } else {
-        sendResponse({
-          valid: false,
-          hash: jsHash,
-          reason:
-            'Error: hash does not match ' +
-            message.origin +
-            ', ' +
-            message.version +
-            ', unmatched JS is ' +
-            message.rawjs,
-        });
+    case MESSAGE_TYPE.RAW_JS: {
+      const origin = MANIFEST_CACHE.get(message.origin);
+      if (!origin) {
+        sendResponse({valid: false, reason: 'no matching origin'});
+        return;
       }
-    });
-    return true;
-  } else if (message.type === MESSAGE_TYPE.UPDATE_STATE) {
-    updateContentScriptState(sender, message.state, message.origin);
-    sendResponse({success: true});
-  } else if (message.type === MESSAGE_TYPE.CONTENT_SCRIPT_START) {
-    recordContentScriptStart(sender, message.origin);
-    sendResponse({
-      success: true,
-      cspHeaders: CSP_HEADERS?.get(sender.tab.id)?.get(sender.frameId),
-      cspReportHeaders: CSP_REPORT_HEADERS?.get(sender.tab.id)?.get(
-        sender.frameId,
-      ),
-    });
-  } else if (message.type === MESSAGE_TYPE.UPDATED_CACHED_SCRIPT_URLS) {
-    if (!CACHED_SCRIPTS_URLS.has(sender.tab.id)) {
-      CACHED_SCRIPTS_URLS.set(sender.tab.id, new Set());
+      const manifestObj = origin.get(message.version);
+      const manifest = manifestObj && manifestObj.leaves;
+      if (!manifest) {
+        sendResponse({valid: false, reason: 'no matching manifest'});
+        return;
+      }
+
+      // fetch the src
+      const encoder = new TextEncoder();
+      const encodedJS = encoder.encode(message.rawjs);
+      // hash the src
+      crypto.subtle.digest('SHA-256', encodedJS).then(jsHashBuffer => {
+        const jsHashArray = Array.from(new Uint8Array(jsHashBuffer));
+        const jsHash = jsHashArray
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+
+        if (manifestObj.leaves.includes(jsHash)) {
+          sendResponse({valid: true, hash: jsHash});
+        } else {
+          sendResponse({
+            valid: false,
+            hash: jsHash,
+            reason:
+              'Error: hash does not match ' +
+              message.origin +
+              ', ' +
+              message.version +
+              ', unmatched JS is ' +
+              message.rawjs,
+          });
+        }
+      });
+
+      // Indicates that the message will send an async response.
+      return true;
     }
-    CACHED_SCRIPTS_URLS.get(sender.tab.id).add(message.url);
-    sendResponse({success: true});
-    return true;
+
+    case MESSAGE_TYPE.UPDATE_STATE: {
+      updateContentScriptState(validSender, message.state, message.origin);
+      sendResponse({success: true});
+      return;
+    }
+
+    case MESSAGE_TYPE.CONTENT_SCRIPT_START: {
+      recordContentScriptStart(validSender, message.origin);
+
+      if (!message.checkCSPHeaders) {
+        sendResponse({
+          success: true,
+        });
+
+        return;
+      }
+
+      sendResponse({
+        success: true,
+        cspHeaders: CSP_HEADERS.get(validSender.tab.id)?.get(
+          validSender.frameId,
+        ),
+        cspReportHeaders: CSP_REPORT_HEADERS?.get(validSender.tab.id)?.get(
+          validSender.frameId,
+        ),
+      });
+
+      return;
+    }
+
+    case MESSAGE_TYPE.UPDATED_CACHED_SCRIPT_URLS: {
+      setOrUpdateSetInMap(CACHED_SCRIPTS_URLS, validSender.tab.id, message.url);
+      sendResponse({success: true});
+
+      return true;
+    }
+
+    default: {
+      // See: https://www.typescriptlang.org/docs/handbook/2/narrowing.html#exhaustiveness-checking
+      const _exhaustiveCheck: never = message;
+      return _exhaustiveCheck;
+    }
   }
 }
 

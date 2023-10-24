@@ -20,7 +20,12 @@ import {
 } from './content/checkDocumentCSPHeaders';
 import downloadJSArchive from './content/downloadJSArchive';
 import alertBackgroundOfImminentFetch from './content/alertBackgroundOfImminentFetch';
-import {currentOrigin, updateCurrentState} from './content/updateCurrentState';
+import {
+  getCurrentOrigin,
+  setCurrentOrigin,
+  updateCurrentState,
+  invalidateAndThrow,
+} from './content/updateCurrentState';
 import checkElementForViolatingJSUri from './content/checkElementForViolatingJSUri';
 import {checkElementForViolatingAttributes} from './content/checkElementForViolatingAttributes';
 import {sendMessageToBackground} from './shared/sendMessageToBackground';
@@ -29,6 +34,7 @@ import genSourceText from './content/genSourceText';
 import isPathnameExcluded from './content/isPathNameExcluded';
 import {doesWorkerUrlConformToCSP} from './content/doesWorkerUrlConformToCSP';
 import {checkWorkerEndpointCSP} from './content/checkWorkerEndpointCSP';
+import {MessagePayload} from './shared/MessageTypes';
 
 type ContentScriptConfig = {
   checkLoggedInFromCookie: boolean;
@@ -57,7 +63,12 @@ const SOURCE_SCRIPTS = new Map();
 const INLINE_SCRIPTS: Array<Map<string, string>> = [];
 
 // Map<version, Array<ScriptDetails>>
-export const FOUND_SCRIPTS = new Map<string, Array<ScriptDetails>>([['', []]]);
+export const UNINITIALIZED = 'UNINITIALIZED';
+const BOTH = 'BOTH';
+let currentFilterType = UNINITIALIZED;
+export const FOUND_SCRIPTS = new Map<string, Array<ScriptDetails>>([
+  [UNINITIALIZED, []],
+]);
 const ALL_FOUND_SCRIPT_TAGS = new Set();
 
 type ScriptDetailsWithSrc = {
@@ -71,8 +82,6 @@ type ScriptDetailsRaw = {
   otherType: string;
 };
 type ScriptDetails = ScriptDetailsRaw | ScriptDetailsWithSrc;
-
-let currentFilterType = '';
 let manifestTimeoutID: string | number = '';
 
 export type RawManifestOtherHashes = {
@@ -93,7 +102,9 @@ function isTopWindow(): boolean {
 }
 function isSameDomainAsTopWindow(): boolean {
   try {
-    return window.location.origin === window.top.location.origin;
+    // This is inside a try/catch because even attempting to access the `origin`
+    // property will throw a SecurityError if the domains don't match.
+    return window.location.origin === window.top!.location.origin;
   } catch {
     return false;
   }
@@ -121,7 +132,10 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
 
     let rawManifest: RawManifest | null = null;
     try {
-      rawManifest = JSON.parse(scriptNodeMaybe.textContent);
+      rawManifest = JSON.parse(scriptNodeMaybe.textContent!);
+      if (!rawManifest) {
+        throw new Error('rawManifest is null or empty');
+      }
     } catch (manifestParseError) {
       setTimeout(
         () => parseFailedJSON({node: scriptNodeMaybe, retry: 5000}),
@@ -131,78 +145,109 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
     }
 
     let leaves = rawManifest.leaves;
-    let otherHashes: RawManifestOtherHashes = null;
     let otherType = '';
     let roothash = rawManifest.root;
     let version = rawManifest.version;
+    let messagePayload: MessagePayload;
     if (originConfig.longTailIsLoadedConditionally) {
       leaves = rawManifest.manifest;
-      otherHashes = rawManifest.manifest_hashes;
-      otherType = scriptNodeMaybe.getAttribute('data-manifest-type');
+      const otherHashes = rawManifest.manifest_hashes;
       roothash = otherHashes.combined_hash;
-      version = scriptNodeMaybe.getAttribute('data-manifest-rev');
+
+      const maybeManifestType =
+        scriptNodeMaybe.getAttribute('data-manifest-type');
+      if (maybeManifestType === null) {
+        updateCurrentState(
+          STATES.INVALID,
+          'manifest is missing `data-manifest-type` prop',
+        );
+      } else {
+        otherType = maybeManifestType;
+      }
+
+      const maybeManifestRev =
+        scriptNodeMaybe.getAttribute('data-manifest-rev');
+      if (maybeManifestRev === null) {
+        updateCurrentState(
+          STATES.INVALID,
+          'manifest is missing `data-manifest-rev` prop',
+        );
+      } else {
+        version = maybeManifestRev;
+      }
 
       // If this is the first manifest we've found, start processing scripts for
       // that type. If we have encountered a second manifest, we can assume both
       // main and longtail manifests are present.
-      if (currentFilterType === '') {
+      if (currentFilterType === UNINITIALIZED) {
         currentFilterType = otherType;
       } else {
-        currentFilterType = 'BOTH';
+        currentFilterType = BOTH;
       }
+
+      messagePayload = {
+        type: MESSAGE_TYPE.LOAD_COMPANY_MANIFEST,
+        leaves,
+        origin: getCurrentOrigin(),
+        otherHashes: otherHashes,
+        rootHash: roothash,
+        workaround: scriptNodeMaybe.innerHTML,
+        version,
+      };
     } else {
       // for whatsapp
-      currentFilterType = 'BOTH';
+      currentFilterType = BOTH;
+
+      messagePayload = {
+        type: MESSAGE_TYPE.LOAD_MANIFEST,
+        leaves,
+        origin: getCurrentOrigin(),
+        rootHash: roothash,
+        workaround: scriptNodeMaybe.innerHTML,
+        version,
+      };
     }
+
     // now that we know the actual version of the scripts, transfer the ones we know about.
     // also set the correct manifest type, "otherType" for already collected scripts
-    if (FOUND_SCRIPTS.has('')) {
+    const foundScriptsWithoutVersion = FOUND_SCRIPTS.get(UNINITIALIZED);
+    if (foundScriptsWithoutVersion) {
+      const scriptsWithUpdatedType = foundScriptsWithoutVersion.map(script => ({
+        ...script,
+        otherType: currentFilterType,
+      }));
+
       FOUND_SCRIPTS.set(version, [
-        ...FOUND_SCRIPTS.get('').map(s => ({
-          ...s,
-          otherType: currentFilterType,
-        })),
+        ...scriptsWithUpdatedType,
         ...(FOUND_SCRIPTS.get(version) ?? []),
       ]);
-      FOUND_SCRIPTS.delete('');
+      FOUND_SCRIPTS.delete(UNINITIALIZED);
     } else if (!FOUND_SCRIPTS.has(version)) {
       // New version is being loaded in
       FOUND_SCRIPTS.set(version, []);
     }
 
-    sendMessageToBackground(
-      {
-        type: MESSAGE_TYPE.LOAD_MANIFEST,
-        useCompanyManifest: originConfig.useCompanyManifest,
-        leaves: leaves,
-        origin: currentOrigin.val,
-        otherHashes: otherHashes,
-        rootHash: roothash,
-        workaround: scriptNodeMaybe.innerHTML,
-        version,
-      },
-      response => {
-        // then start processing of it's JS
-        if (response.valid) {
-          if (manifestTimeoutID !== '') {
-            clearTimeout(manifestTimeoutID);
-            manifestTimeoutID = '';
-          }
-          window.setTimeout(() => processFoundJS(version), 0);
-        } else {
-          if ('UNKNOWN_ENDPOINT_ISSUE' === response.reason) {
-            updateCurrentState(STATES.TIMEOUT);
-            return;
-          }
-          updateCurrentState(STATES.INVALID);
+    sendMessageToBackground(messagePayload, response => {
+      // then start processing of it's JS
+      if (response.valid) {
+        if (manifestTimeoutID !== '') {
+          clearTimeout(manifestTimeoutID);
+          manifestTimeoutID = '';
         }
-      },
-    );
+        window.setTimeout(() => processFoundJS(version), 0);
+      } else {
+        if ('UNKNOWN_ENDPOINT_ISSUE' === response.reason) {
+          updateCurrentState(STATES.TIMEOUT);
+          return;
+        }
+        updateCurrentState(STATES.INVALID);
+      }
+    });
   }
 
   if (scriptNodeMaybe.getAttribute('type') === 'application/json') {
     try {
-      JSON.parse(scriptNodeMaybe.textContent);
+      JSON.parse(scriptNodeMaybe.textContent!);
     } catch (parseError) {
       setTimeout(
         () => parseFailedJSON({node: scriptNodeMaybe, retry: 1500}),
@@ -222,20 +267,17 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
   }
 
   // Need to get the src of the JS
-  let scriptDetails = null;
-  let version = '';
+  let scriptDetails: ScriptDetails;
+  let version = UNINITIALIZED;
 
   if (scriptNodeMaybe.src !== '' || scriptNodeMaybe.innerHTML !== '') {
     if (originConfig.scriptsShouldHaveManifestProp) {
       const dataBtManifest = scriptNodeMaybe.getAttribute('data-btmanifest');
       if (dataBtManifest == null) {
-        // All src specified scripts should have a manifest atribution
-        updateCurrentState(
-          STATES.INVALID,
+        invalidateAndThrow(
           `No data-btmanifest attribute found on script ${scriptNodeMaybe.src}`,
         );
       }
-
       version = dataBtManifest.split('_')[0];
       const otherType = dataBtManifest.split('_')[1];
       scriptDetails = {
@@ -253,6 +295,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
       } else {
         // no src, access innerHTML for the code
         const hashLookupAttribute =
+          // @ts-ignore: This is just sort of hole in the DOM definitions.
           scriptNodeMaybe.attributes['data-binary-transparency-hash-key'];
         const hashLookupKey = hashLookupAttribute && hashLookupAttribute.value;
         scriptDetails = {
@@ -264,17 +307,19 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
       }
     }
 
-    if (FOUND_SCRIPTS.has(version)) {
-      FOUND_SCRIPTS.get(version).push(scriptDetails);
+    const scriptsForVersion = FOUND_SCRIPTS.get(version);
+    if (scriptsForVersion) {
+      scriptsForVersion.push(scriptDetails);
     } else {
-      if (version != '') {
+      if (version != UNINITIALIZED) {
         FOUND_SCRIPTS.set(version, [scriptDetails]);
       } else {
-        FOUND_SCRIPTS.get(FOUND_SCRIPTS.keys().next().value).push(
+        FOUND_SCRIPTS.get(FOUND_SCRIPTS.keys().next().value)?.push(
           scriptDetails,
         );
       }
     }
+
     updateCurrentState(STATES.PROCESSING);
   }
 }
@@ -362,11 +407,13 @@ async function processJSWithSrc(
     if (DOWNLOAD_JS_ENABLED) {
       const fileNameArr = script.src.split('/');
       const fileName = fileNameArr[fileNameArr.length - 1].split('?')[0];
+      const responseBody = sourceResponse.clone().body;
+      if (!responseBody) {
+        throw new Error('Response for fetched script has no body');
+      }
       SOURCE_SCRIPTS.set(
         fileName,
-        sourceResponse
-          .clone()
-          .body.pipeThrough(new window.CompressionStream('gzip')),
+        responseBody.pipeThrough(new window.CompressionStream('gzip')),
       );
     }
     const sourceText = await genSourceText(sourceResponse);
@@ -378,7 +425,7 @@ async function processJSWithSrc(
           {
             type: MESSAGE_TYPE.RAW_JS,
             rawjs: jsPackage.trimStart(),
-            origin: currentOrigin.val,
+            origin: getCurrentOrigin(),
             version: version,
           },
           response => {
@@ -402,15 +449,20 @@ async function processJSWithSrc(
 }
 
 export const processFoundJS = async (version: string): Promise<void> => {
-  const fullscripts = FOUND_SCRIPTS.get(version).splice(0);
-  const scripts = fullscripts.filter(script => {
+  const scriptsForVersion = FOUND_SCRIPTS.get(version);
+  if (!scriptsForVersion) {
+    invalidateAndThrow(
+      `attempting to process scripts for nonexistent version ${version}`,
+    );
+  }
+  const scripts = scriptsForVersion.splice(0).filter(script => {
     if (
       script.otherType === currentFilterType ||
-      ['BOTH', ''].includes(currentFilterType)
+      [BOTH, UNINITIALIZED].includes(currentFilterType)
     ) {
       return true;
     } else {
-      FOUND_SCRIPTS.get(version).push(script);
+      scriptsForVersion.push(script);
     }
   });
   let pendingScriptCount = scripts.length;
@@ -447,14 +499,14 @@ export const processFoundJS = async (version: string): Promise<void> => {
         {
           type: script.type,
           rawjs: script.rawjs.trimStart(),
-          origin: currentOrigin.val,
+          origin: getCurrentOrigin(),
           version: version,
         },
         response => {
           pendingScriptCount--;
           const inlineScriptMap = new Map();
           if (response.valid) {
-            inlineScriptMap.set(response.hash, script.rawjs);
+            inlineScriptMap.set(response.hash!, script.rawjs);
             INLINE_SCRIPTS.push(inlineScriptMap);
             if (pendingScriptCount == 0) {
               updateCurrentState(STATES.VALID);
@@ -462,7 +514,7 @@ export const processFoundJS = async (version: string): Promise<void> => {
           } else {
             inlineScriptMap.set('hash not in manifest', script.rawjs);
             INLINE_SCRIPTS.push(inlineScriptMap);
-            if (KNOWN_EXTENSION_HASHES.includes(response.hash)) {
+            if (KNOWN_EXTENSION_HASHES.includes(response.hash!)) {
               updateCurrentState(STATES.RISK);
             } else {
               updateCurrentState(STATES.INVALID, 'Invalid ScriptDetailsRaw');
@@ -472,7 +524,7 @@ export const processFoundJS = async (version: string): Promise<void> => {
             type: MESSAGE_TYPE.DEBUG,
             log:
               'processed the RAW_JS, response is ' +
-              response.hash +
+              response.hash! +
               ' ' +
               JSON.stringify(response).substring(0, 500),
           });
@@ -488,17 +540,24 @@ let allowedWorkerCSPs: Array<Set<string>> = [];
 
 export function startFor(origin: Origin, config: ContentScriptConfig): void {
   originConfig = config;
+  setCurrentOrigin(origin);
   sendMessageToBackground(
     {
       type: MESSAGE_TYPE.CONTENT_SCRIPT_START,
+      checkCSPHeaders: originConfig.enforceCSPHeaders,
       origin,
     },
     resp => {
       if (originConfig.enforceCSPHeaders) {
+        if (!resp.cspHeaders) {
+          invalidateAndThrow(
+            'Expected CSP Headers in CONTENT_SCRIPT_START response',
+          );
+        }
         const validCSP = checkDocumentCSPHeaders(
           resp.cspHeaders,
           resp.cspReportHeaders,
-          currentOrigin.val,
+          getCurrentOrigin(),
         );
         if (validCSP) {
           allowedWorkerCSPs = getAllowedWorkerCSPs(resp.cspHeaders);
@@ -527,7 +586,6 @@ export function startFor(origin: Origin, config: ContentScriptConfig): void {
   }
   if (isUserLoggedIn) {
     updateCurrentState(STATES.PROCESSING);
-    currentOrigin.val = origin;
     scanForScripts();
     // set the timeout once, in case there's an iframe and contentUtils sets another manifest timer
     if (manifestTimeoutID === '') {
@@ -569,7 +627,7 @@ chrome.runtime.onMessage.addListener(request => {
             checkWorkerEndpointCSP(
               request.response,
               allowedWorkerCSPs,
-              currentOrigin.val,
+              getCurrentOrigin(),
             );
           }
         }
@@ -579,10 +637,15 @@ chrome.runtime.onMessage.addListener(request => {
         log: `Tab is processing ${request.response.url}`,
       });
       ALL_FOUND_SCRIPT_TAGS.add(request.response.url);
-      FOUND_SCRIPTS.get(FOUND_SCRIPTS.keys().next().value).push({
-        src: request.response.url,
-        otherType: currentFilterType,
-      });
+      const uninitializedScripts = FOUND_SCRIPTS.get(
+        FOUND_SCRIPTS.keys().next().value,
+      );
+      if (uninitializedScripts) {
+        uninitializedScripts.push({
+          src: request.response.url,
+          otherType: currentFilterType,
+        });
+      }
       updateCurrentState(STATES.PROCESSING);
     }
   } else if (request.greeting === 'sniffableMimeTypeResource') {

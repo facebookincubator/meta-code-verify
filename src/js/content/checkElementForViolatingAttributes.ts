@@ -37,10 +37,7 @@ export function checkElementForViolatingAttributes(element: Element): void {
       if (
         (elementAttribute.localName === 'href' ||
           elementAttribute.localName === 'xlink:href') &&
-        element
-          .getAttribute(elementAttribute.localName)
-          .toLowerCase()
-          .startsWith('javascript')
+        elementAttribute.value.toLowerCase().startsWith('javascript')
       ) {
         updateCurrentState(
           STATES.INVALID,
