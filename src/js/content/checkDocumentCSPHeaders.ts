@@ -5,15 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {Origin, ORIGIN_HOST, STATES} from '../config';
-import {updateCurrentState} from './updateCurrentState';
-import {parseCSPString} from './parseCSPString';
-import {checkCSPForEvals} from './checkCSPForEvals';
+import { Origin, ORIGIN_HOST, STATES } from '../config';
+import { invalidateAndThrow } from './updateCurrentState';
+import { parseCSPString } from './parseCSPString';
+import { checkCSPForEvals } from './checkCSPForEvals';
 
 function checkCSPForWorkerSrc(
   cspHeaders: Array<string>,
   origin: Origin,
-): boolean {
+): void {
   const host = ORIGIN_HOST[origin];
 
   const headersWithWorkerSrc = cspHeaders.filter(cspHeader =>
@@ -21,11 +21,7 @@ function checkCSPForWorkerSrc(
   );
 
   if (headersWithWorkerSrc.length === 0) {
-    updateCurrentState(
-      STATES.INVALID,
-      `Missing worker-src directive on CSP of main document`,
-    );
-    return false;
+    invalidateAndThrow('Missing worker-src directive on CSP of main document');
   }
 
   // Valid CSP if at least one CSP header is strict enough, since the browser
@@ -51,14 +47,8 @@ function checkCSPForWorkerSrc(
     );
   });
 
-  if (isValid) {
-    return true;
-  } else {
-    updateCurrentState(
-      STATES.INVALID,
-      `Invalid worker-src directive on main document`,
-    );
-    return false;
+  if (!isValid) {
+    invalidateAndThrow('Invalid worker-src directive on main document');
   }
 }
 
@@ -66,11 +56,9 @@ export function checkDocumentCSPHeaders(
   cspHeaders: Array<string>,
   cspReportHeaders: Array<string> | undefined,
   origin: Origin,
-): boolean {
-  return (
-    checkCSPForEvals(cspHeaders, cspReportHeaders) &&
-    checkCSPForWorkerSrc(cspHeaders, origin)
-  );
+): void {
+  checkCSPForEvals(cspHeaders, cspReportHeaders);
+  checkCSPForWorkerSrc(cspHeaders, origin);
 }
 
 export function getAllowedWorkerCSPs(

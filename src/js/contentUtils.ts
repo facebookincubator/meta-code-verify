@@ -554,14 +554,12 @@ export function startFor(origin: Origin, config: ContentScriptConfig): void {
             'Expected CSP Headers in CONTENT_SCRIPT_START response',
           );
         }
-        const validCSP = checkDocumentCSPHeaders(
+        checkDocumentCSPHeaders(
           resp.cspHeaders,
           resp.cspReportHeaders,
           getCurrentOrigin(),
         );
-        if (validCSP) {
-          allowedWorkerCSPs = getAllowedWorkerCSPs(resp.cspHeaders);
-        }
+        allowedWorkerCSPs = getAllowedWorkerCSPs(resp.cspHeaders);
       }
     },
   );

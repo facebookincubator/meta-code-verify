@@ -26,11 +26,7 @@ export function checkWorkerEndpointCSP(
     .map(h => h.value)
     .filter((header): header is string => !!header);
 
-  const hasValidEvalCSPs = checkCSPForEvals(cspHeaders, cspReportHeaders);
-
-  if (!hasValidEvalCSPs) {
-    return false;
-  }
+  checkCSPForEvals(cspHeaders, cspReportHeaders);
 
   /**
    * Dedicated Workers can nest workers, we need to check their CSPs.

@@ -78,7 +78,7 @@ function getIsValidScriptSrcAndHasScriptSrcDirective(
 export function checkCSPForEvals(
   cspHeaders: Array<string>,
   cspReportHeaders: Array<string> | undefined,
-): boolean {
+): void {
   const [hasValidScriptSrcEnforcement, hasScriptSrcDirectiveForEnforce] =
     getIsValidScriptSrcAndHasScriptSrcDirective(cspHeaders);
 
@@ -86,7 +86,7 @@ export function checkCSPForEvals(
   // directive that has no `unsafe-eval` keyword. This means the browser will
   // enforce unsafe eval for us.
   if (hasValidScriptSrcEnforcement) {
-    return true;
+    return;
   }
 
   // 2. If we have no script-src directives, the browser will fall back to
@@ -94,7 +94,7 @@ export function checkCSPForEvals(
   // with no `unsafe-eval`, the browser will enforce for us.
   if (!hasScriptSrcDirectiveForEnforce) {
     if (getIsValidDefaultSrc(cspHeaders)) {
-      return true;
+      return;
     }
   }
 
@@ -135,5 +135,4 @@ export function checkCSPForEvals(
   // 5. If we've gotten here without throwing, we can start scanning for violations
   // from our report-only headers.
   scanForCSPEvalReportViolations();
-  return true;
 }
