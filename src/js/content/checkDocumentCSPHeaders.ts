@@ -10,7 +10,7 @@ import {updateCurrentState} from './updateCurrentState';
 import {parseCSPString} from './parseCSPString';
 import {checkCSPForEvals} from './checkCSPForEvals';
 
-function checkCSPForWorkerSrc(
+export function checkCSPForWorkerSrc(
   cspHeaders: Array<string>,
   origin: Origin,
 ): boolean {
