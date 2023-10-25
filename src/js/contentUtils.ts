@@ -131,15 +131,13 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
     }
 
     let rawManifest: RawManifest | null = null;
+    // Only a document/doctype can have textContent as null
+    const manifestNodeTextContent = scriptNodeMaybe.textContent ?? '';
     try {
-      if (scriptNodeMaybe.textContent == null) {
-        updateCurrentState(STATES.INVALID, 'Manifest is empty');
-        return;
-      }
-      rawManifest = JSON.parse(scriptNodeMaybe.textContent);
+      rawManifest = JSON.parse(manifestNodeTextContent);
     } catch (manifestParseError) {
       setTimeout(
-        () => parseFailedJSON({node: scriptNodeMaybe, retry: 5000}),
+        () => parseFailedJSON({text: manifestNodeTextContent, retry: 5000}),
         20,
       );
       return;
@@ -250,12 +248,14 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
     });
   }
 
+  // Only a document/doctype can have textContent as null
+  const nodeTextContent = scriptNodeMaybe.textContent ?? '';
   if (scriptNodeMaybe.getAttribute('type') === 'application/json') {
     try {
-      scriptNodeMaybe.textContent && JSON.parse(scriptNodeMaybe.textContent);
+      JSON.parse(nodeTextContent);
     } catch (parseError) {
       setTimeout(
-        () => parseFailedJSON({node: scriptNodeMaybe, retry: 1500}),
+        () => parseFailedJSON({text: nodeTextContent, retry: 1500}),
         20,
       );
     }
