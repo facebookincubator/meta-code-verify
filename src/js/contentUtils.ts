@@ -104,7 +104,7 @@ function isSameDomainAsTopWindow(): boolean {
   try {
     // This is inside a try/catch because even attempting to access the `origin`
     // property will throw a SecurityError if the domains don't match.
-    return window.location.origin === window.top!.location.origin;
+    return window.location.origin === window.top?.location.origin;
   } catch {
     return false;
   }
@@ -132,16 +132,21 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
 
     let rawManifest: RawManifest | null = null;
     try {
-      rawManifest = JSON.parse(scriptNodeMaybe.textContent!);
-      if (!rawManifest) {
-        throw new Error('rawManifest is null or empty');
+      if (scriptNodeMaybe.textContent == null) {
+        updateCurrentState(STATES.INVALID, 'Manifest is empty');
+        return;
       }
+      rawManifest = JSON.parse(scriptNodeMaybe.textContent);
     } catch (manifestParseError) {
       setTimeout(
         () => parseFailedJSON({node: scriptNodeMaybe, retry: 5000}),
         20,
       );
       return;
+    }
+
+    if (rawManifest == null || typeof rawManifest !== 'object') {
+      invalidateAndThrow('Manifest is null');
     }
 
     let leaves = rawManifest.leaves;
@@ -247,7 +252,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
 
   if (scriptNodeMaybe.getAttribute('type') === 'application/json') {
     try {
-      JSON.parse(scriptNodeMaybe.textContent!);
+      scriptNodeMaybe.textContent && JSON.parse(scriptNodeMaybe.textContent);
     } catch (parseError) {
       setTimeout(
         () => parseFailedJSON({node: scriptNodeMaybe, retry: 1500}),
@@ -506,7 +511,7 @@ export const processFoundJS = async (version: string): Promise<void> => {
           pendingScriptCount--;
           const inlineScriptMap = new Map();
           if (response.valid) {
-            inlineScriptMap.set(response.hash!, script.rawjs);
+            inlineScriptMap.set(response.hash, script.rawjs);
             INLINE_SCRIPTS.push(inlineScriptMap);
             if (pendingScriptCount == 0) {
               updateCurrentState(STATES.VALID);
@@ -514,7 +519,10 @@ export const processFoundJS = async (version: string): Promise<void> => {
           } else {
             inlineScriptMap.set('hash not in manifest', script.rawjs);
             INLINE_SCRIPTS.push(inlineScriptMap);
-            if (KNOWN_EXTENSION_HASHES.includes(response.hash!)) {
+            if (
+              response.hash &&
+              KNOWN_EXTENSION_HASHES.includes(response.hash)
+            ) {
               updateCurrentState(STATES.RISK);
             } else {
               updateCurrentState(STATES.INVALID, 'Invalid ScriptDetailsRaw');
@@ -524,7 +532,7 @@ export const processFoundJS = async (version: string): Promise<void> => {
             type: MESSAGE_TYPE.DEBUG,
             log:
               'processed the RAW_JS, response is ' +
-              response.hash! +
+              response.hash +
               ' ' +
               JSON.stringify(response).substring(0, 500),
           });

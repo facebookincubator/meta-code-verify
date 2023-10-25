@@ -32,12 +32,10 @@ export default async function genSourceText(
   // after the sourceURL comment, which would execute on the browser but get
   // stripped away by the extension before getting hashed + verified.
   // As a result, we're always starting our search from the bottom.
-  if (
-    sourceTextParts[sourceTextParts.length - 1].startsWith('//# sourceURL=')
-  ) {
-    // Assume we always have a final part.
-    const finalpart = sourceTextParts.pop()!;
-    const sourceURL = finalpart.split('//# sourceURL=')[1] ?? '';
+  const lastPart = sourceTextParts[sourceTextParts.length - 1];
+  if (lastPart.startsWith('//# sourceURL=')) {
+    sourceTextParts.pop();
+    const sourceURL = lastPart.split('//# sourceURL=')[1] ?? '';
     if (!sourceURL.startsWith('http')) {
       throw new Error(`Invalid sourceUrl in inlined data script: ${sourceURL}`);
     }

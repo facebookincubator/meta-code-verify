@@ -78,7 +78,7 @@ function attachListeners(origin: string | null): void {
   });
 
   const closeMenuButton = document.getElementById('close_menu');
-  closeMenuButton!.addEventListener('click', () => window.close());
+  closeMenuButton?.addEventListener('click', () => window.close());
 
   const menuRowList = document.getElementsByClassName('menu_row');
 
@@ -102,28 +102,35 @@ function attachListeners(origin: string | null): void {
 
     downloadTextList[0].addEventListener('click', () => {
       chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-        chrome.tabs.sendMessage(
-          tabs[0].id!,
-          {greeting: 'downloadSource'},
-          () => {},
-        );
+        const tabId = tabs[0].id;
+        if (tabId) {
+          chrome.tabs.sendMessage(
+            tabId,
+            {greeting: 'downloadSource'},
+            () => {},
+          );
+        }
       });
     });
     if (downloadTextList[0] instanceof HTMLElement) {
       downloadTextList[0].style.cursor = 'pointer';
     }
 
-    downloadSrcButton!.onclick = () => {
-      chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-        chrome.tabs.sendMessage(
-          tabs[0].id!,
-          {greeting: 'downloadSource'},
-          () => {},
-        );
-      });
-    };
-
-    downloadSrcButton!.style.cursor = 'pointer';
+    if (downloadSrcButton) {
+      downloadSrcButton.onclick = () => {
+        chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
+          const tabId = tabs[0].id;
+          if (tabId) {
+            chrome.tabs.sendMessage(
+              tabId,
+              {greeting: 'downloadSource'},
+              () => {},
+            );
+          }
+        });
+      };
+      downloadSrcButton.style.cursor = 'pointer';
+    }
 
     downloadTextList[0].addEventListener('click', () =>
       updateDisplay('download'),
@@ -140,7 +147,7 @@ function attachListeners(origin: string | null): void {
     if (downloadMessagePartTwo != null) {
       downloadMessagePartTwo.remove();
     }
-    downloadSrcButton!.remove();
+    downloadSrcButton?.remove();
   }
 
   const learnMoreList = document.getElementsByClassName(
@@ -184,8 +191,8 @@ function attachListeners(origin: string | null): void {
   }
 }
 
-function updateDisplay(state: string | null): void {
-  const popupState = STATE_TO_POPUP_STATE[state!] || state;
+function updateDisplay(state: string): void {
+  const popupState = STATE_TO_POPUP_STATE[state] || state;
   Array.from(document.getElementsByClassName('state_boundary')).forEach(
     (element: Element) => {
       if (element instanceof HTMLElement) {
@@ -221,7 +228,8 @@ function setUpBackgroundMessageHandler(tabId: string | null): void {
 (function (): void {
   const params = new URL(document.location.href).searchParams;
   setUpBackgroundMessageHandler(params.get('tab_id'));
-  updateDisplay(params.get('state'));
+  const state = params.get('state');
+  state && updateDisplay(state);
   attachTextToHtml();
   attachListeners(params.get('origin'));
 })();

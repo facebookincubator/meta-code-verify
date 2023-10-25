@@ -7,9 +7,7 @@
 
 export type ValidSender = {
   frameId: number;
-  tab: {
-    id: number;
-  };
+  tab: {id: number};
 };
 
 export function validateSender(
@@ -22,7 +20,7 @@ export function validateSender(
   //
   // We will always be receiving this message in an extension, and always from
   // a tab. Thus receiving a message without a tab indicates something wrong.
-  const tab = sender.tab!;
+  const tab = sender.tab;
   if (!tab) {
     return;
   }
@@ -48,9 +46,7 @@ export function validateSender(
   }
 
   return {
-    frameId: frameId!,
-    tab: {
-      id: tabId,
-    },
+    frameId,
+    tab: {id: tabId},
   };
 }

@@ -8,7 +8,9 @@
 import {getCFRootHash} from './getCFRootHash';
 
 const fromHexString = (hexString: string): Uint8Array =>
-  new Uint8Array(hexString.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
+  new Uint8Array(
+    (hexString.match(/.{1,2}/g) ?? []).map(byte => parseInt(byte, 16)),
+  );
 
 const toHexString = (bytes: Uint8Array): string =>
   bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
