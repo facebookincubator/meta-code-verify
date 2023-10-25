@@ -15,11 +15,9 @@ function getAttributeValue(
   attributeName: string,
   currentAttributeValue: string,
 ): string {
-  if (
-    nodeName.toLowerCase() === elementName &&
-    element.hasAttribute(attributeName)
-  ) {
-    return element.getAttribute(attributeName)!.toLowerCase();
+  const attribute = element.getAttribute(attributeName);
+  if (attribute && nodeName.toLowerCase() === elementName) {
+    return attribute.toLowerCase();
   }
   return currentAttributeValue;
 }

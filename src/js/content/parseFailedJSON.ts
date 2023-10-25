@@ -11,11 +11,11 @@ import {STATES} from '../config';
 import {updateCurrentState} from './updateCurrentState';
 
 export default function parseFailedJson(queuedJsonToParse: {
-  node: Element;
+  text: string;
   retry: number;
 }): void {
   try {
-    JSON.parse(queuedJsonToParse.node.textContent!);
+    JSON.parse(queuedJsonToParse.text);
   } catch (parseError) {
     if (queuedJsonToParse.retry > 0) {
       queuedJsonToParse.retry--;

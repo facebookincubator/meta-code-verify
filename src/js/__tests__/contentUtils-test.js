@@ -120,8 +120,8 @@ describe('contentUtils', () => {
               {localName: 'height'},
               {localName: 'width'},
             ],
-            hasAttribute: () => {
-              return true;
+            getAttribute: () => {
+              return 'attr';
             },
             nodeType: 2,
             nodeName: 'nodename',
@@ -133,16 +133,16 @@ describe('contentUtils', () => {
               {localName: 'height'},
               {localName: 'width'},
             ],
-            hasAttribute: () => {
-              return true;
+            getAttribute: () => {
+              return 'attr';
             },
             nodeType: 3,
             nodeName: 'nodename',
             tagName: 'tagName',
           },
         ],
-        hasAttribute: () => {
-          return false;
+        getAttribute: () => {
+          return 'attr';
         },
         nodeType: 1,
         nodeName: 'nodename',
@@ -161,8 +161,9 @@ describe('contentUtils', () => {
               {localName: 'height'},
               {localName: 'width'},
             ],
-            hasAttribute: () => {
-              return true;
+
+            getAttribute: () => {
+              return 'attr';
             },
             nodeType: 2,
             nodeName: 'nodename',
@@ -173,9 +174,8 @@ describe('contentUtils', () => {
             attributes: {
               'data-binary-transparency-hash-key': {value: 'green'},
             },
-            getAttribute: () => {},
-            hasAttribute: () => {
-              return false;
+            getAttribute: () => {
+              return null;
             },
             nodeName: 'SCRIPT',
             nodeType: 1,
@@ -184,8 +184,8 @@ describe('contentUtils', () => {
             src: '',
           },
         ],
-        hasAttribute: () => {
-          return false;
+        getAttribute: () => {
+          return null;
         },
         nodeType: 1,
         nodeName: 'nodename',
@@ -210,8 +210,8 @@ describe('contentUtils', () => {
               {localName: 'height'},
               {localName: 'width'},
             ],
-            hasAttribute: () => {
-              return true;
+            getAttribute: () => {
+              return 'attr';
             },
             nodeType: 2,
             nodeName: 'nodename',
@@ -221,7 +221,9 @@ describe('contentUtils', () => {
           {
             attributes: {
               'data-binary-transparency-hash-key': {value: 'green'},
-              getAttribute: () => {},
+              getAttribute: () => {
+                return null;
+              },
             },
             childNodes: [
               {
@@ -230,7 +232,9 @@ describe('contentUtils', () => {
                 },
                 nodeName: 'script',
                 nodeType: 1,
-                getAttribute: () => {},
+                getAttribute: () => {
+                  return null;
+                },
                 hasAttribute: () => {
                   return false;
                 },
@@ -240,7 +244,9 @@ describe('contentUtils', () => {
                 attributes: {
                   'data-binary-transparency-hash-key': {value: 'green2'},
                 },
-                getAttribute: () => {},
+                getAttribute: () => {
+                  return null;
+                },
                 hasAttribute: () => {
                   return false;
                 },
@@ -249,16 +255,16 @@ describe('contentUtils', () => {
                 tagName: 'tagName',
               },
             ],
-            hasAttribute: () => {
-              return false;
+            getAttribute: () => {
+              return null;
             },
             nodeType: 1,
             nodeName: 'nodename',
             tagName: 'tagName',
           },
         ],
-        hasAttribute: () => {
-          return false;
+        getAttribute: () => {
+          return null;
         },
         nodeType: 1,
         nodeName: 'nodename',
