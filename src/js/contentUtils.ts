@@ -29,7 +29,7 @@ import {
 import checkElementForViolatingJSUri from './content/checkElementForViolatingJSUri';
 import {checkElementForViolatingAttributes} from './content/checkElementForViolatingAttributes';
 import {sendMessageToBackground} from './shared/sendMessageToBackground';
-import parseFailedJSON from './content/parseFailedJSON';
+import {parseFailedJSON} from './content/parseFailedJSON';
 import genSourceText from './content/genSourceText';
 import isPathnameExcluded from './content/isPathNameExcluded';
 import {doesWorkerUrlConformToCSP} from './content/doesWorkerUrlConformToCSP';
