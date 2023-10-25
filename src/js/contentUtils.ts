@@ -137,7 +137,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
       rawManifest = JSON.parse(manifestNodeTextContent);
     } catch (manifestParseError) {
       setTimeout(
-        () => parseFailedJSON({text: manifestNodeTextContent, retry: 5000}),
+        () => parseFailedJSON({node: scriptNodeMaybe, retry: 5000}),
         20,
       );
       return;
@@ -255,7 +255,7 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
       JSON.parse(nodeTextContent);
     } catch (parseError) {
       setTimeout(
-        () => parseFailedJSON({text: nodeTextContent, retry: 1500}),
+        () => parseFailedJSON({node: scriptNodeMaybe, retry: 1500}),
         20,
       );
     }

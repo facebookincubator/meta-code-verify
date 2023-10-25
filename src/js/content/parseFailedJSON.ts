@@ -11,11 +11,13 @@ import {STATES} from '../config';
 import {updateCurrentState} from './updateCurrentState';
 
 export default function parseFailedJson(queuedJsonToParse: {
-  text: string;
+  node: Element;
   retry: number;
 }): void {
+  // Only a document/doctype can have textContent as null
+  const nodeTextContent = queuedJsonToParse.node.textContent ?? '';
   try {
-    JSON.parse(queuedJsonToParse.text);
+    JSON.parse(nodeTextContent);
   } catch (parseError) {
     if (queuedJsonToParse.retry > 0) {
       queuedJsonToParse.retry--;
