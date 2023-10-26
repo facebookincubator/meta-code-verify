@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import {STATES} from '../config';
 import alertBackgroundOfImminentFetch from './alertBackgroundOfImminentFetch';
 import {parseCSPString} from './parseCSPString';
-import {invalidateAndThrow} from './updateCurrentState';
+import {updateCurrentState} from './updateCurrentState';
 
 function scanForCSPEvalReportViolations(): void {
   document.addEventListener('securitypolicyviolation', e => {
@@ -37,7 +38,7 @@ function scanForCSPEvalReportViolations(): void {
           ) {
             return;
           }
-          invalidateAndThrow(`Caught eval in ${e.sourceFile}`);
+          updateCurrentState(STATES.INVALID, `Caught eval in ${e.sourceFile}`);
         });
     });
   });
@@ -111,7 +112,8 @@ export function checkCSPForEvals(
   // 3. Thus, if we've gotten this far and we have no report headers, the page
   // should be considered invalid.
   if (!cspReportHeaders || cspReportHeaders.length === 0) {
-    invalidateAndThrow('Missing CSP report-only header');
+    updateCurrentState(STATES.INVALID, 'Missing CSP report-only header');
+    return false;
   }
 
   // Check if at least one header has the correct report setup
@@ -129,7 +131,11 @@ export function checkCSPForEvals(
   //  b. We have no script-src, and at least one default-src without unsafe-eval
   // Then we must invalidate because there is nothing preventing unsafe-eval.
   if (!hasValidScriptSrcReport && !hasValidDefaultSrcReport) {
-    invalidateAndThrow('Missing unsafe-eval from CSP report-only header');
+    updateCurrentState(
+      STATES.INVALID,
+      'Missing unsafe-eval from CSP report-only header',
+    );
+    return false;
   }
 
   // 5. If we've gotten here without throwing, we can start scanning for violations
