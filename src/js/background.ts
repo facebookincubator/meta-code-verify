@@ -74,7 +74,7 @@ function logReceivedMessage(
       break;
   }
   if (sender.tab) {
-    logger(`handleMessages from tab:${sender.tab.id}`, JSON.stringify(message));
+    logger(`handleMessages from tab:${sender.tab.id}`, message);
   } else {
     logger(`handleMessages from unknown tab`, message);
   }
