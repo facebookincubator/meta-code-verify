@@ -8,8 +8,12 @@
 'use strict';
 
 import {jest} from '@jest/globals';
-import {isWorkerEndpointCSPValid} from '../content/checkWorkerEndpointCSP';
-import {ORIGIN_TYPE} from '../config';
+import {
+  areBlobAndDataExcluded,
+  isWorkerSrcValid,
+  isWorkerEndpointCSPValid,
+} from '../content/checkWorkerEndpointCSP';
+import {ORIGIN_HOST, ORIGIN_TYPE} from '../config';
 import {setCurrentOrigin} from '../content/updateCurrentState';
 
 const CSP_KEY = 'content-security-policy';
@@ -43,215 +47,91 @@ describe('checkWorkerEndpointCSP', () => {
     );
     expect(valid).toBeFalsy();
   });
-  /**
-   * Evals covered more extensively by checkDocumentCSPHeaders
-   * Same logic is used for both CSPs
-   */
-  it('Invalid if eval allowed by CSP', () => {
-    const [valid] = isWorkerEndpointCSPValid(
-      {
-        responseHeaders: [
-          {
-            name: CSP_KEY,
-            value:
-              `default-src data: blob: 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';` +
-              `script-src *.facebook.com *.fbcdn.net 'self' 'unsafe-eval';` +
-              'worker-src *.facebook.com/worker_url;',
-          },
-          {name: CSPRO_KEY, value: ''},
-        ],
-      },
-      [new Set(['*.facebook.com/worker_url'])],
-      ORIGIN_TYPE.FACEBOOK,
-    );
-    expect(valid).toBeFalsy();
+
+  describe('areBlobAndDataExcluded', () => {
+    it('Invalid if blob: allowed by script src', () => {
+      const valid = areBlobAndDataExcluded([
+        `default-src 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';` +
+          `script-src *.facebook.com *.fbcdn.net 'self' blob: 'wasm-unsafe-eval';`,
+      ]);
+      expect(valid).toBeFalsy();
+    });
+    it('Invalid if data: allowed by script src', () => {
+      const valid = areBlobAndDataExcluded([
+        `default-src 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';` +
+          `script-src *.facebook.com *.fbcdn.net 'self' data: 'wasm-unsafe-eval';`,
+      ]);
+      expect(valid).toBeFalsy();
+    });
+    it('Invalid if blob: allowed by default src', () => {
+      const valid = areBlobAndDataExcluded([
+        `default-src blob: 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';`,
+      ]);
+      expect(valid).toBeFalsy();
+    });
+    it('Invalid if data: allowed by default src', () => {
+      const valid = areBlobAndDataExcluded([
+        `default-src data: 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';`,
+      ]);
+      expect(valid).toBeFalsy();
+    });
   });
-  it('Invalid if blob: allowed by script src', () => {
-    const [valid] = isWorkerEndpointCSPValid(
-      {
-        responseHeaders: [
-          {
-            name: CSP_KEY,
-            value:
-              `default-src data: blob: 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';` +
-              `script-src *.facebook.com *.fbcdn.net 'self' blob: 'wasm-unsafe-eval';` +
-              'worker-src *.facebook.com/worker_url;',
-          },
-          {name: CSPRO_KEY, value: ''},
+
+  describe('isWorkerSrcValid', () => {
+    it('Valid CSP, same url nested workers and different origins', () => {
+      const valid = isWorkerSrcValid(
+        ['worker-src *.facebook.com/worker_url *.instagram.com;'],
+        ORIGIN_HOST[ORIGIN_TYPE.FACEBOOK],
+        [new Set(['*.facebook.com/worker_url'])],
+      );
+      expect(valid).toBeTruthy();
+    });
+    it('Valid CSP, nested workers (non-exact match)', () => {
+      const valid = isWorkerSrcValid(
+        ['worker-src *.facebook.com/worker_url/;'],
+        ORIGIN_HOST[ORIGIN_TYPE.FACEBOOK],
+        [new Set(['*.facebook.com/worker_url/'])],
+      );
+      expect(valid).toBeTruthy();
+    });
+    it('Valid CSP, subpath nested workers', () => {
+      const valid = isWorkerSrcValid(
+        [
+          'worker-src *.facebook.com/worker_url/first *.facebook.com/worker_url/second;',
         ],
-      },
-      [new Set(['*.facebook.com/worker_url'])],
-      ORIGIN_TYPE.FACEBOOK,
-    );
-    expect(valid).toBeFalsy();
-  });
-  it('Invalid if data: allowed by script src', () => {
-    const [valid] = isWorkerEndpointCSPValid(
-      {
-        responseHeaders: [
-          {
-            name: CSP_KEY,
-            value:
-              `default-src data: blob: 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';` +
-              `script-src *.facebook.com *.fbcdn.net 'self' data: 'wasm-unsafe-eval';` +
-              'worker-src *.facebook.com/worker_url;',
-          },
-          {name: CSPRO_KEY, value: ''},
+        ORIGIN_HOST[ORIGIN_TYPE.FACEBOOK],
+        [new Set(['*.facebook.com/worker_url/'])],
+      );
+      expect(valid).toBeTruthy();
+    });
+
+    it('Invalid CSP, subpath nested workers (exact match needed)', () => {
+      const valid = isWorkerSrcValid(
+        [
+          'worker-src *.facebook.com/worker_url/first *.facebook.com/worker_url/second;',
         ],
-      },
-      [new Set(['*.facebook.com/worker_url'])],
-      ORIGIN_TYPE.FACEBOOK,
-    );
-    expect(valid).toBeFalsy();
-  });
-  it('Invalid if blob: allowed by default src', () => {
-    const [valid] = isWorkerEndpointCSPValid(
-      {
-        responseHeaders: [
-          {
-            name: CSP_KEY,
-            value:
-              `default-src blob: 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';` +
-              'worker-src *.facebook.com/worker_url;',
-          },
-          {name: CSPRO_KEY, value: ''},
+        ORIGIN_HOST[ORIGIN_TYPE.FACEBOOK],
+        [new Set(['*.facebook.com/worker_url'])],
+      );
+      expect(valid).toBeFalsy();
+    });
+    it('Invalid CSP, different paths', () => {
+      const valid = isWorkerSrcValid(
+        [
+          'worker-src *.facebook.com/wrong_worker_url *.facebook.com/worker_url;',
         ],
-      },
-      [new Set(['*.facebook.com/worker_url'])],
-      ORIGIN_TYPE.FACEBOOK,
-    );
-    expect(valid).toBeFalsy();
-  });
-  it('Invalid if data: allowed by default src', () => {
-    const [valid] = isWorkerEndpointCSPValid(
-      {
-        responseHeaders: [
-          {
-            name: CSP_KEY,
-            value:
-              `default-src data: 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';` +
-              'worker-src *.facebook.com/worker_url;',
-          },
-          {name: CSPRO_KEY, value: ''},
-        ],
-      },
-      [new Set(['*.facebook.com/worker_url'])],
-      ORIGIN_TYPE.FACEBOOK,
-    );
-    expect(valid).toBeFalsy();
-  });
-  it('Valid CSP, same url nested workers and different origins', () => {
-    const [valid] = isWorkerEndpointCSPValid(
-      {
-        responseHeaders: [
-          {
-            name: CSP_KEY,
-            value:
-              `default-src data: blob: 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';` +
-              `script-src *.facebook.com *.fbcdn.net 'self' 'wasm-unsafe-eval';` +
-              'worker-src *.facebook.com/worker_url *.instagram.com;',
-          },
-          {name: CSPRO_KEY, value: ''},
-        ],
-      },
-      [new Set(['*.facebook.com/worker_url'])],
-      ORIGIN_TYPE.FACEBOOK,
-    );
-    expect(valid).toBeTruthy();
-  });
-  it('Valid CSP, nested workers (non-exact match)', () => {
-    const [valid] = isWorkerEndpointCSPValid(
-      {
-        responseHeaders: [
-          {
-            name: CSP_KEY,
-            value:
-              `default-src data: blob: 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';` +
-              `script-src *.facebook.com *.fbcdn.net 'self' 'wasm-unsafe-eval';` +
-              'worker-src *.facebook.com/worker_url/;',
-          },
-          {name: CSPRO_KEY, value: ''},
-        ],
-      },
-      [new Set(['*.facebook.com/worker_url/'])],
-      ORIGIN_TYPE.FACEBOOK,
-    );
-    expect(valid).toBeTruthy();
-  });
-  it('Valid CSP, subpath nested workers', () => {
-    const [valid] = isWorkerEndpointCSPValid(
-      {
-        responseHeaders: [
-          {
-            name: CSP_KEY,
-            value:
-              `default-src data: blob: 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';` +
-              `script-src *.facebook.com *.fbcdn.net 'self' 'wasm-unsafe-eval';` +
-              'worker-src *.facebook.com/worker_url/first *.facebook.com/worker_url/second;',
-          },
-          {name: CSPRO_KEY, value: ''},
-        ],
-      },
-      [new Set(['*.facebook.com/worker_url/'])],
-      ORIGIN_TYPE.FACEBOOK,
-    );
-    expect(valid).toBeTruthy();
-  });
-  it('Invalid CSP, subpath nested workers (exact match needed)', () => {
-    const [valid] = isWorkerEndpointCSPValid(
-      {
-        responseHeaders: [
-          {
-            name: CSP_KEY,
-            value:
-              `default-src data: blob: 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';` +
-              `script-src *.facebook.com *.fbcdn.net 'self' 'wasm-unsafe-eval';` +
-              'worker-src *.facebook.com/worker_url/first *.facebook.com/worker_url/second;',
-          },
-          {name: CSPRO_KEY, value: ''},
-        ],
-      },
-      [new Set(['*.facebook.com/worker_url'])],
-      ORIGIN_TYPE.FACEBOOK,
-    );
-    expect(valid).toBeFalsy();
-  });
-  it('Invalid CSP, different paths', () => {
-    const [valid] = isWorkerEndpointCSPValid(
-      {
-        responseHeaders: [
-          {
-            name: CSP_KEY,
-            value:
-              `default-src data: blob: 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';` +
-              `script-src *.facebook.com *.fbcdn.net 'self' 'wasm-unsafe-eval';` +
-              'worker-src *.facebook.com/wrong_worker_url *.facebook.com/worker_url;',
-          },
-          {name: CSPRO_KEY, value: ''},
-        ],
-      },
-      [new Set(['*.facebook.com/worker_url'])],
-      ORIGIN_TYPE.FACEBOOK,
-    );
-    expect(valid).toBeFalsy();
-  });
-  it('Invalid CSP, nested worker allowing domain wide urls', () => {
-    const [valid] = isWorkerEndpointCSPValid(
-      {
-        responseHeaders: [
-          {
-            name: CSP_KEY,
-            value:
-              `default-src data: blob: 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';` +
-              `script-src *.facebook.com *.fbcdn.net 'self' 'wasm-unsafe-eval';` +
-              'worker-src *.facebook.com/;',
-          },
-          {name: CSPRO_KEY, value: ''},
-        ],
-      },
-      [new Set(['*.facebook.com/worker_url'])],
-      ORIGIN_TYPE.FACEBOOK,
-    );
-    expect(valid).toBeFalsy();
+        ORIGIN_HOST[ORIGIN_TYPE.FACEBOOK],
+        [new Set(['*.facebook.com/worker_url'])],
+      );
+      expect(valid).toBeFalsy();
+    });
+    it('Invalid CSP, nested worker allowing domain wide urls', () => {
+      const valid = isWorkerSrcValid(
+        ['worker-src *.facebook.com/;'],
+        ORIGIN_HOST[ORIGIN_TYPE.FACEBOOK],
+        [new Set(['*.facebook.com/worker_url'])],
+      );
+      expect(valid).toBeFalsy();
+    });
   });
 });
