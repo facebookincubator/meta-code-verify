@@ -89,9 +89,12 @@ export function isWorkerEndpointCSPValid(
     .map(h => h.value)
     .filter((header): header is string => !!header);
 
-  const [evalIsValid, reason] = checkCSPForEvals(cspHeaders, cspReportHeaders);
+  const [evalIsValid, evalReason] = checkCSPForEvals(
+    cspHeaders,
+    cspReportHeaders,
+  );
   if (!evalIsValid) {
-    return [false, reason];
+    return [false, evalReason];
   }
 
   if (!isWorkerSrcValid(cspHeaders, host, documentWorkerCSPs)) {

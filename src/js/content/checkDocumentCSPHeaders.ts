@@ -9,6 +9,7 @@ import {Origin, ORIGIN_HOST} from '../config';
 import {invalidateAndThrow} from './updateCurrentState';
 import {parseCSPString} from './parseCSPString';
 import {checkCSPForEvals} from './checkCSPForEvals';
+import {checkCSPForUnsafeInline} from './checkCSPForUnsafeInline';
 
 export function checkCSPForWorkerSrc(
   cspHeaders: Array<string>,
@@ -60,6 +61,7 @@ export function checkDocumentCSPHeaders(
   origin: Origin,
 ): void {
   [
+    checkCSPForUnsafeInline(cspHeaders),
     checkCSPForEvals(cspHeaders, cspReportHeaders),
     checkCSPForWorkerSrc(cspHeaders, origin),
   ].forEach(([valid, reason]) => {
