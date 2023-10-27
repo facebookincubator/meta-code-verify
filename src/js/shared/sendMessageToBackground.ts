@@ -11,6 +11,9 @@ export function sendMessageToBackground(
   message: MessagePayload,
   callback?: (response: MessageResponse) => void,
 ): void {
-  callback ??= () => {};
-  chrome.runtime.sendMessage(message, callback);
+  if (callback != null) {
+    chrome.runtime.sendMessage(message, callback);
+  } else {
+    chrome.runtime.sendMessage(message);
+  }
 }
