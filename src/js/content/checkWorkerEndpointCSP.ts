@@ -12,35 +12,20 @@ import {doesWorkerUrlConformToCSP} from './doesWorkerUrlConformToCSP';
 import {parseCSPString} from './parseCSPString';
 import {updateCurrentState} from './updateCurrentState';
 
-export function checkWorkerEndpointCSP(
-  response: chrome.webRequest.WebResponseCacheDetails,
-  documentWorkerCSPs: Array<Set<string>>,
-  origin: Origin,
+/**
+ * Dedicated Workers can nest workers, we need to check their CSPs.
+ *
+ * worker-src CSP inside a worker should conform to atleast
+ * one of the worker-src CSPs on the main document which
+ * have already been validated, otherwise worker can spin
+ * up arbitrary workers or blob:/data:.
+ */
+export function isWorkerSrcValid(
+  cspHeaders: string[],
+  host: string,
+  documentWorkerCSPs: Set<string>[],
 ): boolean {
-  const host = ORIGIN_HOST[origin];
-  const cspHeaders = getCSPHeadersFromWebRequestResponse(response)
-    .map(h => h.value)
-    .filter((header): header is string => !!header);
-
-  const cspReportHeaders = getCSPHeadersFromWebRequestResponse(response, true)
-    .map(h => h.value)
-    .filter((header): header is string => !!header);
-
-  const hasValidEvalCSPs = checkCSPForEvals(cspHeaders, cspReportHeaders);
-
-  if (!hasValidEvalCSPs) {
-    return false;
-  }
-
-  /**
-   * Dedicated Workers can nest workers, we need to check their CSPs.
-   *
-   * worker-src CSP inside a worker should conform to atleast
-   * one of the worker-src CSPs on the main document which
-   * have already been validated, otherwise worker can spin
-   * up arbitrary workers or blob:/data:.
-   */
-  const isWorkerSrcValid = cspHeaders.some(header => {
+  return cspHeaders.some(header => {
     const allowedWorkers = parseCSPString(header).get('worker-src');
 
     if (allowedWorkers) {
@@ -63,21 +48,14 @@ export function checkWorkerEndpointCSP(
     }
     return false;
   });
+}
 
-  if (!isWorkerSrcValid) {
-    updateCurrentState(
-      STATES.INVALID,
-      `Nested worker-src does not conform to document worker-src CSP`,
-    );
-    return false;
-  }
-
-  /**
-   * Check script-src for blob: data:
-   * Workers can call importScripts/import on arbitrary strings.
-   * This CSP should be in place to prevent that.
-   *
-   */
+/**
+ * Check script-src for blob: data:
+ * Workers can call importScripts/import on arbitrary strings.
+ * This CSP should be in place to prevent that.
+ */
+export function areBlobAndDataExcluded(cspHeaders: string[]): boolean {
   const [hasValidScriptSrcEnforcement, hasScriptSrcDirectiveForEnforce] =
     getIsValidScriptSrcAndHasScriptSrcDirective(cspHeaders);
   if (hasValidScriptSrcEnforcement) {
@@ -90,11 +68,59 @@ export function checkWorkerEndpointCSP(
     }
   }
 
-  updateCurrentState(
-    STATES.INVALID,
-    `Worker allows blob:/data: importScripts/import`,
-  );
   return false;
+}
+
+/**
+ * This function should not have side-effects (no throw, no invalidation).
+ * See checkWorkerEndpointCSP for enforcement.
+ */
+export function isWorkerEndpointCSPValid(
+  response: chrome.webRequest.WebResponseCacheDetails,
+  documentWorkerCSPs: Array<Set<string>>,
+  origin: Origin,
+): [true] | [false, string] {
+  const host = ORIGIN_HOST[origin];
+  const cspHeaders = getCSPHeadersFromWebRequestResponse(response)
+    .map(h => h.value)
+    .filter((header): header is string => !!header);
+
+  const cspReportHeaders = getCSPHeadersFromWebRequestResponse(response, true)
+    .map(h => h.value)
+    .filter((header): header is string => !!header);
+
+  if (!checkCSPForEvals(cspHeaders, cspReportHeaders)) {
+    return [false, ''];
+  }
+
+  if (!isWorkerSrcValid(cspHeaders, host, documentWorkerCSPs)) {
+    return [
+      false,
+      'Nested worker-src does not conform to document worker-src CSP',
+    ];
+  }
+
+  if (!areBlobAndDataExcluded(cspHeaders)) {
+    return [false, 'Worker allows blob:/data: importScripts/import'];
+  }
+
+  return [true];
+}
+
+export function checkWorkerEndpointCSP(
+  response: chrome.webRequest.WebResponseCacheDetails,
+  documentWorkerCSPs: Array<Set<string>>,
+  origin: Origin,
+): boolean {
+  const [valid, reason] = isWorkerEndpointCSPValid(
+    response,
+    documentWorkerCSPs,
+    origin,
+  );
+  if (!valid) {
+    updateCurrentState(STATES.INVALID, reason);
+  }
+  return valid;
 }
 
 function cspValuesExcludeBlobAndData(cspValues: Set<string>): boolean {
