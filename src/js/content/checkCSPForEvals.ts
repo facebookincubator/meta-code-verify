@@ -79,7 +79,7 @@ function getIsValidScriptSrcAndHasScriptSrcDirective(
 export function checkCSPForEvals(
   cspHeaders: Array<string>,
   cspReportHeaders: Array<string> | undefined,
-): boolean {
+): [true] | [false, string] {
   const [hasValidScriptSrcEnforcement, hasScriptSrcDirectiveForEnforce] =
     getIsValidScriptSrcAndHasScriptSrcDirective(cspHeaders);
 
@@ -87,7 +87,7 @@ export function checkCSPForEvals(
   // directive that has no `unsafe-eval` keyword. This means the browser will
   // enforce unsafe eval for us.
   if (hasValidScriptSrcEnforcement) {
-    return true;
+    return [true];
   }
 
   // 2. If we have no script-src directives, the browser will fall back to
@@ -95,7 +95,7 @@ export function checkCSPForEvals(
   // with no `unsafe-eval`, the browser will enforce for us.
   if (!hasScriptSrcDirectiveForEnforce) {
     if (getIsValidDefaultSrc(cspHeaders)) {
-      return true;
+      return [true];
     }
   }
 
@@ -112,8 +112,7 @@ export function checkCSPForEvals(
   // 3. Thus, if we've gotten this far and we have no report headers, the page
   // should be considered invalid.
   if (!cspReportHeaders || cspReportHeaders.length === 0) {
-    updateCurrentState(STATES.INVALID, 'Missing CSP report-only header');
-    return false;
+    return [false, 'Missing CSP report-only header'];
   }
 
   // Check if at least one header has the correct report setup
@@ -131,15 +130,11 @@ export function checkCSPForEvals(
   //  b. We have no script-src, and at least one default-src without unsafe-eval
   // Then we must invalidate because there is nothing preventing unsafe-eval.
   if (!hasValidScriptSrcReport && !hasValidDefaultSrcReport) {
-    updateCurrentState(
-      STATES.INVALID,
-      'Missing unsafe-eval from CSP report-only header',
-    );
-    return false;
+    return [false, 'Missing unsafe-eval from CSP report-only header'];
   }
 
   // 5. If we've gotten here without throwing, we can start scanning for violations
   // from our report-only headers.
   scanForCSPEvalReportViolations();
-  return true;
+  return [true];
 }
