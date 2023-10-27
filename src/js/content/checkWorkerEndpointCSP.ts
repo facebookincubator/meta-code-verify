@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {Origin, ORIGIN_HOST, STATES} from '../config';
+import {Origin, ORIGIN_HOST} from '../config';
 import {getCSPHeadersFromWebRequestResponse} from '../shared/getCSPHeadersFromWebRequestResponse';
 import {checkCSPForEvals} from './checkCSPForEvals';
 import {doesWorkerUrlConformToCSP} from './doesWorkerUrlConformToCSP';
 import {parseCSPString} from './parseCSPString';
-import {updateCurrentState} from './updateCurrentState';
+import {invalidateAndThrow} from './updateCurrentState';
 
 /**
  * Dedicated Workers can nest workers, we need to check their CSPs.
@@ -89,8 +89,9 @@ export function isWorkerEndpointCSPValid(
     .map(h => h.value)
     .filter((header): header is string => !!header);
 
-  if (!checkCSPForEvals(cspHeaders, cspReportHeaders)) {
-    return [false, ''];
+  const [evalIsValid, reason] = checkCSPForEvals(cspHeaders, cspReportHeaders);
+  if (!evalIsValid) {
+    return [false, reason];
   }
 
   if (!isWorkerSrcValid(cspHeaders, host, documentWorkerCSPs)) {
@@ -111,16 +112,15 @@ export function checkWorkerEndpointCSP(
   response: chrome.webRequest.WebResponseCacheDetails,
   documentWorkerCSPs: Array<Set<string>>,
   origin: Origin,
-): boolean {
+): void {
   const [valid, reason] = isWorkerEndpointCSPValid(
     response,
     documentWorkerCSPs,
     origin,
   );
   if (!valid) {
-    updateCurrentState(STATES.INVALID, reason);
+    invalidateAndThrow(reason);
   }
-  return valid;
 }
 
 function cspValuesExcludeBlobAndData(cspValues: Set<string>): boolean {
