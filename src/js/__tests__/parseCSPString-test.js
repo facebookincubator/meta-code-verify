@@ -57,4 +57,14 @@ describe('parseCSPString', () => {
       ]),
     );
   });
+  it('Can still parse keys when invalid characters are present', () => {
+    expect(
+      parseCSPString(`default-src 'self';          script-src 'none';`),
+    ).toEqual(
+      new Map([
+        ['default-src', new Set(["'self'"])],
+        ['script-src', new Set(["'none'"])],
+      ]),
+    );
+  });
 });
