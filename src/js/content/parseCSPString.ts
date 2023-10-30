@@ -8,7 +8,7 @@
 export function parseCSPString(csp: string): Map<string, Set<string>> {
   const directiveStrings = csp.split(';');
   return directiveStrings.reduce((map, directiveString) => {
-    const [directive, ...values] = directiveString.split(' ');
+    const [directive, ...values] = directiveString.toLowerCase().split(' ');
     return map.set(directive, new Set(values));
   }, new Map());
 }
