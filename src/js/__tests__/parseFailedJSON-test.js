@@ -47,7 +47,6 @@ describe('parseFailedJSON', () => {
       node.textContent = '{}';
     }, 200);
     jest.runAllTimers();
-    console.log(getFailedForTestDoNotUse());
     setTimeout(() => {
       expect(getFailedForTestDoNotUse()).toBe(null);
     }, 200);

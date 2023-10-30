@@ -350,4 +350,28 @@ describe('checkCSPForEvals', () => {
       expect(isValid).toBeFalsy();
     });
   });
+  describe('Case insensitive CSPs', () => {
+    it('Works with mixed case CSP', () => {
+      const [isValid] = checkCSPForEvals(
+        [
+          `default-src data: blob: 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';` +
+            `sCriPt-src *.facebook.com *.fbcdn.net blob: data: 'self' 'wasm-UNsafe-eval';`,
+        ],
+        [],
+        ORIGIN_TYPE.FACEBOOK,
+      );
+      expect(isValid).toBeTruthy();
+    });
+    it('Blocks invalid mixed case CSP', () => {
+      const [isValid] = checkCSPForEvals(
+        [
+          `default-src data: blob: 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';` +
+            `sCriPt-src *.facebook.com *.fbcdn.net blob: data: 'self' 'UNsafe-eval';`,
+        ],
+        [],
+        ORIGIN_TYPE.FACEBOOK,
+      );
+      expect(isValid).toBeFalsy();
+    });
+  });
 });
