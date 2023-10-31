@@ -26,8 +26,6 @@ import {
   updateCurrentState,
   invalidateAndThrow,
 } from './content/updateCurrentState';
-import checkElementForViolatingJSUri from './content/checkElementForViolatingJSUri';
-import {checkElementForViolatingAttributes} from './content/checkElementForViolatingAttributes';
 import {sendMessageToBackground} from './shared/sendMessageToBackground';
 import {parseFailedJSON} from './content/parseFailedJSON';
 import genSourceText from './content/genSourceText';
@@ -329,18 +327,11 @@ export function storeFoundJS(scriptNodeMaybe: HTMLScriptElement): void {
   }
 }
 
-function checkNodeForViolations(element: Element): void {
-  checkElementForViolatingJSUri(element);
-  checkElementForViolatingAttributes(element);
-}
-
 export function hasInvalidScripts(scriptNodeMaybe: Node): void {
   // if not an HTMLElement ignore it!
   if (scriptNodeMaybe.nodeType !== Node.ELEMENT_NODE) {
     return;
   }
-
-  checkNodeForViolations(scriptNodeMaybe as Element);
 
   if (scriptNodeMaybe.nodeName.toLowerCase() === 'script') {
     storeFoundJS(scriptNodeMaybe as HTMLScriptElement);
@@ -354,7 +345,6 @@ export function hasInvalidScripts(scriptNodeMaybe: Node): void {
 export const scanForScripts = (): void => {
   const allElements = document.getElementsByTagName('*');
   Array.from(allElements).forEach(element => {
-    checkNodeForViolations(element);
     // next check for existing script elements and if they're violating
     if (element.nodeName.toLowerCase() === 'script') {
       storeFoundJS(element as HTMLScriptElement);
@@ -377,11 +367,6 @@ export const scanForScripts = (): void => {
               hasInvalidScripts(checkScript);
             }
           });
-        } else if (
-          mutation.type === 'attributes' &&
-          mutation.target.nodeType === Node.ELEMENT_NODE
-        ) {
-          checkNodeForViolations(mutation.target as Element);
         }
       });
     });
