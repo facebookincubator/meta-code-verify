@@ -8,7 +8,6 @@
 'use strict';
 
 import {jest} from '@jest/globals';
-import {STATES} from '../config';
 import {setCurrentOrigin} from '../content/updateCurrentState';
 import {
   getFailedForTestDoNotUse,
