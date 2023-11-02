@@ -33,6 +33,7 @@ import isPathnameExcluded from './content/isPathNameExcluded';
 import {doesWorkerUrlConformToCSP} from './content/doesWorkerUrlConformToCSP';
 import {checkWorkerEndpointCSP} from './content/checkWorkerEndpointCSP';
 import {MessagePayload} from './shared/MessageTypes';
+import {pushToOrCreateArrayInMap} from './shared/nestedDataHelpers';
 
 type ContentScriptConfig = {
   checkLoggedInFromCookie: boolean;
@@ -228,10 +229,6 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
 }
 
 function handleScriptNode(scriptNode: HTMLScriptElement): void {
-  // Need to get the src of the JS
-  let scriptDetails: ScriptDetails;
-  let version = UNINITIALIZED;
-
   if (originConfig.scriptsShouldHaveManifestProp) {
     const dataBtManifest = scriptNode.getAttribute('data-btmanifest');
     if (dataBtManifest == null) {
@@ -239,14 +236,36 @@ function handleScriptNode(scriptNode: HTMLScriptElement): void {
         `No data-btmanifest attribute found on script ${scriptNode.src}`,
       );
     }
-    version = dataBtManifest.split('_')[0];
-    const otherType = dataBtManifest.split('_')[1];
-    scriptDetails = {
+
+    // Scripts may contain packages from both main and longtail manifests,
+    // e.g. "1009592080_main,1009592080_longtail"
+    const [manifest1, manifest2] = dataBtManifest.split(',');
+
+    // If this scripts contains packages from both main and longtail manifests
+    // then require both manifests to be loaded before processing this script,
+    // otherwise use the single type specified.
+    const otherType = manifest2 ? BOTH : manifest1.split('_')[1];
+
+    // It is safe to assume a script will not contain packages from different
+    // versions, so we can use the first manifest version as the script version.
+    const version = manifest1.split('_')[0];
+
+    if (!version) {
+      invalidateAndThrow(
+        `Unable to parse a valid version from the data-btmanifest property of ${scriptNode.src}`,
+      );
+    }
+
+    const scriptDetails = {
       src: scriptNode.src,
       otherType,
     };
+
     ALL_FOUND_SCRIPT_TAGS.add(scriptNode.src);
+    pushToOrCreateArrayInMap(FOUND_SCRIPTS, version, scriptDetails);
   } else {
+    let scriptDetails: ScriptDetails;
+
     if (scriptNode.src !== '') {
       scriptDetails = {
         src: scriptNode.src,
@@ -266,17 +285,8 @@ function handleScriptNode(scriptNode: HTMLScriptElement): void {
         otherType: currentFilterType,
       };
     }
-  }
 
-  const scriptsForVersion = FOUND_SCRIPTS.get(version);
-  if (scriptsForVersion) {
-    scriptsForVersion.push(scriptDetails);
-  } else {
-    if (version != UNINITIALIZED) {
-      FOUND_SCRIPTS.set(version, [scriptDetails]);
-    } else {
-      FOUND_SCRIPTS.get(FOUND_SCRIPTS.keys().next().value)?.push(scriptDetails);
-    }
+    FOUND_SCRIPTS.get(FOUND_SCRIPTS.keys().next().value)?.push(scriptDetails);
   }
 
   updateCurrentState(STATES.PROCESSING);
