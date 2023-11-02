@@ -161,6 +161,10 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
     // If this is the first manifest we've found, start processing scripts for
     // that type. If we have encountered a second manifest, we can assume both
     // main and longtail manifests are present.
+
+    // If a session lasts long enough that the user loads code from a new version,
+    // the code for adding the new manifests ensures that they are loaded before
+    // any new scripts, so we can safely process scripts for both types.
     if (currentFilterType === UNINITIALIZED) {
       currentFilterType = otherType;
     } else {
