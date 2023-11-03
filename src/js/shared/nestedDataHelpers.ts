@@ -31,3 +31,16 @@ export function setOrUpdateSetInMap<OuterKey, Value>(
   }
   return outerMap;
 }
+
+export function pushToOrCreateArrayInMap<OuterKey, Value>(
+  outerMap: Map<OuterKey, Array<Value>>,
+  outerKey: OuterKey,
+  value: Value,
+): Map<OuterKey, Array<Value>> {
+  const innerArray = outerMap.get(outerKey) ?? [];
+  innerArray.push(value);
+  if (!outerMap.has(outerKey)) {
+    outerMap.set(outerKey, innerArray);
+  }
+  return outerMap;
+}
