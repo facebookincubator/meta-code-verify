@@ -61,24 +61,31 @@ const SOURCE_SCRIPTS = new Map();
  * */
 const INLINE_SCRIPTS: Array<Map<string, string>> = [];
 
-// Map<version, Array<ScriptDetails>>
-export const UNINITIALIZED = 'UNINITIALIZED';
-const BOTH = 'BOTH';
-let currentFilterType = UNINITIALIZED;
+export const UNKNOWN = 'UNKNOWN';
+
+// Filter types
+const MANIFEST_NOT_LOADED = 'MANIFEST_NOT_LOADED';
+const BOTH_MANIFESTS_LOADED = 'BOTH_MANIFESTS_LOADED';
+const MANIFEST_LOADED = 'MANIFEST_LOADED';
+const ANY_FILTER = 'ANY_FILTER';
+
+const filterTypeByVersion: Map<string, string> = new Map([
+  [UNKNOWN, MANIFEST_NOT_LOADED],
+]);
 export const FOUND_SCRIPTS = new Map<string, Array<ScriptDetails>>([
-  [UNINITIALIZED, []],
+  [UNKNOWN, []],
 ]);
 const ALL_FOUND_SCRIPT_TAGS = new Set();
 
 type ScriptDetailsWithSrc = {
-  otherType: string;
+  filterTypeRequiredToProcess: string;
   src: string;
 };
 type ScriptDetailsRaw = {
   type: typeof MESSAGE_TYPE.RAW_JS;
   rawjs: string;
   lookupKey: string;
-  otherType: string;
+  filterTypeRequiredToProcess: string;
 };
 type ScriptDetails = ScriptDetailsRaw | ScriptDetailsWithSrc;
 let manifestTimeoutID: string | number = '';
@@ -130,31 +137,24 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
   }
 
   let leaves = rawManifest.leaves;
-  let otherType = '';
+  let filterType: string;
   let roothash = rawManifest.root;
-  let version = rawManifest.version;
+  let version: string;
   let messagePayload: MessagePayload;
+
   if (originConfig.longTailIsLoadedConditionally) {
     leaves = rawManifest.manifest;
     const otherHashes = rawManifest.manifest_hashes;
     roothash = otherHashes.combined_hash;
 
-    const maybeManifestType = manifestNode.getAttribute('data-manifest-type');
-    if (maybeManifestType === null) {
-      updateCurrentState(
-        STATES.INVALID,
-        'manifest is missing `data-manifest-type` prop',
-      );
-    } else {
-      otherType = maybeManifestType;
+    const manifestType = manifestNode.getAttribute('data-manifest-type');
+    if (manifestType === null) {
+      invalidateAndThrow('manifest is missing `data-manifest-type` prop');
     }
 
     const maybeManifestRev = manifestNode.getAttribute('data-manifest-rev');
     if (maybeManifestRev === null) {
-      updateCurrentState(
-        STATES.INVALID,
-        'manifest is missing `data-manifest-rev` prop',
-      );
+      invalidateAndThrow('manifest is missing `data-manifest-rev` prop');
     } else {
       version = maybeManifestRev;
     }
@@ -162,10 +162,10 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
     // If this is the first manifest we've found, start processing scripts for
     // that type. If we have encountered a second manifest, we can assume both
     // main and longtail manifests are present.
-    if (currentFilterType === UNINITIALIZED) {
-      currentFilterType = otherType;
+    if (filterTypeByVersion.has(version)) {
+      filterType = BOTH_MANIFESTS_LOADED;
     } else {
-      currentFilterType = BOTH;
+      filterType = manifestType;
     }
 
     messagePayload = {
@@ -179,7 +179,8 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
     };
   } else {
     // for whatsapp
-    currentFilterType = BOTH;
+    version = rawManifest.version;
+    filterType = MANIFEST_LOADED;
 
     messagePayload = {
       type: MESSAGE_TYPE.LOAD_MANIFEST,
@@ -191,23 +192,18 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
     };
   }
 
-  // now that we know the actual version of the scripts, transfer the ones we know about.
-  // also set the correct manifest type, "otherType" for already collected scripts
-  const foundScriptsWithoutVersion = FOUND_SCRIPTS.get(UNINITIALIZED);
-  if (foundScriptsWithoutVersion) {
-    const scriptsWithUpdatedType = foundScriptsWithoutVersion.map(script => ({
-      ...script,
-      otherType: currentFilterType,
-    }));
+  filterTypeByVersion.set(version, filterType);
 
-    FOUND_SCRIPTS.set(version, [
-      ...scriptsWithUpdatedType,
-      ...(FOUND_SCRIPTS.get(version) ?? []),
-    ]);
-    FOUND_SCRIPTS.delete(UNINITIALIZED);
-  } else if (!FOUND_SCRIPTS.has(version)) {
-    // New version is being loaded in
-    FOUND_SCRIPTS.set(version, []);
+  // Initialize this version in FOUND_SCRIPTS if it doesn't already exist.
+  const scriptsForVersion = FOUND_SCRIPTS.get(version) ?? [];
+  FOUND_SCRIPTS.set(version, scriptsForVersion);
+
+  // Now that we definitely have a version, we can grab any scripts with an
+  // unknown version and move them into that version's queue.
+  const foundScriptsWithoutVersion = FOUND_SCRIPTS.get(UNKNOWN);
+  if (foundScriptsWithoutVersion) {
+    scriptsForVersion.push(...foundScriptsWithoutVersion);
+    FOUND_SCRIPTS.delete(UNKNOWN);
   }
 
   sendMessageToBackground(messagePayload, response => {
@@ -244,7 +240,9 @@ function handleScriptNode(scriptNode: HTMLScriptElement): void {
     // If this scripts contains packages from both main and longtail manifests
     // then require both manifests to be loaded before processing this script,
     // otherwise use the single type specified.
-    const otherType = manifest2 ? BOTH : manifest1.split('_')[1];
+    const filterTypeRequiredToProcess = manifest2
+      ? BOTH_MANIFESTS_LOADED
+      : manifest1.split('_')[1];
 
     // It is safe to assume a script will not contain packages from different
     // versions, so we can use the first manifest version as the script version.
@@ -258,7 +256,7 @@ function handleScriptNode(scriptNode: HTMLScriptElement): void {
 
     const scriptDetails = {
       src: scriptNode.src,
-      otherType,
+      filterTypeRequiredToProcess,
     };
 
     ALL_FOUND_SCRIPT_TAGS.add(scriptNode.src);
@@ -269,7 +267,7 @@ function handleScriptNode(scriptNode: HTMLScriptElement): void {
     if (scriptNode.src !== '') {
       scriptDetails = {
         src: scriptNode.src,
-        otherType: currentFilterType,
+        filterTypeRequiredToProcess: MANIFEST_LOADED,
       };
       ALL_FOUND_SCRIPT_TAGS.add(scriptNode.src);
     } else {
@@ -282,11 +280,14 @@ function handleScriptNode(scriptNode: HTMLScriptElement): void {
         type: MESSAGE_TYPE.RAW_JS,
         rawjs: scriptNode.innerHTML,
         lookupKey: hashLookupKey,
-        otherType: currentFilterType,
+        filterTypeRequiredToProcess: MANIFEST_LOADED,
       };
     }
 
-    FOUND_SCRIPTS.get(FOUND_SCRIPTS.keys().next().value)?.push(scriptDetails);
+    const latestVersionInMap = Array.from(FOUND_SCRIPTS.values()).pop();
+    if (latestVersionInMap) {
+      latestVersionInMap.push(scriptDetails);
+    }
   }
 
   updateCurrentState(STATES.PROCESSING);
@@ -450,15 +451,20 @@ async function processJSWithSrc(
 
 export const processFoundJS = async (version: string): Promise<void> => {
   const scriptsForVersion = FOUND_SCRIPTS.get(version);
-  if (!scriptsForVersion) {
+  const filterTypeForVersion = filterTypeByVersion.get(version);
+  if (!scriptsForVersion || !filterTypeForVersion) {
     invalidateAndThrow(
       `attempting to process scripts for nonexistent version ${version}`,
     );
   }
   const scripts = scriptsForVersion.splice(0).filter(script => {
     if (
-      script.otherType === currentFilterType ||
-      [BOTH, UNINITIALIZED].includes(currentFilterType)
+      (script.filterTypeRequiredToProcess === ANY_FILTER,
+      [
+        script.filterTypeRequiredToProcess,
+        BOTH_MANIFESTS_LOADED,
+        MANIFEST_LOADED,
+      ].includes(filterTypeForVersion))
     ) {
       return true;
     } else {
@@ -639,13 +645,17 @@ chrome.runtime.onMessage.addListener(request => {
         log: `Tab is processing ${request.response.url}`,
       });
       ALL_FOUND_SCRIPT_TAGS.add(request.response.url);
-      const uninitializedScripts = FOUND_SCRIPTS.get(
-        FOUND_SCRIPTS.keys().next().value,
-      );
-      if (uninitializedScripts) {
-        uninitializedScripts.push({
+
+      // Normally we use data attributes to get the version and type for a script.
+      // We cannot do that in this case because we're intercepting a request and thus
+      // have no script tag. Instead we will assume that this belongs to the latest
+      // version, and will start processing it as soon as we have loaded any manifest
+      // for that version.
+      const latestVersionInMap = Array.from(FOUND_SCRIPTS.values()).pop();
+      if (latestVersionInMap) {
+        latestVersionInMap.push({
           src: request.response.url,
-          otherType: currentFilterType,
+          filterTypeRequiredToProcess: ANY_FILTER,
         });
       }
       updateCurrentState(STATES.PROCESSING);
