@@ -104,15 +104,6 @@
 	"i18ndownloadSourcePrompt": {
 		"message": "Download Source Code"
 	},
-	"i18nReportBugStatusHeader": {
-		"message": "Report a Bug"
-	},
-	"i18nReportBugStatusMessage": {
-		"message": "Having a problem? Click below to report the bug."
-	},
-	"i18nReportBugButton": {
-		"message": "Report Bug"
-	},
 	"i18nDownloadPrompt": {
 		"message": "Download"
 	},
