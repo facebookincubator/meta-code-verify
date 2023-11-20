@@ -22,7 +22,8 @@
   flex-direction: column;
 }
 
-.anomaly_learn_more_button {
+.anomaly_learn_more_button,
+.download_button {
   border: 1px solid #cbd2d9;
   box-sizing: border-box;
   border-radius: 4px;
