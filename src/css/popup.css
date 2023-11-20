@@ -22,8 +22,7 @@
   flex-direction: column;
 }
 
-.anomaly_learn_more_button,
-.report_issue_button {
+.anomaly_learn_more_button {
   border: 1px solid #cbd2d9;
   box-sizing: border-box;
   border-radius: 4px;
