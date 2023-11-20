@@ -22,13 +22,14 @@
   flex-direction: column;
 }
 
-.anomaly_learn_more_button, .report_issue_button {
-  border: 1px solid #CBD2D9;
+.anomaly_learn_more_button,
+.report_issue_button {
+  border: 1px solid #cbd2d9;
   box-sizing: border-box;
   border-radius: 4px;
   height: 36px;
   width: 230px;
-  background: #1C2B33;
+  background: #1c2b33;
   font-family: SF Pro Text;
   font-style: normal;
   font-weight: 500;
@@ -36,18 +37,18 @@
   line-height: 20px;
   text-align: center;
   letter-spacing: -0.23px;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .download_button,
 .risk_learn_more_button,
 .timeout_learn_more_button {
-  border: 1px solid #CBD2D9;
+  border: 1px solid #cbd2d9;
   box-sizing: border-box;
   border-radius: 4px;
   height: 36px;
   width: 111px;
-  background: #FFFFFF;
+  background: #ffffff;
   font-family: SF Pro Text;
   font-style: normal;
   font-weight: 500;
@@ -55,7 +56,7 @@
   line-height: 20px;
   text-align: center;
   letter-spacing: -0.23px;
-  color: #1C2B33;
+  color: #1c2b33;
 }
 
 .download_header {
@@ -76,10 +77,16 @@
   padding-bottom: 21px;
 }
 
+.download_body {
+  width: 262px;
+  height: 164px;
+  padding-bottom: 12px;
+}
+
 .error_body {
   width: 262px;
   height: 288px;
-  background: #FFFFFF;
+  background: #ffffff;
   margin: 0;
 }
 
@@ -103,7 +110,7 @@ header {
 .menu_right_sidebar {
   display: flex;
   flex-direction: column;
-  background: #F1F4F7;
+  background: #f1f4f7;
   box-shadow: 0px 0px 16px rgba(52, 72, 84, 0.05);
   height: 227px;
   width: 209px;
@@ -123,7 +130,7 @@ header {
   font-size: 15px;
   line-height: 20px;
   letter-spacing: -0.23px;
-  color: #1C2B33;
+  color: #1c2b33;
   flex: none;
   order: 1;
   flex-grow: 1;
@@ -172,7 +179,7 @@ header {
 .loading_body {
   width: 257px;
   height: 154px;
-  background: #FFFFFF;
+  background: #ffffff;
   margin: 0;
 }
 
@@ -183,12 +190,12 @@ header {
 }
 
 .retry_button {
-  border: 1px solid #CBD2D9;
+  border: 1px solid #cbd2d9;
   box-sizing: border-box;
   border-radius: 4px;
   height: 36px;
   width: 111px;
-  background: #1C2B33;
+  background: #1c2b33;
   font-family: SF Pro Text;
   font-style: normal;
   font-weight: 500;
@@ -196,7 +203,7 @@ header {
   line-height: 20px;
   text-align: center;
   letter-spacing: -0.23px;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .row_image {
@@ -226,7 +233,7 @@ header {
   text-align: center;
   letter-spacing: -0.08px;
 
-  color: #1C2B33;
+  color: #1c2b33;
   margin-top: 12px;
 }
 
@@ -238,18 +245,18 @@ header {
   line-height: 18px;
   text-align: center;
   letter-spacing: -0.08px;
-  color: #63788A;
+  color: #63788a;
   margin: 0 36px;
 }
 
 .status_message_highlight {
-  color: #1C2B33;
+  color: #1c2b33;
 }
 
 .valid_body {
   width: 262px;
   height: 164px;
-  background: #FFFFFF;
+  background: #ffffff;
   margin: 0;
 }
 
@@ -262,14 +269,14 @@ header {
 .warning_risk_body {
   width: 262px;
   height: 270px;
-  background: #FFFFFF;
+  background: #ffffff;
   margin: 0;
 }
 
 .warning_timeout_body {
   width: 262px;
   height: 216px;
-  background: #FFFFFF;
+  background: #ffffff;
   margin: 0;
 }
 
