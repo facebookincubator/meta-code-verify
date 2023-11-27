@@ -82,71 +82,65 @@ function attachListeners(origin: string | null): void {
 
   const menuRowList = document.getElementsByClassName('menu_row');
 
-  menuRowList[0].addEventListener('click', _evt => {
+  const learnMoreMenuItem = menuRowList[0];
+  learnMoreMenuItem.addEventListener('click', _evt => {
     chrome.tabs.create({url: learnMoreUrls.about});
   });
-  if (menuRowList[0] instanceof HTMLElement) {
-    menuRowList[0].style.cursor = 'pointer';
+  if (learnMoreMenuItem instanceof HTMLElement) {
+    learnMoreMenuItem.style.cursor = 'pointer';
+  }
+  const downloadReleaseSourceMenuItem = menuRowList[2];
+  downloadReleaseSourceMenuItem.addEventListener('click', _evt => {
+    sendMessageToActiveTab('downloadReleaseSource');
+  });
+  if (downloadReleaseSourceMenuItem instanceof HTMLElement) {
+    downloadReleaseSourceMenuItem.style.cursor = 'pointer';
+  }
+  if (origin === ORIGIN_TYPE.WHATSAPP) {
+    downloadReleaseSourceMenuItem.remove();
   }
 
-  const downloadTextList = document.getElementsByClassName(
+  const downloadPageSourceText = document.getElementsByClassName(
     'status_message_highlight',
-  );
+  )[0];
   const downloadSrcButton = document.getElementById('i18nDownloadSourceButton');
 
   if (DOWNLOAD_JS_ENABLED) {
-    menuRowList[1].addEventListener('click', () => updateDisplay('download'));
-    if (menuRowList[1] instanceof HTMLElement) {
-      menuRowList[1].style.cursor = 'pointer';
+    const downloadPageSourceMenuItem = menuRowList[1];
+    downloadPageSourceMenuItem.addEventListener('click', () =>
+      updateDisplay('download'),
+    );
+    if (downloadPageSourceMenuItem instanceof HTMLElement) {
+      downloadPageSourceMenuItem.style.cursor = 'pointer';
     }
 
-    downloadTextList[0].addEventListener('click', () => {
-      chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-        const tabId = tabs[0].id;
-        if (tabId) {
-          chrome.tabs.sendMessage(
-            tabId,
-            {greeting: 'downloadSource'},
-            () => {},
-          );
-        }
-      });
+    downloadPageSourceText.addEventListener('click', () => {
+      sendMessageToActiveTab('downloadSource');
     });
-    if (downloadTextList[0] instanceof HTMLElement) {
-      downloadTextList[0].style.cursor = 'pointer';
+    if (downloadPageSourceText instanceof HTMLElement) {
+      downloadPageSourceText.style.cursor = 'pointer';
     }
 
     if (downloadSrcButton) {
       downloadSrcButton.onclick = () => {
-        chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-          const tabId = tabs[0].id;
-          if (tabId) {
-            chrome.tabs.sendMessage(
-              tabId,
-              {greeting: 'downloadSource'},
-              () => {},
-            );
-          }
-        });
+        sendMessageToActiveTab('downloadSource');
       };
       downloadSrcButton.style.cursor = 'pointer';
     }
 
-    downloadTextList[0].addEventListener('click', () =>
+    downloadPageSourceText.addEventListener('click', () =>
       updateDisplay('download'),
     );
-    if (downloadTextList[0] instanceof HTMLElement) {
-      downloadTextList[0].style.cursor = 'pointer';
+    if (downloadPageSourceText instanceof HTMLElement) {
+      downloadPageSourceText.style.cursor = 'pointer';
     }
   } else {
     menuRowList[1].remove();
-    downloadTextList[0].remove();
+    downloadPageSourceText.remove();
     const downloadMessagePartTwo = document.getElementById(
       'i18nValidationFailureStatusMessagePartTwo',
     );
-    if (downloadMessagePartTwo != null) {
-      downloadMessagePartTwo.remove();
-    }
+    downloadMessagePartTwo?.remove();
     downloadSrcButton?.remove();
   }
 
@@ -221,6 +215,15 @@ function setUpBackgroundMessageHandler(tabId: string | null): void {
       message.tabId.toString() === tabId
     ) {
       updateDisplay(message.state);
+    }
+  });
+}
+
+function sendMessageToActiveTab(message: string): void {
+  chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
+    const tabId = tabs[0].id;
+    if (tabId) {
+      chrome.tabs.sendMessage(tabId, {greeting: message}, () => {});
     }
   });
 }
