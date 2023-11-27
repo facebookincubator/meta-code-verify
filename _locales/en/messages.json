@@ -102,7 +102,10 @@
 		"message": "Learn More"
 	},
 	"i18ndownloadSourcePrompt": {
-		"message": "Download Source Code"
+		"message": "Download Page Source Code"
+	},
+	"i18ndownloadReleaseSourcePrompt": {
+		"message": "Download Release Source Code"
 	},
 	"i18nDownloadPrompt": {
 		"message": "Download"

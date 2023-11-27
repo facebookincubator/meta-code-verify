@@ -61,10 +61,10 @@ const SOURCE_SCRIPTS = new Map();
  * */
 const INLINE_SCRIPTS: Array<Map<string, string>> = [];
 
-// Map<version, Array<ScriptDetails>>
 export const UNINITIALIZED = 'UNINITIALIZED';
 const BOTH = 'BOTH';
 let currentFilterType = UNINITIALIZED;
+// Map<version, Array<ScriptDetails>>
 export const FOUND_SCRIPTS = new Map<string, Array<ScriptDetails>>([
   [UNINITIALIZED, []],
 ]);
@@ -655,5 +655,15 @@ chrome.runtime.onMessage.addListener(request => {
       STATES.INVALID,
       `Sniffable MIME type resource: ${request.src}`,
     );
+  } else if (request.greeting === 'downloadReleaseSource') {
+    for (const key of FOUND_SCRIPTS.keys()) {
+      if (key !== 'UNINITIALIZED') {
+        window.open(
+          `https://www.facebook.com/btarchive/${key}/${getCurrentOrigin().toLowerCase()}`,
+          '_blank',
+          'noopener,noreferrer',
+        );
+      }
+    }
   }
 });
