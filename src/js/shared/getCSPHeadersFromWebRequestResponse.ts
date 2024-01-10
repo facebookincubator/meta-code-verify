@@ -23,15 +23,15 @@ export function getCSPHeadersFromWebRequestResponse(
 
   // A single header value can be a comma seperated list of headers
   // https://www.w3.org/TR/CSP3/#parse-serialized-policy-list
-  const individualHeadears: Array<chrome.webRequest.HttpHeader> = [];
+  const individualHeaders: Array<chrome.webRequest.HttpHeader> = [];
   cspHeaders.forEach(header => {
     if (header.value?.includes(', ')) {
       header.value.split(', ').forEach(headerValue => {
-        individualHeadears.push({name: header.name, value: headerValue});
+        individualHeaders.push({name: header.name, value: headerValue});
       });
     } else {
-      individualHeadears.push(header);
+      individualHeaders.push(header);
     }
   });
-  return individualHeadears;
+  return individualHeaders;
 }
