@@ -57,7 +57,7 @@
     ],
     "permissions": [
         "webRequest",
-        "https://*.privacy-auditability.cloudflare.com/",
+        "https://*.privacy-auditability.cloudflare.com/*",
         "https://static.xx.fbcdn.net/",
         "https://static.cdninstagram.com/",
         "*://*.messenger.com/*",
