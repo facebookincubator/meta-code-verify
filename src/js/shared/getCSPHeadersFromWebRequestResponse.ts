@@ -13,11 +13,25 @@ export function getCSPHeadersFromWebRequestResponse(
   if (!responseHeaders) {
     throw new Error('Request is missing responseHeaders');
   }
-  return responseHeaders.filter(
+  const cspHeaders = responseHeaders.filter(
     header =>
       header.name.toLowerCase() ===
       (reportHeader
         ? 'content-security-policy-report-only'
         : 'content-security-policy'),
   );
+
+  // A single header value can be a comma seperated list of headers
+  // https://www.w3.org/TR/CSP3/#parse-serialized-policy-list
+  const individualHeadears: Array<chrome.webRequest.HttpHeader> = [];
+  cspHeaders.forEach(header => {
+    if (header.value?.includes(', ')) {
+      header.value.split(', ').forEach(headerValue => {
+        individualHeadears.push({name: header.name, value: headerValue});
+      });
+    } else {
+      individualHeadears.push(header);
+    }
+  });
+  return individualHeadears;
 }
