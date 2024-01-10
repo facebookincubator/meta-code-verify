@@ -37,18 +37,40 @@ export default function setupCSPListener(
            */
           frameId = 0;
         }
-        setOrUpdateMapInMap(
-          cspHeadersMap,
-          details.tabId,
-          frameId,
-          cspHeaders.map(h => h.value),
-        );
-        setOrUpdateMapInMap(
-          cspReportHeadersMap,
-          details.tabId,
-          frameId,
-          cspReportHeaders.map(h => h.value),
-        );
+        if (details.tabId !== 0) {
+          setOrUpdateMapInMap(
+            cspHeadersMap,
+            details.tabId,
+            frameId,
+            cspHeaders.map(h => h.value),
+          );
+          setOrUpdateMapInMap(
+            cspReportHeadersMap,
+            details.tabId,
+            frameId,
+            cspReportHeaders.map(h => h.value),
+          );
+        } else {
+          // Safari, https://developer.apple.com/forums/thread/668159
+          // Best guess effort, this should be fast enough that we can
+          // get the correct tabID even if the user is opening multiple tabs
+          chrome.tabs.query({active: true, currentWindow: true}).then(tabs => {
+            if (tabs.length !== 0) {
+              setOrUpdateMapInMap(
+                cspHeadersMap,
+                tabs[0].id,
+                frameId,
+                cspHeaders.map(h => h.value),
+              );
+              setOrUpdateMapInMap(
+                cspReportHeadersMap,
+                tabs[0].id,
+                frameId,
+                cspReportHeaders.map(h => h.value),
+              );
+            }
+          });
+        }
       }
     },
     {
