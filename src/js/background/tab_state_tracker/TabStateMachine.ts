@@ -23,10 +23,12 @@ function getChromeV3Action() {
     return self.chrome.action;
   } else {
     return {
-      setIcon: self.chrome.pageAction.setIcon,
-      enable: self.chrome.pageAction.show,
-      disable: self.chrome.pageAction.hide,
-      setPopup: self.chrome.pageAction.setPopup,
+      setIcon: (_: chrome.pageAction.IconDetails) =>
+        self.chrome.pageAction.setIcon(_),
+      disable: (tabId: number) => self.chrome.pageAction.hide?.(tabId),
+      enable: (tabId: number) => self.chrome.pageAction.show?.(tabId),
+      setPopup: (_: chrome.pageAction.PopupDetails) =>
+        self.chrome.pageAction.setPopup(_),
     };
   }
 }
