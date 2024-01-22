@@ -31,9 +31,18 @@ export default function setupCSPListener(
           details.frameId !== 0
         ) {
           /**
-           * This seems to be unintended behavior in `webRequest` where
-           * frameId ends up as non-zero for prerendered documents.
-           * Tracking in https://bugs.chromium.org/p/chromium/issues/detail?id=1492006
+           * Chrome uses a non-main frame for prerender
+           * https://bugs.chromium.org/p/chromium/issues/detail?id=1492006
+           *
+           * This creates issues in tracking the document resources
+           * because content scripts *might* start sending messages
+           * to the background while the document is still in "prerender"-ing
+           * mode. When that happens the "sender" correctly has the frameID;
+           * however, at other times (if the user hits navigate/enter? quick enough)
+           * content script ends up sending messages from the "main" frame
+           * (frameId = 0). To handle the former case whenever the background
+           * receives a messages from a frame that is still in "prerendering"
+           * we assume the frameID to 0. See validateSender.ts
            */
           frameId = 0;
         }
