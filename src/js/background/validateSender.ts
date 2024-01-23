@@ -40,9 +40,15 @@ export function validateSender(
   }
 
   // If a tab is present, a frameId should always be present.
-  const frameId = sender.frameId;
+  let frameId = sender.frameId;
   if (frameId === undefined) {
     return;
+  }
+
+  // See setupCSPListener.ts for explanation
+  // @ts-expect-error Missing: type definitions in @types/chrome
+  if (sender?.documentLifecycle === 'prerender') {
+    frameId = 0;
   }
 
   return {
