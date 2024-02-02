@@ -88,6 +88,7 @@ export default function setupCSPListener(
         '*://*.facebook.com/*',
         '*://*.messenger.com/*',
         '*://*.instagram.com/*',
+        '*://*.whatsapp.com/*',
       ],
     },
     ['responseHeaders'],
