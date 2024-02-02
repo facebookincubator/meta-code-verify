@@ -34,6 +34,7 @@ export function checkCSPForWorkerSrc(
       workersSrcValues &&
       !workersSrcValues.has('data:') &&
       !workersSrcValues.has('blob:') &&
+      !workersSrcValues.has("'self'") &&
       /**
        * Ensure that worker-src doesn't have values like *.facebook.com
        * this would require us to assume that every non main-thread script

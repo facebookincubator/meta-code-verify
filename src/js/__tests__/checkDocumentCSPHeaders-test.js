@@ -272,7 +272,7 @@ describe('checkCSPForEvals', () => {
       );
       expect(isValid).toBeFalsy();
     });
-    it('Should be invalid if we have a valid worker-src', () => {
+    it('Should be valid if we have a valid worker-src', () => {
       const [isValid] = checkCSPForWorkerSrc(
         [
           `default-src data: blob: 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';` +
@@ -333,6 +333,17 @@ describe('checkCSPForEvals', () => {
           `default-src data: blob: 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';` +
             `script-src *.facebook.com *.fbcdn.net blob: data: 'self' 'wasm-unsafe-eval';` +
             'worker-src blob:',
+        ],
+        ORIGIN_TYPE.FACEBOOK,
+      );
+      expect(isValid).toBeFalsy();
+    });
+    it("Should be invalid if we have an invalid worker-src ('self')", () => {
+      const [isValid] = checkCSPForWorkerSrc(
+        [
+          `default-src data: blob: 'self' *.facebook.com *.fbcdn.net 'wasm-unsafe-eval';` +
+            `script-src *.facebook.com *.fbcdn.net blob: data: 'self' 'wasm-unsafe-eval';` +
+            "worker-src 'self';",
         ],
         ORIGIN_TYPE.FACEBOOK,
       );
