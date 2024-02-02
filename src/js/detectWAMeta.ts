@@ -10,7 +10,8 @@ import {startFor} from './contentUtils.js';
 
 startFor(
   ORIGIN_TYPE.WHATSAPP,
-  document.documentElement.classList.contains('no-js')
+  document.documentElement.classList.contains('no-js') ||
+    document.documentElement.classList.contains('js')
     ? Object.freeze({
         checkLoggedInFromCookie: false,
         enforceCSPHeaders: false,
