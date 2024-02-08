@@ -30,12 +30,7 @@ const contentScriptSteps: Array<RollupOptions> = SITES.map((site, index) => ({
     file: `dist/${target}/content${site}.js`,
     format: 'iife',
   })),
-  plugins: [
-    index === 0 ? cleanOnce() : null,
-    typescript(),
-    prettierSrc(),
-    eslint(),
-  ],
+  plugins: [cleanOnce(), typescript(), prettierSrc(), eslint()],
 }));
 
 const config: Array<RollupOptions> = contentScriptSteps.concat([
