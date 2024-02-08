@@ -21,12 +21,16 @@ function prettierSrc(): Plugin {
   return prettierBuildStart('"src/**/*.(js|ts)"');
 }
 
-const TARGETS_TO_MANIFEST_VERSION = {chrome: 'v3', edge: 'v3', firefox: 'v2'};
+const TARGETS = [
+  ['chrome', 'v3'],
+  ['edge', 'v3'],
+  ['firefox', 'v2'],
+];
 const SITES = ['WA', 'MSGR', 'FB', 'IG'];
 
 const contentScriptSteps: Array<RollupOptions> = SITES.map((site, index) => ({
   input: `src/js/detect${site}Meta.ts`,
-  output: Object.keys(TARGETS_TO_MANIFEST_VERSION).map(target => ({
+  output: TARGETS.map(([target]) => ({
     file: `dist/${target}/content${site}.js`,
     format: 'iife',
   })),
@@ -36,7 +40,7 @@ const contentScriptSteps: Array<RollupOptions> = SITES.map((site, index) => ({
 const config: Array<RollupOptions> = contentScriptSteps.concat([
   {
     input: 'src/js/background.ts',
-    output: Object.keys(TARGETS_TO_MANIFEST_VERSION).map(target => ({
+    output: TARGETS.map(([target]) => ({
       file: `dist/${target}/background.js`,
       format: 'iife',
     })),
@@ -44,14 +48,10 @@ const config: Array<RollupOptions> = contentScriptSteps.concat([
   },
   {
     input: 'src/js/popup.ts',
-    output: (
-      Object.keys(TARGETS_TO_MANIFEST_VERSION) as Array<
-        keyof typeof TARGETS_TO_MANIFEST_VERSION
-      >
-    ).map(target => ({
+    output: TARGETS.map(([target, version]) => ({
       file: `dist/${target}/popup.js`,
       format: 'iife',
-      plugins: [staticFiles(`config/${TARGETS_TO_MANIFEST_VERSION[target]}/`)],
+      plugins: [staticFiles(`config/${version}/`)],
     })),
     plugins: [
       typescript(),
