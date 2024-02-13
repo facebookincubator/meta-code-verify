@@ -60,6 +60,7 @@
         "https://*.privacy-auditability.cloudflare.com/*",
         "https://static.xx.fbcdn.net/",
         "https://static.cdninstagram.com/",
+        "https://static.whatsapp.net/",
         "*://*.messenger.com/*",
         "*://*.facebook.com/*",
         "*://*.instagram.com/*",
