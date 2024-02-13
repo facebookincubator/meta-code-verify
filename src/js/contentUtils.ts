@@ -12,6 +12,7 @@ import {
   STATES,
   Origin,
   ORIGIN_TYPE,
+  MANIFEST_TIMEOUT,
 } from './config';
 
 import {
@@ -34,6 +35,7 @@ import {doesWorkerUrlConformToCSP} from './content/doesWorkerUrlConformToCSP';
 import {checkWorkerEndpointCSP} from './content/checkWorkerEndpointCSP';
 import {MessagePayload} from './shared/MessageTypes';
 import {pushToOrCreateArrayInMap} from './shared/nestedDataHelpers';
+import ensureManifestWasOrWillBeLoaded from './content/ensureManifestWasOrWillBeLoaded';
 
 type ContentScriptConfig = {
   checkLoggedInFromCookie: boolean;
@@ -68,7 +70,8 @@ let currentFilterType = UNINITIALIZED;
 export const FOUND_SCRIPTS = new Map<string, Array<ScriptDetails>>([
   [UNINITIALIZED, []],
 ]);
-const ALL_FOUND_SCRIPT_TAGS = new Set();
+const ALL_FOUND_SCRIPT_TAGS = new Set<string>();
+const FOUND_MANIFEST_VERSIONS = new Set<string>();
 
 type ScriptDetailsWithSrc = {
   otherType: string;
@@ -217,6 +220,7 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
         clearTimeout(manifestTimeoutID);
         manifestTimeoutID = '';
       }
+      FOUND_MANIFEST_VERSIONS.add(version);
       window.setTimeout(() => processFoundJS(version), 0);
     } else {
       if ('UNKNOWN_ENDPOINT_ISSUE' === response.reason) {
@@ -262,6 +266,7 @@ function handleScriptNode(scriptNode: HTMLScriptElement): void {
     };
 
     ALL_FOUND_SCRIPT_TAGS.add(scriptNode.src);
+    ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
     pushToOrCreateArrayInMap(FOUND_SCRIPTS, version, scriptDetails);
   } else {
     let scriptDetails: ScriptDetails;
@@ -594,7 +599,7 @@ export function startFor(origin: Origin, config: ContentScriptConfig): void {
       manifestTimeoutID = window.setTimeout(() => {
         // Manifest failed to load, flag a warning to the user.
         updateCurrentState(STATES.TIMEOUT);
-      }, 45000);
+      }, MANIFEST_TIMEOUT);
     }
   }
 }

@@ -129,3 +129,5 @@ export type Origin = keyof typeof ORIGIN_TYPE;
 // Firefox and Safari currently do not support CompressionStream/showSaveFilePicker
 export const DOWNLOAD_JS_ENABLED =
   'CompressionStream' in window && 'showSaveFilePicker' in window;
+
+export const MANIFEST_TIMEOUT = 45000;
