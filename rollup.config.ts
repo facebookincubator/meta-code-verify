@@ -25,6 +25,7 @@ const TARGETS = [
   ['chrome', 'v3'],
   ['edge', 'v3'],
   ['firefox', 'v2'],
+  ['safari', 'v2'],
 ];
 const SITES = ['WA', 'MSGR', 'FB', 'IG'];
 
