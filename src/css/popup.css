@@ -5,6 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+/* We only use objects to render out SVGs so disable pointer events */
+object {
+  pointer-events: none;
+}
+
 .action_bar {
   flex-direction: row;
   justify-content: space-between;
@@ -96,6 +101,10 @@ header {
 }
 
 .menu {
+  height: 20px;
+}
+
+.menu_button {
   cursor: pointer;
   height: 20px;
 }
