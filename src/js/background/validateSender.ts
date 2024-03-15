@@ -46,7 +46,6 @@ export function validateSender(
   }
 
   // See setupCSPListener.ts for explanation
-  // @ts-expect-error Missing: type definitions in @types/chrome
   if (sender?.documentLifecycle === 'prerender') {
     frameId = 0;
   }
