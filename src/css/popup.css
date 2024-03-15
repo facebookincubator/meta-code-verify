@@ -104,9 +104,9 @@ header {
   height: 20px;
 }
 
-.menu_button {
+.menu_button,
+#close_menu {
   cursor: pointer;
-  height: 20px;
 }
 
 .menu_body {
@@ -149,6 +149,7 @@ header {
 .menu_title {
   display: flex;
   flex-direction: row;
+  align-items: center;
   justify-content: space-between;
   font-family: Optimistic Display;
   font-style: normal;
