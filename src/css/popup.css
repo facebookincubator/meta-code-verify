@@ -220,6 +220,7 @@ header {
 
 .state_boundary {
   flex-direction: column;
+  display: none;
 }
 
 .status_header {
