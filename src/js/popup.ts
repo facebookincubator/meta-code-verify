@@ -72,8 +72,8 @@ function attachListeners(origin: string | null): void {
   }
   const learnMoreUrls = ORIGIN_TO_LEARN_MORE_PAGES[origin];
 
-  const menuButtonList = document.getElementsByClassName('menu');
-  Array.from(menuButtonList).forEach(menuButton => {
+  const menuButtonsList = document.getElementsByClassName('menu_button');
+  Array.from(menuButtonsList).forEach(menuButton => {
     menuButton.addEventListener('click', () => updateDisplay('menu'));
   });
 

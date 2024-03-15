@@ -8,14 +8,16 @@
         "default_title": "Code Verify",
         "default_icon": {
             "32": "default_32.png",
+            "48": "default_48.png",
             "64": "default_64.png",
-            "128": "default_64@2x.png"
+            "128": "default_128.png"
         }
     },
     "icons":  {
         "32": "default_32.png",
+        "48": "default_48.png",
         "64": "default_64.png",
-        "128": "default_64@2x.png"
+        "128": "default_128.png"
     },
     "background": {
         "persistent": true,
