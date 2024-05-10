@@ -39,21 +39,10 @@ import ensureManifestWasOrWillBeLoaded from './content/ensureManifestWasOrWillBe
 
 type ContentScriptConfig = {
   checkLoggedInFromCookie: boolean;
-  enforceCSPHeaders: boolean;
   excludedPathnames: Array<RegExp>;
-  longTailIsLoadedConditionally: boolean;
-  scriptsShouldHaveManifestProp: boolean;
-  useCompanyManifest: boolean;
 };
 
-let originConfig: ContentScriptConfig = {
-  checkLoggedInFromCookie: false,
-  enforceCSPHeaders: false,
-  excludedPathnames: [],
-  longTailIsLoadedConditionally: false,
-  scriptsShouldHaveManifestProp: false,
-  useCompanyManifest: false,
-};
+let originConfig: ContentScriptConfig | null = null;
 
 const SOURCE_SCRIPTS = new Map();
 /**
@@ -132,67 +121,51 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
     invalidateAndThrow('Manifest is null');
   }
 
-  let leaves = rawManifest.leaves;
+  const leaves = rawManifest.manifest;
+  const otherHashes = rawManifest.manifest_hashes;
+  const roothash = otherHashes.combined_hash;
+
   let otherType = '';
-  let roothash = rawManifest.root;
-  let version = rawManifest.version;
-  let messagePayload: MessagePayload;
-  if (originConfig.longTailIsLoadedConditionally) {
-    leaves = rawManifest.manifest;
-    const otherHashes = rawManifest.manifest_hashes;
-    roothash = otherHashes.combined_hash;
+  let version = '';
 
-    const maybeManifestType = manifestNode.getAttribute('data-manifest-type');
-    if (maybeManifestType === null) {
-      updateCurrentState(
-        STATES.INVALID,
-        'manifest is missing `data-manifest-type` prop',
-      );
-    } else {
-      otherType = maybeManifestType;
-    }
-
-    const maybeManifestRev = manifestNode.getAttribute('data-manifest-rev');
-    if (maybeManifestRev === null) {
-      updateCurrentState(
-        STATES.INVALID,
-        'manifest is missing `data-manifest-rev` prop',
-      );
-    } else {
-      version = maybeManifestRev;
-    }
-
-    // If this is the first manifest we've found, start processing scripts for
-    // that type. If we have encountered a second manifest, we can assume both
-    // main and longtail manifests are present.
-    if (currentFilterType === UNINITIALIZED) {
-      currentFilterType = otherType;
-    } else {
-      currentFilterType = BOTH;
-    }
-
-    messagePayload = {
-      type: MESSAGE_TYPE.LOAD_COMPANY_MANIFEST,
-      leaves,
-      origin: getCurrentOrigin(),
-      otherHashes: otherHashes,
-      rootHash: roothash,
-      workaround: manifestNode.innerHTML,
-      version,
-    };
+  const maybeManifestType = manifestNode.getAttribute('data-manifest-type');
+  if (maybeManifestType === null) {
+    updateCurrentState(
+      STATES.INVALID,
+      'manifest is missing `data-manifest-type` prop',
+    );
   } else {
-    // for whatsapp
-    currentFilterType = BOTH;
-
-    messagePayload = {
-      type: MESSAGE_TYPE.LOAD_MANIFEST,
-      leaves,
-      origin: getCurrentOrigin(),
-      rootHash: roothash,
-      workaround: manifestNode.innerHTML,
-      version,
-    };
+    otherType = maybeManifestType;
   }
+
+  const maybeManifestRev = manifestNode.getAttribute('data-manifest-rev');
+  if (maybeManifestRev === null) {
+    updateCurrentState(
+      STATES.INVALID,
+      'manifest is missing `data-manifest-rev` prop',
+    );
+  } else {
+    version = maybeManifestRev;
+  }
+
+  // If this is the first manifest we've found, start processing scripts for
+  // that type. If we have encountered a second manifest, we can assume both
+  // main and longtail manifests are present.
+  if (currentFilterType === UNINITIALIZED) {
+    currentFilterType = otherType;
+  } else {
+    currentFilterType = BOTH;
+  }
+
+  const messagePayload: MessagePayload = {
+    type: MESSAGE_TYPE.LOAD_COMPANY_MANIFEST,
+    leaves,
+    origin: getCurrentOrigin(),
+    otherHashes: otherHashes,
+    rootHash: roothash,
+    workaround: manifestNode.innerHTML,
+    version,
+  };
 
   // now that we know the actual version of the scripts, transfer the ones we know about.
   // also set the correct manifest type, "otherType" for already collected scripts
@@ -233,66 +206,42 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
 }
 
 function handleScriptNode(scriptNode: HTMLScriptElement): void {
-  if (originConfig.scriptsShouldHaveManifestProp) {
-    const dataBtManifest = scriptNode.getAttribute('data-btmanifest');
-    if (dataBtManifest == null) {
-      invalidateAndThrow(
-        `No data-btmanifest attribute found on script ${scriptNode.src}`,
-      );
-    }
-
-    // Scripts may contain packages from both main and longtail manifests,
-    // e.g. "1009592080_main,1009592080_longtail"
-    const [manifest1, manifest2] = dataBtManifest.split(',');
-
-    // If this scripts contains packages from both main and longtail manifests
-    // then require both manifests to be loaded before processing this script,
-    // otherwise use the single type specified.
-    const otherType = manifest2 ? BOTH : manifest1.split('_')[1];
-
-    // It is safe to assume a script will not contain packages from different
-    // versions, so we can use the first manifest version as the script version.
-    const version = manifest1.split('_')[0];
-
-    if (!version) {
-      invalidateAndThrow(
-        `Unable to parse a valid version from the data-btmanifest property of ${scriptNode.src}`,
-      );
-    }
-
-    const scriptDetails = {
-      src: scriptNode.src,
-      otherType,
-    };
-
-    ALL_FOUND_SCRIPT_TAGS.add(scriptNode.src);
-    ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
-    pushToOrCreateArrayInMap(FOUND_SCRIPTS, version, scriptDetails);
-  } else {
-    let scriptDetails: ScriptDetails;
-
-    if (scriptNode.src !== '') {
-      scriptDetails = {
-        src: scriptNode.src,
-        otherType: currentFilterType,
-      };
-      ALL_FOUND_SCRIPT_TAGS.add(scriptNode.src);
-    } else {
-      // no src, access innerHTML for the code
-      const hashLookupAttribute =
-        // @ts-ignore: This is just sort of hole in the DOM definitions.
-        scriptNode.attributes['data-binary-transparency-hash-key'];
-      const hashLookupKey = hashLookupAttribute && hashLookupAttribute.value;
-      scriptDetails = {
-        type: MESSAGE_TYPE.RAW_JS,
-        rawjs: scriptNode.innerHTML,
-        lookupKey: hashLookupKey,
-        otherType: currentFilterType,
-      };
-    }
-
-    FOUND_SCRIPTS.get(FOUND_SCRIPTS.keys().next().value)?.push(scriptDetails);
+  const dataBtManifest = scriptNode.getAttribute('data-btmanifest');
+  if (dataBtManifest == null) {
+    invalidateAndThrow(
+      `No data-btmanifest attribute found on script ${scriptNode.src}`,
+    );
   }
+
+  // Scripts may contain packages from both main and longtail manifests,
+  // e.g. "1009592080_main,1009592080_longtail"
+  const [manifest1, manifest2] = dataBtManifest.split(',');
+
+  // If this scripts contains packages from both main and longtail manifests
+  // then require both manifests to be loaded before processing this script,
+  // otherwise use the single type specified.
+  const otherType = manifest2 ? BOTH : manifest1.split('_')[1];
+
+  // It is safe to assume a script will not contain packages from different
+  // versions, so we can use the first manifest version as the script version.
+  const version = manifest1.split('_')[0];
+
+  if (!version) {
+    invalidateAndThrow(
+      `Unable to parse a valid version from the data-btmanifest property of ${scriptNode.src}`,
+    );
+  }
+
+  const scriptDetails = {
+    src: scriptNode.src,
+    otherType,
+  };
+
+  ALL_FOUND_SCRIPT_TAGS.add(scriptNode.src);
+  ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
+  pushToOrCreateArrayInMap(FOUND_SCRIPTS, version, scriptDetails);
+
+  FOUND_SCRIPTS.get(FOUND_SCRIPTS.keys().next().value)?.push(scriptDetails);
 
   updateCurrentState(STATES.PROCESSING);
 }
@@ -552,24 +501,21 @@ export function startFor(origin: Origin, config: ContentScriptConfig): void {
   sendMessageToBackground(
     {
       type: MESSAGE_TYPE.CONTENT_SCRIPT_START,
-      checkCSPHeaders: originConfig.enforceCSPHeaders,
       origin,
     },
     resp => {
-      if (originConfig.enforceCSPHeaders) {
-        if (!resp.cspHeaders) {
-          invalidateAndThrow(
-            'Expected CSP Headers in CONTENT_SCRIPT_START response',
-          );
-        }
-        checkDocumentCSPHeaders(
-          resp.cspHeaders,
-          resp.cspReportHeaders,
-          getCurrentOrigin(),
+      if (!resp.cspHeaders) {
+        invalidateAndThrow(
+          'Expected CSP Headers in CONTENT_SCRIPT_START response',
         );
-
-        allowedWorkerCSPs = getAllowedWorkerCSPs(resp.cspHeaders);
       }
+      checkDocumentCSPHeaders(
+        resp.cspHeaders,
+        resp.cspReportHeaders,
+        getCurrentOrigin(),
+      );
+
+      allowedWorkerCSPs = getAllowedWorkerCSPs(resp.cspHeaders);
     },
   );
   if (isPathnameExcluded(originConfig.excludedPathnames)) {
@@ -620,23 +566,21 @@ chrome.runtime.onMessage.addListener(request => {
       ) {
         return;
       }
-      if (originConfig.enforceCSPHeaders) {
-        const hostname = window.location.hostname;
-        const resourceURL = new URL(request.response.url);
-        if (resourceURL.hostname === hostname) {
-          // This can potentially be a worker, check if CSPs allow it as a worker
-          if (
-            allowedWorkerCSPs.every(csp =>
-              doesWorkerUrlConformToCSP(csp, resourceURL.toString()),
-            )
-          ) {
-            // This might be a worker, ensure it's CSP headers are valid
-            checkWorkerEndpointCSP(
-              request.response,
-              allowedWorkerCSPs,
-              getCurrentOrigin(),
-            );
-          }
+      const hostname = window.location.hostname;
+      const resourceURL = new URL(request.response.url);
+      if (resourceURL.hostname === hostname) {
+        // This can potentially be a worker, check if CSPs allow it as a worker
+        if (
+          allowedWorkerCSPs.every(csp =>
+            doesWorkerUrlConformToCSP(csp, resourceURL.toString()),
+          )
+        ) {
+          // This might be a worker, ensure it's CSP headers are valid
+          checkWorkerEndpointCSP(
+            request.response,
+            allowedWorkerCSPs,
+            getCurrentOrigin(),
+          );
         }
       }
       sendMessageToBackground({

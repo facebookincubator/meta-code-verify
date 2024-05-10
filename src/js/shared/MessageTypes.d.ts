@@ -50,7 +50,6 @@ export type MessagePayload =
     }
   | {
       type: typeof MESSAGE_TYPE.CONTENT_SCRIPT_START;
-      checkCSPHeaders: boolean;
       origin: Origin;
     }
   | {

@@ -30,37 +30,22 @@ describe('contentUtils', () => {
       const fakeUrl = 'https://fancytestingyouhere.com/';
       const fakeScriptNode = {
         src: fakeUrl,
-        getAttribute: () => {},
+        getAttribute: () => {
+          return 'data-btmanifest';
+        },
       };
       storeFoundJS(fakeScriptNode);
       expect(FOUND_SCRIPTS.get(UNINITIALIZED).length).toEqual(1);
       expect(FOUND_SCRIPTS.get(UNINITIALIZED)[0].src).toEqual(fakeUrl);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
-    it('should handle inline scripts correctly', () => {
-      const fakeInnerHtml = 'console.log';
-      const fakeLookupKey = 'somelonghashkey';
-      const fakeScriptNode = {
-        attributes: {
-          'data-binary-transparency-hash-key': {value: fakeLookupKey},
-        },
-        getAttribute: () => {},
-        innerHTML: fakeInnerHtml,
-        src: '',
-      };
-      storeFoundJS(fakeScriptNode);
-      expect(FOUND_SCRIPTS.get(UNINITIALIZED).length).toEqual(1);
-      expect(FOUND_SCRIPTS.get(UNINITIALIZED)[0].rawjs).toEqual(fakeInnerHtml);
-      expect(FOUND_SCRIPTS.get(UNINITIALIZED)[0].lookupKey).toEqual(
-        fakeLookupKey,
-      );
-      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
-    });
     it('should send update icon message if valid', () => {
       const fakeUrl = 'https://fancytestingyouhere.com/';
       const fakeScriptNode = {
         src: fakeUrl,
-        getAttribute: () => {},
+        getAttribute: () => {
+          return 'data-btmanifest';
+        },
       };
       storeFoundJS(fakeScriptNode);
       const sentMessage = window.chrome.runtime.sendMessage.mock.calls[0][0];
@@ -74,14 +59,6 @@ describe('contentUtils', () => {
   describe('hasInvalidScripts', () => {
     it('should not check for non-HTMLElements', () => {
       const fakeElement = {
-        attributes: [
-          {localName: 'onclick'},
-          {localName: 'height'},
-          {localName: 'width'},
-        ],
-        hasAttribute: () => {
-          return true;
-        },
         nodeType: 2,
         tagName: 'tagName',
       };
@@ -90,10 +67,8 @@ describe('contentUtils', () => {
     });
     it('should store any script elements we find', () => {
       const fakeElement = {
-        attributes: {'data-binary-transparency-hash-key': {value: 'green'}},
-        getAttribute: () => {},
-        hasAttribute: () => {
-          return false;
+        getAttribute: () => {
+          return 'data-btmanifest';
         },
         childNodes: [],
         nodeName: 'SCRIPT',
@@ -103,9 +78,6 @@ describe('contentUtils', () => {
       };
       hasInvalidScripts(fakeElement);
       expect(FOUND_SCRIPTS.get(UNINITIALIZED).length).toBe(1);
-      expect(FOUND_SCRIPTS.get(UNINITIALIZED)[0].type).toBe(
-        MESSAGE_TYPE.RAW_JS,
-      );
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
       expect(window.chrome.runtime.sendMessage.mock.calls[0][0].type).toBe(
         MESSAGE_TYPE.UPDATE_STATE,
@@ -115,11 +87,6 @@ describe('contentUtils', () => {
       const fakeElement = {
         childNodes: [
           {
-            attributes: [
-              {localName: 'onclick'},
-              {localName: 'height'},
-              {localName: 'width'},
-            ],
             getAttribute: () => {
               return 'attr';
             },
@@ -128,11 +95,6 @@ describe('contentUtils', () => {
             tagName: 'tagName',
           },
           {
-            attributes: [
-              {localName: 'onclick'},
-              {localName: 'height'},
-              {localName: 'width'},
-            ],
             getAttribute: () => {
               return 'attr';
             },
@@ -156,12 +118,6 @@ describe('contentUtils', () => {
       const fakeElement = {
         childNodes: [
           {
-            attributes: [
-              {localName: 'onclick'},
-              {localName: 'height'},
-              {localName: 'width'},
-            ],
-
             getAttribute: () => {
               return 'attr';
             },
@@ -171,11 +127,8 @@ describe('contentUtils', () => {
             tagName: 'tagName',
           },
           {
-            attributes: {
-              'data-binary-transparency-hash-key': {value: 'green'},
-            },
             getAttribute: () => {
-              return null;
+              return 'data-btmanifest';
             },
             nodeName: 'SCRIPT',
             nodeType: 1,
@@ -193,9 +146,6 @@ describe('contentUtils', () => {
       };
       hasInvalidScripts(fakeElement);
       expect(FOUND_SCRIPTS.get(UNINITIALIZED).length).toBe(1);
-      expect(FOUND_SCRIPTS.get(UNINITIALIZED)[0].type).toBe(
-        MESSAGE_TYPE.RAW_JS,
-      );
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
       expect(window.chrome.runtime.sendMessage.mock.calls[0][0].type).toBe(
         MESSAGE_TYPE.UPDATE_STATE,
@@ -205,11 +155,6 @@ describe('contentUtils', () => {
       const fakeElement = {
         childNodes: [
           {
-            attributes: [
-              {localName: 'onclick'},
-              {localName: 'height'},
-              {localName: 'width'},
-            ],
             getAttribute: () => {
               return 'attr';
             },
@@ -219,36 +164,18 @@ describe('contentUtils', () => {
             tagName: 'tagName',
           },
           {
-            attributes: {
-              'data-binary-transparency-hash-key': {value: 'green'},
-              getAttribute: () => {
-                return null;
-              },
-            },
             childNodes: [
               {
-                attributes: {
-                  'data-binary-transparency-hash-key': {value: 'green1'},
-                },
                 nodeName: 'script',
                 nodeType: 1,
                 getAttribute: () => {
-                  return null;
-                },
-                hasAttribute: () => {
-                  return false;
+                  return 'data-btmanifest';
                 },
                 tagName: 'tagName',
               },
               {
-                attributes: {
-                  'data-binary-transparency-hash-key': {value: 'green2'},
-                },
                 getAttribute: () => {
-                  return null;
-                },
-                hasAttribute: () => {
-                  return false;
+                  return 'data-btmanifest';
                 },
                 nodeName: 'script',
                 nodeType: 1,
@@ -280,11 +207,10 @@ describe('contentUtils', () => {
       jest.resetModules();
       document.body.innerHTML =
         '<div>' +
-        '  <script>console.log("a unit test");</script>' +
-        '  <script src="https://facebook.com/"></script>' +
+        '  <script data-btmanifest="123" src="https://facebook.com/"></script>' +
         '</div>';
       scanForScripts();
-      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(2);
+      expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
   });
 });
