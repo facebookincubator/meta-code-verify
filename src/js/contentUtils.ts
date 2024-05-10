@@ -226,9 +226,9 @@ function handleScriptNode(scriptNode: HTMLScriptElement): void {
   // versions, so we can use the first manifest version as the script version.
   const version = manifest1.split('_')[0];
 
-  if (!version) {
+  if (!version || !otherType) {
     invalidateAndThrow(
-      `Unable to parse a valid version from the data-btmanifest property of ${scriptNode.src}`,
+      `Missing manifest version or type from the data-btmanifest property of ${scriptNode.src}`,
     );
   }
 

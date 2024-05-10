@@ -31,7 +31,7 @@ describe('contentUtils', () => {
       const fakeScriptNode = {
         src: fakeUrl,
         getAttribute: () => {
-          return 'data-btmanifest';
+          return '123_main';
         },
       };
       storeFoundJS(fakeScriptNode);
@@ -44,7 +44,7 @@ describe('contentUtils', () => {
       const fakeScriptNode = {
         src: fakeUrl,
         getAttribute: () => {
-          return 'data-btmanifest';
+          return '123_main';
         },
       };
       storeFoundJS(fakeScriptNode);
@@ -68,7 +68,7 @@ describe('contentUtils', () => {
     it('should store any script elements we find', () => {
       const fakeElement = {
         getAttribute: () => {
-          return 'data-btmanifest';
+          return '123_main';
         },
         childNodes: [],
         nodeName: 'SCRIPT',
@@ -128,7 +128,7 @@ describe('contentUtils', () => {
           },
           {
             getAttribute: () => {
-              return 'data-btmanifest';
+              return '123_main';
             },
             nodeName: 'SCRIPT',
             nodeType: 1,
@@ -169,13 +169,13 @@ describe('contentUtils', () => {
                 nodeName: 'script',
                 nodeType: 1,
                 getAttribute: () => {
-                  return 'data-btmanifest';
+                  return '123_main';
                 },
                 tagName: 'tagName',
               },
               {
                 getAttribute: () => {
-                  return 'data-btmanifest';
+                  return '123_longtail';
                 },
                 nodeName: 'script',
                 nodeType: 1,
@@ -207,7 +207,7 @@ describe('contentUtils', () => {
       jest.resetModules();
       document.body.innerHTML =
         '<div>' +
-        '  <script data-btmanifest="123" src="https://facebook.com/"></script>' +
+        '  <script data-btmanifest="123_main" src="https://facebook.com/"></script>' +
         '</div>';
       scanForScripts();
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
