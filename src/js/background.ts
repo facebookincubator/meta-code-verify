@@ -219,14 +219,6 @@ function handleMessages(
     case MESSAGE_TYPE.CONTENT_SCRIPT_START: {
       recordContentScriptStart(validSender, message.origin);
 
-      if (!message.checkCSPHeaders) {
-        sendResponse({
-          success: true,
-        });
-
-        return;
-      }
-
       sendResponse({
         success: true,
         cspHeaders: CSP_HEADERS.get(validSender.tab.id)?.get(

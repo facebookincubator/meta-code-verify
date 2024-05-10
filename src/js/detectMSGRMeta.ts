@@ -8,14 +8,7 @@
 import {ORIGIN_TYPE} from './config';
 import {startFor} from './contentUtils.js';
 
-startFor(
-  ORIGIN_TYPE.MESSENGER,
-  Object.freeze({
-    checkLoggedInFromCookie: true,
-    enforceCSPHeaders: true,
-    excludedPathnames: [],
-    longTailIsLoadedConditionally: true,
-    scriptsShouldHaveManifestProp: true,
-    useCompanyManifest: true,
-  }),
-);
+startFor(ORIGIN_TYPE.MESSENGER, {
+  checkLoggedInFromCookie: true,
+  excludedPathnames: [],
+});
