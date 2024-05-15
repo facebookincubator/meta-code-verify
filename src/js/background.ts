@@ -15,7 +15,6 @@ import {
 import setupCSPListener from './background/setupCSPListener';
 import setUpWebRequestsListener from './background/setUpWebRequestsListener';
 import {validateMetaCompanyManifest} from './background/validateMetaCompanyManifest';
-import {validateManifest} from './background/validateManifest';
 import {validateSender} from './background/validateSender';
 import {MessagePayload, MessageResponse} from './shared/MessageTypes';
 import {setOrUpdateSetInMap} from './shared/nestedDataHelpers';
@@ -126,35 +125,6 @@ function handleMessages(
             if (!manifest.leaves.includes(leaf)) {
               manifest.leaves.push(leaf);
             }
-          });
-          sendResponse({valid: true});
-        } else {
-          sendResponse(validationResult);
-        }
-      });
-
-      // Indicates that the message will send an async response.
-      return true;
-    }
-
-    case MESSAGE_TYPE.LOAD_MANIFEST: {
-      const slicedHash = message.rootHash.slice(2);
-      const slicedLeaves = message.leaves.map(leaf => {
-        return leaf.slice(2);
-      });
-      validateManifest(
-        slicedHash,
-        slicedLeaves,
-        ORIGIN_HOST[message.origin],
-        message.version,
-        message.workaround,
-      ).then(validationResult => {
-        if (validationResult.valid) {
-          const manifestMap = getManifestMapForOrigin(message.origin);
-          manifestMap.set(message.version, {
-            leaves: slicedLeaves,
-            root: slicedHash,
-            start: Date.now(),
           });
           sendResponse({valid: true});
         } else {

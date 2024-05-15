@@ -19,14 +19,6 @@ export type MessagePayload =
       workaround: string;
     }
   | {
-      type: typeof MESSAGE_TYPE.LOAD_MANIFEST;
-      origin: Origin;
-      rootHash: string;
-      leaves: Array<string>;
-      version: string;
-      workaround: string;
-    }
-  | {
       type: typeof MESSAGE_TYPE.RAW_JS;
       rawjs: string;
       origin: Origin;
