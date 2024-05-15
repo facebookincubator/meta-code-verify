@@ -28,7 +28,7 @@ const ICONS = {
   DEFAULT: {
     32: 'default_32.png',
     64: 'default_64.png',
-    128: 'default_64@2x.png',
+    128: 'default_128.png',
   },
   FAILURE: {
     32: 'failure_32.png',
