@@ -35,8 +35,8 @@ describe('contentUtils', () => {
         },
       };
       storeFoundJS(fakeScriptNode);
-      expect(FOUND_SCRIPTS.get(UNINITIALIZED).length).toEqual(1);
-      expect(FOUND_SCRIPTS.get(UNINITIALIZED)[0].src).toEqual(fakeUrl);
+      expect(FOUND_SCRIPTS.get('123').length).toEqual(1);
+      expect(FOUND_SCRIPTS.get('123')[0].src).toEqual(fakeUrl);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
     it('should send update icon message if valid', () => {
@@ -77,7 +77,7 @@ describe('contentUtils', () => {
         src: '',
       };
       hasInvalidScripts(fakeElement);
-      expect(FOUND_SCRIPTS.get(UNINITIALIZED).length).toBe(1);
+      expect(FOUND_SCRIPTS.get('123').length).toBe(1);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
       expect(window.chrome.runtime.sendMessage.mock.calls[0][0].type).toBe(
         MESSAGE_TYPE.UPDATE_STATE,
@@ -145,7 +145,7 @@ describe('contentUtils', () => {
         tagName: 'tagName',
       };
       hasInvalidScripts(fakeElement);
-      expect(FOUND_SCRIPTS.get(UNINITIALIZED).length).toBe(1);
+      expect(FOUND_SCRIPTS.get('123').length).toBe(1);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
       expect(window.chrome.runtime.sendMessage.mock.calls[0][0].type).toBe(
         MESSAGE_TYPE.UPDATE_STATE,
@@ -198,7 +198,7 @@ describe('contentUtils', () => {
         tagName: 'tagName',
       };
       hasInvalidScripts(fakeElement);
-      expect(FOUND_SCRIPTS.get(UNINITIALIZED).length).toBe(2);
+      expect(FOUND_SCRIPTS.get('123').length).toBe(2);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(2);
     });
   });
