@@ -241,8 +241,6 @@ function handleScriptNode(scriptNode: HTMLScriptElement): void {
   ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
   pushToOrCreateArrayInMap(FOUND_SCRIPTS, version, scriptDetails);
 
-  FOUND_SCRIPTS.get(FOUND_SCRIPTS.keys().next().value)?.push(scriptDetails);
-
   updateCurrentState(STATES.PROCESSING);
 }
 
