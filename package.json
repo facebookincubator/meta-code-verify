@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "@rollup/plugin-eslint": "^9.0.5",
+    "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-typescript": "^11.1.5",
     "@types/chrome": "^0.0.248",
     "@types/jest": "^29.4.0",
@@ -33,5 +34,8 @@
     "ts-jest": "^29.0.0",
     "tslib": "^2.5.0",
     "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "acorn": "^8.11.3"
   }
 }

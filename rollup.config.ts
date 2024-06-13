@@ -10,6 +10,7 @@ import type {Plugin, RollupOptions} from 'rollup';
 import cleanOnce from './build/rollup-plugin-clean-once';
 import eslintPlugin from '@rollup/plugin-eslint';
 import typescript from '@rollup/plugin-typescript';
+import nodeResolve from '@rollup/plugin-node-resolve';
 import prettierBuildStart from './build/rollup-plugin-prettier-build-start';
 import staticFiles from './build/rollup-plugin-static-files';
 import watch from './build/rollup-plugin-watch-additional';
@@ -45,7 +46,7 @@ const config: Array<RollupOptions> = contentScriptSteps.concat([
       file: `dist/${target}/background.js`,
       format: 'iife',
     })),
-    plugins: [typescript(), prettierSrc(), eslint()],
+    plugins: [typescript(), prettierSrc(), eslint(), nodeResolve()],
   },
   {
     input: 'src/js/popup.ts',

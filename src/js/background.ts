@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {Origin, STATES} from './config';
+import {DYNAMIC_STRING_MARKER, Origin, STATES} from './config';
 import {MESSAGE_TYPE, ORIGIN_HOST, ORIGIN_TIMEOUT} from './config';
 
 import {
@@ -16,6 +16,7 @@ import setupCSPListener from './background/setupCSPListener';
 import setUpWebRequestsListener from './background/setUpWebRequestsListener';
 import {validateMetaCompanyManifest} from './background/validateMetaCompanyManifest';
 import {validateSender} from './background/validateSender';
+import {removeDynamicStrings} from './background/removeDynamicStrings';
 import {MessagePayload, MessageResponse} from './shared/MessageTypes';
 import {setOrUpdateSetInMap} from './shared/nestedDataHelpers';
 
@@ -147,6 +148,15 @@ function handleMessages(
       if (!manifest) {
         sendResponse({valid: false, reason: 'no matching manifest'});
         return;
+      }
+
+      if (message.rawjs.includes(DYNAMIC_STRING_MARKER)) {
+        try {
+          message.rawjs = removeDynamicStrings(message.rawjs);
+        } catch (e) {
+          sendResponse({valid: false, reason: 'failed parsing AST'});
+          return;
+        }
       }
 
       // fetch the src
