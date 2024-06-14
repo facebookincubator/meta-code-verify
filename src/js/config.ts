@@ -130,3 +130,5 @@ export const DOWNLOAD_JS_ENABLED =
   'CompressionStream' in window && 'showSaveFilePicker' in window;
 
 export const MANIFEST_TIMEOUT = 45000;
+
+export const DYNAMIC_STRING_MARKER = '/*BTDS*/';

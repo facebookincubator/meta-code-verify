@@ -65,6 +65,7 @@ const FOUND_MANIFEST_VERSIONS = new Set<string>();
 type ScriptDetailsWithSrc = {
   otherType: string;
   src: string;
+  isServiceWorker?: boolean;
 };
 type ScriptDetailsRaw = {
   type: typeof MESSAGE_TYPE.RAW_JS;
@@ -355,6 +356,11 @@ async function processJSWithSrc(
     await alertBackgroundOfImminentFetch(script.src);
     const sourceResponse = await fetch(script.src, {
       method: 'GET',
+      // When the browser fetches a service worker it adds this header.
+      // If this is missing it will cause a cache miss, resulting in invalidation.
+      headers: script.isServiceWorker
+        ? {'Service-Worker': 'script'}
+        : undefined,
     });
     if (DOWNLOAD_JS_ENABLED) {
       const fileNameArr = script.src.split('/');
@@ -558,12 +564,6 @@ chrome.runtime.onMessage.addListener(request => {
     );
   } else if (request.greeting === 'checkIfScriptWasProcessed') {
     if (isUserLoggedIn && !ALL_FOUND_SCRIPT_TAGS.has(request.response.url)) {
-      if (
-        'serviceWorker' in navigator &&
-        navigator.serviceWorker.controller?.scriptURL === request.response.url
-      ) {
-        return;
-      }
       const hostname = window.location.hostname;
       const resourceURL = new URL(request.response.url);
       if (resourceURL.hostname === hostname) {
@@ -593,6 +593,7 @@ chrome.runtime.onMessage.addListener(request => {
         uninitializedScripts.push({
           src: request.response.url,
           otherType: currentFilterType,
+          isServiceWorker: hasVaryServiceWorkerHeader(request.response),
         });
       }
       updateCurrentState(STATES.PROCESSING);
@@ -614,3 +615,15 @@ chrome.runtime.onMessage.addListener(request => {
     }
   }
 });
+
+function hasVaryServiceWorkerHeader(
+  response: chrome.webRequest.WebResponseCacheDetails,
+): boolean {
+  return (
+    response.responseHeaders?.find(
+      header =>
+        header.name.includes('vary') &&
+        header.value?.includes('Service-Worker'),
+    ) !== undefined
+  );
+}
