@@ -36,6 +36,7 @@ import {checkWorkerEndpointCSP} from './content/checkWorkerEndpointCSP';
 import {MessagePayload} from './shared/MessageTypes';
 import {pushToOrCreateArrayInMap} from './shared/nestedDataHelpers';
 import ensureManifestWasOrWillBeLoaded from './content/ensureManifestWasOrWillBeLoaded';
+import scanForCSS from './content/scanForCSS';
 
 type ContentScriptConfig = {
   checkLoggedInFromCookie: boolean;
@@ -544,6 +545,7 @@ export function startFor(origin: Origin, config: ContentScriptConfig): void {
   if (isUserLoggedIn) {
     updateCurrentState(STATES.PROCESSING);
     scanForScripts();
+    scanForCSS();
     // set the timeout once, in case there's an iframe and contentUtils sets another manifest timer
     if (manifestTimeoutID === '') {
       manifestTimeoutID = window.setTimeout(() => {
