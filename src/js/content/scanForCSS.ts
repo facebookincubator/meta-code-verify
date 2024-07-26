@@ -38,6 +38,7 @@ async function checkIsStylesheetValid(
       return true;
     }
     CHECKED_STYLESHEET_HREFS.add(styleSheet.href);
+    ensureCORSEnabledForStylesheet(styleSheet);
   } else if (
     // Inline css
     potentialOwnerNode instanceof Element &&
@@ -63,11 +64,38 @@ function isValidCSSRule(rule: CSSRule): boolean {
     return false;
   }
 
-  if (!(rule instanceof CSSGroupingRule || rule instanceof CSSKeyframesRule)) {
+  if (
+    !(
+      rule instanceof CSSGroupingRule ||
+      rule instanceof CSSKeyframesRule ||
+      rule instanceof CSSImportRule
+    )
+  ) {
     return true;
   }
 
-  return [...rule.cssRules].every(isValidCSSRule);
+  let rulesToCheck: Array<CSSRule> = [];
+
+  if (rule instanceof CSSImportRule) {
+    const styleSheet = rule.styleSheet;
+    if (styleSheet != null) {
+      ensureCORSEnabledForStylesheet(styleSheet);
+      rulesToCheck = [...styleSheet.cssRules];
+    }
+  } else {
+    rulesToCheck = [...rule.cssRules];
+  }
+
+  return rulesToCheck.every(isValidCSSRule);
+}
+
+function ensureCORSEnabledForStylesheet(styleSheet: CSSStyleSheet): void {
+  try {
+    // Ensure all non same origin stylesheets can be accessed (CORS)
+    styleSheet.cssRules;
+  } catch (e) {
+    updateStateOnInvalidStylesheet(false, styleSheet);
+  }
 }
 
 async function hashString(content: string): Promise<string> {
