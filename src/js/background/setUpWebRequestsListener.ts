@@ -27,7 +27,7 @@ function checkResponseMIMEType(
   // Sniffable MIME types are a violation
   if (
     response.responseHeaders?.find(header =>
-      header.name.includes('x-content-type-options'),
+      header.name.toLowerCase().includes('x-content-type-options'),
     )?.value !== 'nosniff'
   ) {
     chrome.tabs.sendMessage(
