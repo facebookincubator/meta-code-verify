@@ -45,12 +45,6 @@ type ContentScriptConfig = {
 let originConfig: ContentScriptConfig | null = null;
 
 const SOURCE_SCRIPTS = new Map();
-/**
- * using an array of maps, as we're using the same key for inline scripts
- * this will eventually be removed, once inline scripts are removed from the
- * page load
- * */
-const INLINE_SCRIPTS: Array<Map<string, string>> = [];
 
 export const UNINITIALIZED = 'UNINITIALIZED';
 const BOTH = 'BOTH';
@@ -505,7 +499,7 @@ export function startFor(origin: Origin, config: ContentScriptConfig): void {
 
 chrome.runtime.onMessage.addListener(request => {
   if (request.greeting === 'downloadSource' && DOWNLOAD_JS_ENABLED) {
-    downloadJSArchive(SOURCE_SCRIPTS, INLINE_SCRIPTS);
+    downloadJSArchive(SOURCE_SCRIPTS);
   } else if (request.greeting === 'nocacheHeaderFound') {
     updateCurrentState(
       STATES.INVALID,
