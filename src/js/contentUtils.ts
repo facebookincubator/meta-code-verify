@@ -6,7 +6,6 @@
  */
 
 import {
-  KNOWN_EXTENSION_HASHES,
   MESSAGE_TYPE,
   DOWNLOAD_JS_ENABLED,
   STATES,
@@ -46,12 +45,6 @@ type ContentScriptConfig = {
 let originConfig: ContentScriptConfig | null = null;
 
 const SOURCE_SCRIPTS = new Map();
-/**
- * using an array of maps, as we're using the same key for inline scripts
- * this will eventually be removed, once inline scripts are removed from the
- * page load
- * */
-const INLINE_SCRIPTS: Array<Map<string, string>> = [];
 
 export const UNINITIALIZED = 'UNINITIALIZED';
 const BOTH = 'BOTH';
@@ -63,18 +56,11 @@ export const FOUND_SCRIPTS = new Map<string, Array<ScriptDetails>>([
 const ALL_FOUND_SCRIPT_TAGS = new Set<string>();
 const FOUND_MANIFEST_VERSIONS = new Set<string>();
 
-type ScriptDetailsWithSrc = {
+type ScriptDetails = {
   otherType: string;
   src: string;
   isServiceWorker?: boolean;
 };
-type ScriptDetailsRaw = {
-  type: typeof MESSAGE_TYPE.RAW_JS;
-  rawjs: string;
-  lookupKey: string;
-  otherType: string;
-};
-type ScriptDetails = ScriptDetailsRaw | ScriptDetailsWithSrc;
 let manifestTimeoutID: string | number = '';
 
 export type RawManifestOtherHashes = {
@@ -234,14 +220,12 @@ function handleScriptNode(scriptNode: HTMLScriptElement): void {
     );
   }
 
-  const scriptDetails = {
-    src: scriptNode.src,
-    otherType,
-  };
-
   ALL_FOUND_SCRIPT_TAGS.add(scriptNode.src);
   ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
-  pushToOrCreateArrayInMap(FOUND_SCRIPTS, version, scriptDetails);
+  pushToOrCreateArrayInMap(FOUND_SCRIPTS, version, {
+    src: scriptNode.src,
+    otherType,
+  });
 
   updateCurrentState(STATES.PROCESSING);
 }
@@ -346,7 +330,7 @@ export const scanForScripts = (): void => {
 };
 
 async function processJSWithSrc(
-  script: ScriptDetailsWithSrc,
+  script: ScriptDetails,
   version: string,
 ): Promise<{
   valid: boolean;
@@ -426,73 +410,30 @@ export const processFoundJS = async (version: string): Promise<void> => {
   });
   let pendingScriptCount = scripts.length;
   for (const script of scripts) {
-    if ('src' in script) {
-      // ScriptDetailsWithSrc
-      await processJSWithSrc(script, version).then(response => {
-        pendingScriptCount--;
-        if (response.valid) {
-          if (pendingScriptCount == 0) {
-            updateCurrentState(STATES.VALID);
-          }
-        } else {
-          if (response.type === 'EXTENSION') {
-            updateCurrentState(STATES.RISK);
-          } else {
-            updateCurrentState(
-              STATES.INVALID,
-              `Invalid ScriptDetailsWithSrc ${script.src}`,
-            );
-          }
+    await processJSWithSrc(script, version).then(response => {
+      pendingScriptCount--;
+      if (response.valid) {
+        if (pendingScriptCount == 0) {
+          updateCurrentState(STATES.VALID);
         }
-        sendMessageToBackground({
-          type: MESSAGE_TYPE.DEBUG,
-          log:
-            'processed JS with SRC response is ' +
-            JSON.stringify(response).substring(0, 500),
-          src: script.src,
-        });
+      } else {
+        if (response.type === 'EXTENSION') {
+          updateCurrentState(STATES.RISK);
+        } else {
+          updateCurrentState(
+            STATES.INVALID,
+            `Invalid ScriptDetailsWithSrc ${script.src}`,
+          );
+        }
+      }
+      sendMessageToBackground({
+        type: MESSAGE_TYPE.DEBUG,
+        log:
+          'processed JS with SRC response is ' +
+          JSON.stringify(response).substring(0, 500),
+        src: script.src,
       });
-    } else {
-      // ScriptDetailsRaw
-      sendMessageToBackground(
-        {
-          type: script.type,
-          rawjs: script.rawjs.trimStart(),
-          origin: getCurrentOrigin(),
-          version: version,
-        },
-        response => {
-          pendingScriptCount--;
-          const inlineScriptMap = new Map();
-          if (response.valid) {
-            inlineScriptMap.set(response.hash, script.rawjs);
-            INLINE_SCRIPTS.push(inlineScriptMap);
-            if (pendingScriptCount == 0) {
-              updateCurrentState(STATES.VALID);
-            }
-          } else {
-            inlineScriptMap.set('hash not in manifest', script.rawjs);
-            INLINE_SCRIPTS.push(inlineScriptMap);
-            if (
-              response.hash &&
-              KNOWN_EXTENSION_HASHES.includes(response.hash)
-            ) {
-              updateCurrentState(STATES.RISK);
-            } else {
-              updateCurrentState(STATES.INVALID, 'Invalid ScriptDetailsRaw');
-            }
-          }
-          sendMessageToBackground({
-            type: MESSAGE_TYPE.DEBUG,
-            log:
-              'processed the RAW_JS, response is ' +
-              response.hash +
-              ' ' +
-              JSON.stringify(response).substring(0, 500),
-          });
-        },
-      );
-    }
+    });
   }
   window.setTimeout(() => processFoundJS(version), 3000);
 };
@@ -558,7 +499,7 @@ export function startFor(origin: Origin, config: ContentScriptConfig): void {
 
 chrome.runtime.onMessage.addListener(request => {
   if (request.greeting === 'downloadSource' && DOWNLOAD_JS_ENABLED) {
-    downloadJSArchive(SOURCE_SCRIPTS, INLINE_SCRIPTS);
+    downloadJSArchive(SOURCE_SCRIPTS);
   } else if (request.greeting === 'nocacheHeaderFound') {
     updateCurrentState(
       STATES.INVALID,
