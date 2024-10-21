@@ -6,7 +6,7 @@
  */
 
 import {ORIGIN_TYPE} from './config';
-import {startFor} from './contentUtils.js';
+import {startFor} from './content.js';
 
 startFor(ORIGIN_TYPE.MESSENGER, {
   checkLoggedInFromCookie: true,

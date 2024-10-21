@@ -6,7 +6,7 @@
  */
 
 import {MESSAGE_TYPE, Origin, State} from '../config';
-import {RawManifestOtherHashes} from '../contentUtils';
+import {RawManifestOtherHashes} from '../content';
 
 export type MessagePayload =
   | {

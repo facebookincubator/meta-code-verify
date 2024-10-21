@@ -6,7 +6,7 @@
  */
 
 import {ORIGIN_TYPE} from './config';
-import {startFor} from './contentUtils.js';
+import {startFor} from './content.js';
 
 // Pathnames that do not currently have messaging enabled and are not BT
 // compliant/
