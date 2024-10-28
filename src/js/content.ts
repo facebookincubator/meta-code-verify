@@ -18,8 +18,6 @@ import {
   checkDocumentCSPHeaders,
   getAllowedWorkerCSPs,
 } from './content/checkDocumentCSPHeaders';
-import downloadJSArchive from './content/downloadJSArchive';
-import alertBackgroundOfImminentFetch from './content/alertBackgroundOfImminentFetch';
 import {
   getCurrentOrigin,
   setCurrentOrigin,
@@ -28,7 +26,6 @@ import {
 } from './content/updateCurrentState';
 import {sendMessageToBackground} from './shared/sendMessageToBackground';
 import {parseFailedJSON} from './content/parseFailedJSON';
-import genSourceText from './content/genSourceText';
 import isPathnameExcluded from './content/isPathNameExcluded';
 import {doesWorkerUrlConformToCSP} from './content/doesWorkerUrlConformToCSP';
 import {checkWorkerEndpointCSP} from './content/checkWorkerEndpointCSP';
@@ -36,6 +33,9 @@ import {MessagePayload} from './shared/MessageTypes';
 import {pushToOrCreateArrayInMap} from './shared/nestedDataHelpers';
 import ensureManifestWasOrWillBeLoaded from './content/ensureManifestWasOrWillBeLoaded';
 import scanForCSS from './content/scanForCSS';
+import {downloadJS, processJSWithSrc} from './content/contentJSUtils';
+import {hasVaryServiceWorkerHeader} from './content/hasVaryServiceWorkerHeader';
+import {isSameDomainAsTopWindow, isTopWindow} from './content/iFrameUtils';
 
 type ContentScriptConfig = {
   checkLoggedInFromCookie: boolean;
@@ -43,8 +43,6 @@ type ContentScriptConfig = {
 };
 
 let originConfig: ContentScriptConfig | null = null;
-
-const SOURCE_SCRIPTS = new Map();
 
 export const UNINITIALIZED = 'UNINITIALIZED';
 const BOTH = 'BOTH';
@@ -56,7 +54,7 @@ export const FOUND_SCRIPTS = new Map<string, Array<ScriptDetails>>([
 const ALL_FOUND_SCRIPT_TAGS = new Set<string>();
 const FOUND_MANIFEST_VERSIONS = new Set<string>();
 
-type ScriptDetails = {
+export type ScriptDetails = {
   otherType: string;
   src: string;
   isServiceWorker?: boolean;
@@ -75,19 +73,6 @@ type RawManifest = {
   root: string;
   version: string;
 };
-
-function isTopWindow(): boolean {
-  return window == window.top;
-}
-function isSameDomainAsTopWindow(): boolean {
-  try {
-    // This is inside a try/catch because even attempting to access the `origin`
-    // property will throw a SecurityError if the domains don't match.
-    return window.location.origin === window.top?.location.origin;
-  } catch {
-    return false;
-  }
-}
 
 function handleManifestNode(manifestNode: HTMLScriptElement): void {
   if (manifestNode.getAttribute('type') !== 'application/json') {
@@ -230,6 +215,21 @@ function handleScriptNode(scriptNode: HTMLScriptElement): void {
   updateCurrentState(STATES.PROCESSING);
 }
 
+export function hasInvalidScripts(scriptNodeMaybe: Node): void {
+  // if not an HTMLElement ignore it!
+  if (scriptNodeMaybe.nodeType !== Node.ELEMENT_NODE) {
+    return;
+  }
+
+  if (scriptNodeMaybe.nodeName.toLowerCase() === 'script') {
+    storeFoundJS(scriptNodeMaybe as HTMLScriptElement);
+  } else if (scriptNodeMaybe.childNodes.length > 0) {
+    scriptNodeMaybe.childNodes.forEach(childNode => {
+      hasInvalidScripts(childNode);
+    });
+  }
+}
+
 export function storeFoundJS(scriptNode: HTMLScriptElement): void {
   if (!isTopWindow() && isSameDomainAsTopWindow()) {
     // this means that content utils is running in an iframe - disable timer and call processFoundJS on manifest processed in top level frame
@@ -275,28 +275,10 @@ export function storeFoundJS(scriptNode: HTMLScriptElement): void {
   }
 }
 
-export function hasInvalidScripts(scriptNodeMaybe: Node): void {
-  // if not an HTMLElement ignore it!
-  if (scriptNodeMaybe.nodeType !== Node.ELEMENT_NODE) {
-    return;
-  }
-
-  if (scriptNodeMaybe.nodeName.toLowerCase() === 'script') {
-    storeFoundJS(scriptNodeMaybe as HTMLScriptElement);
-  } else if (scriptNodeMaybe.childNodes.length > 0) {
-    scriptNodeMaybe.childNodes.forEach(childNode => {
-      hasInvalidScripts(childNode);
-    });
-  }
-}
-
 export const scanForScripts = (): void => {
-  const allElements = document.getElementsByTagName('*');
+  const allElements = document.getElementsByTagName('script');
   Array.from(allElements).forEach(element => {
-    // next check for existing script elements and if they're violating
-    if (element.nodeName.toLowerCase() === 'script') {
-      storeFoundJS(element as HTMLScriptElement);
-    }
+    storeFoundJS(element);
   });
 
   try {
@@ -328,68 +310,6 @@ export const scanForScripts = (): void => {
     updateCurrentState(STATES.INVALID, 'unknown');
   }
 };
-
-async function processJSWithSrc(
-  script: ScriptDetails,
-  version: string,
-): Promise<{
-  valid: boolean;
-  type?: unknown;
-}> {
-  // fetch the script from page context, not the extension context.
-  try {
-    await alertBackgroundOfImminentFetch(script.src);
-    const sourceResponse = await fetch(script.src, {
-      method: 'GET',
-      // When the browser fetches a service worker it adds this header.
-      // If this is missing it will cause a cache miss, resulting in invalidation.
-      headers: script.isServiceWorker
-        ? {'Service-Worker': 'script'}
-        : undefined,
-    });
-    if (DOWNLOAD_JS_ENABLED) {
-      const fileNameArr = script.src.split('/');
-      const fileName = fileNameArr[fileNameArr.length - 1].split('?')[0];
-      const responseBody = sourceResponse.clone().body;
-      if (!responseBody) {
-        throw new Error('Response for fetched script has no body');
-      }
-      SOURCE_SCRIPTS.set(
-        fileName,
-        responseBody.pipeThrough(new window.CompressionStream('gzip')),
-      );
-    }
-    const sourceText = await genSourceText(sourceResponse);
-    // split package up if necessary
-    const packages = sourceText.split('/*FB_PKG_DELIM*/\n');
-    const packagePromises = packages.map(jsPackage => {
-      return new Promise((resolve, reject) => {
-        sendMessageToBackground(
-          {
-            type: MESSAGE_TYPE.RAW_JS,
-            rawjs: jsPackage.trimStart(),
-            origin: getCurrentOrigin(),
-            version: version,
-          },
-          response => {
-            if (response.valid) {
-              resolve(null);
-            } else {
-              reject();
-            }
-          },
-        );
-      });
-    });
-    await Promise.all(packagePromises);
-    return {valid: true};
-  } catch (scriptProcessingError) {
-    return {
-      valid: false,
-      type: scriptProcessingError,
-    };
-  }
-}
 
 export const processFoundJS = async (version: string): Promise<void> => {
   const scriptsForVersion = FOUND_SCRIPTS.get(version);
@@ -499,7 +419,7 @@ export function startFor(origin: Origin, config: ContentScriptConfig): void {
 
 chrome.runtime.onMessage.addListener(request => {
   if (request.greeting === 'downloadSource' && DOWNLOAD_JS_ENABLED) {
-    downloadJSArchive(SOURCE_SCRIPTS);
+    downloadJS();
   } else if (request.greeting === 'nocacheHeaderFound') {
     updateCurrentState(
       STATES.INVALID,
@@ -558,15 +478,3 @@ chrome.runtime.onMessage.addListener(request => {
     }
   }
 });
-
-function hasVaryServiceWorkerHeader(
-  response: chrome.webRequest.WebResponseCacheDetails,
-): boolean {
-  return (
-    response.responseHeaders?.find(
-      header =>
-        header.name.includes('vary') &&
-        header.value?.includes('Service-Worker'),
-    ) !== undefined
-  );
-}

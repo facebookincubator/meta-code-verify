@@ -15,10 +15,10 @@ import {
   FOUND_SCRIPTS,
   storeFoundJS,
   UNINITIALIZED,
-} from '../contentUtils';
+} from '../content';
 import {setCurrentOrigin} from '../content/updateCurrentState';
 
-describe('contentUtils', () => {
+describe('content', () => {
   beforeEach(() => {
     window.chrome.runtime.sendMessage = jest.fn(() => {});
     setCurrentOrigin('FACEBOOK');
