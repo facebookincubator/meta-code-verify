@@ -39,7 +39,7 @@ type Manifest = {
 };
 
 function getManifestMapForOrigin(origin: Origin): Map<string, Manifest> {
-  // store manifest to subsequently validate JS
+  // store manifest to subsequently validate JS/CSS
   let manifestMap = MANIFEST_CACHE.get(origin);
   if (manifestMap == null) {
     manifestMap = new Map();
@@ -137,7 +137,7 @@ function handleMessages(
       return true;
     }
 
-    case MESSAGE_TYPE.RAW_JS: {
+    case MESSAGE_TYPE.RAW_SRC: {
       const origin = MANIFEST_CACHE.get(message.origin);
       if (!origin) {
         sendResponse({valid: false, reason: 'no matching origin'});
@@ -150,9 +150,9 @@ function handleMessages(
         return;
       }
 
-      if (message.rawjs.includes(DYNAMIC_STRING_MARKER)) {
+      if (message.pkgRaw.includes(DYNAMIC_STRING_MARKER)) {
         try {
-          message.rawjs = removeDynamicStrings(message.rawjs);
+          message.pkgRaw = removeDynamicStrings(message.pkgRaw);
         } catch (e) {
           sendResponse({valid: false, reason: 'failed parsing AST'});
           return;
@@ -161,27 +161,27 @@ function handleMessages(
 
       // fetch the src
       const encoder = new TextEncoder();
-      const encodedJS = encoder.encode(message.rawjs);
+      const encodedSrc = encoder.encode(message.pkgRaw);
       // hash the src
-      crypto.subtle.digest('SHA-256', encodedJS).then(jsHashBuffer => {
-        const jsHashArray = Array.from(new Uint8Array(jsHashBuffer));
-        const jsHash = jsHashArray
+      crypto.subtle.digest('SHA-256', encodedSrc).then(hashBuffer => {
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hash = hashArray
           .map(b => b.toString(16).padStart(2, '0'))
           .join('');
 
-        if (manifestObj.leaves.includes(jsHash)) {
-          sendResponse({valid: true, hash: jsHash});
+        if (manifestObj.leaves.includes(hash)) {
+          sendResponse({valid: true, hash: hash});
         } else {
           sendResponse({
             valid: false,
-            hash: jsHash,
+            hash: hash,
             reason:
               'Error: hash does not match ' +
               message.origin +
               ', ' +
               message.version +
-              ', unmatched JS is ' +
-              message.rawjs,
+              ', unmatched SRC is ' +
+              message.pkgRaw,
           });
         }
       });

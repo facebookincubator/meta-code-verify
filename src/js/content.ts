@@ -32,10 +32,16 @@ import {checkWorkerEndpointCSP} from './content/checkWorkerEndpointCSP';
 import {MessagePayload} from './shared/MessageTypes';
 import {pushToOrCreateArrayInMap} from './shared/nestedDataHelpers';
 import ensureManifestWasOrWillBeLoaded from './content/ensureManifestWasOrWillBeLoaded';
-import scanForCSS from './content/scanForCSS';
-import {downloadJS, processJSWithSrc} from './content/contentJSUtils';
+import {downloadSrc, processSrc} from './content/contentUtils';
 import {hasVaryServiceWorkerHeader} from './content/hasVaryServiceWorkerHeader';
 import {isSameDomainAsTopWindow, isTopWindow} from './content/iFrameUtils';
+import {getTagIdentifier} from './content/getTagIdentifier';
+import {
+  BOTH,
+  getManifestVersionAndTypeFromNode,
+  tryToGetManifestVersionAndTypeFromNode,
+} from './content/getManifestVersionAndTypeFromNode';
+import {scanForCSSNeedingManualInspsection} from './content/manualCSSInspector';
 
 type ContentScriptConfig = {
   checkLoggedInFromCookie: boolean;
@@ -45,20 +51,31 @@ type ContentScriptConfig = {
 let originConfig: ContentScriptConfig | null = null;
 
 export const UNINITIALIZED = 'UNINITIALIZED';
-const BOTH = 'BOTH';
 let currentFilterType = UNINITIALIZED;
-// Map<version, Array<ScriptDetails>>
-export const FOUND_SCRIPTS = new Map<string, Array<ScriptDetails>>([
+// Map<version, Array<TagDetails>>
+export const FOUND_ELEMENTS = new Map<string, Array<TagDetails>>([
   [UNINITIALIZED, []],
 ]);
-const ALL_FOUND_SCRIPT_TAGS = new Set<string>();
+const ALL_FOUND_TAGS_URLS = new Set<string>();
 const FOUND_MANIFEST_VERSIONS = new Set<string>();
 
-export type ScriptDetails = {
-  otherType: string;
-  src: string;
-  isServiceWorker?: boolean;
-};
+export type TagDetails =
+  | {
+      otherType: string;
+      src: string;
+      isServiceWorker?: boolean;
+      type: 'script';
+    }
+  | {
+      otherType: string;
+      href: string;
+      type: 'link';
+    }
+  | {
+      otherType: string;
+      tag: HTMLStyleElement;
+      type: 'style';
+    };
 let manifestTimeoutID: string | number = '';
 
 export type RawManifestOtherHashes = {
@@ -142,21 +159,23 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
 
   // now that we know the actual version of the scripts, transfer the ones we know about.
   // also set the correct manifest type, "otherType" for already collected scripts
-  const foundScriptsWithoutVersion = FOUND_SCRIPTS.get(UNINITIALIZED);
-  if (foundScriptsWithoutVersion) {
-    const scriptsWithUpdatedType = foundScriptsWithoutVersion.map(script => ({
-      ...script,
-      otherType: currentFilterType,
-    }));
+  const foundElementsWithoutVersion = FOUND_ELEMENTS.get(UNINITIALIZED);
+  if (foundElementsWithoutVersion) {
+    const elementsWithUpdatedType = foundElementsWithoutVersion.map(
+      element => ({
+        ...element,
+        otherType: currentFilterType,
+      }),
+    );
 
-    FOUND_SCRIPTS.set(version, [
-      ...scriptsWithUpdatedType,
-      ...(FOUND_SCRIPTS.get(version) ?? []),
+    FOUND_ELEMENTS.set(version, [
+      ...elementsWithUpdatedType,
+      ...(FOUND_ELEMENTS.get(version) ?? []),
     ]);
-    FOUND_SCRIPTS.delete(UNINITIALIZED);
-  } else if (!FOUND_SCRIPTS.has(version)) {
+    FOUND_ELEMENTS.delete(UNINITIALIZED);
+  } else if (!FOUND_ELEMENTS.has(version)) {
     // New version is being loaded in
-    FOUND_SCRIPTS.set(version, []);
+    FOUND_ELEMENTS.set(version, []);
   }
 
   sendMessageToBackground(messagePayload, response => {
@@ -167,7 +186,7 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
         manifestTimeoutID = '';
       }
       FOUND_MANIFEST_VERSIONS.add(version);
-      window.setTimeout(() => processFoundJS(version), 0);
+      window.setTimeout(() => processFoundElements(version), 0);
     } else {
       if ('UNKNOWN_ENDPOINT_ISSUE' === response.reason) {
         updateCurrentState(STATES.TIMEOUT);
@@ -178,172 +197,38 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
   });
 }
 
-function handleScriptNode(scriptNode: HTMLScriptElement): void {
-  const dataBtManifest = scriptNode.getAttribute('data-btmanifest');
-  if (dataBtManifest == null) {
+export const processFoundElements = async (version: string): Promise<void> => {
+  const elementsForVersion = FOUND_ELEMENTS.get(version);
+  if (!elementsForVersion) {
     invalidateAndThrow(
-      `No data-btmanifest attribute found on script ${scriptNode.src}`,
+      `attempting to process elements for nonexistent version ${version}`,
     );
   }
-
-  // Scripts may contain packages from both main and longtail manifests,
-  // e.g. "1009592080_main,1009592080_longtail"
-  const [manifest1, manifest2] = dataBtManifest.split(',');
-
-  // If this scripts contains packages from both main and longtail manifests
-  // then require both manifests to be loaded before processing this script,
-  // otherwise use the single type specified.
-  const otherType = manifest2 ? BOTH : manifest1.split('_')[1];
-
-  // It is safe to assume a script will not contain packages from different
-  // versions, so we can use the first manifest version as the script version.
-  const version = manifest1.split('_')[0];
-
-  if (!version || !otherType) {
-    invalidateAndThrow(
-      `Missing manifest version or type from the data-btmanifest property of ${scriptNode.src}`,
-    );
-  }
-
-  ALL_FOUND_SCRIPT_TAGS.add(scriptNode.src);
-  ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
-  pushToOrCreateArrayInMap(FOUND_SCRIPTS, version, {
-    src: scriptNode.src,
-    otherType,
-  });
-
-  updateCurrentState(STATES.PROCESSING);
-}
-
-export function hasInvalidScripts(scriptNodeMaybe: Node): void {
-  // if not an HTMLElement ignore it!
-  if (scriptNodeMaybe.nodeType !== Node.ELEMENT_NODE) {
-    return;
-  }
-
-  if (scriptNodeMaybe.nodeName.toLowerCase() === 'script') {
-    storeFoundJS(scriptNodeMaybe as HTMLScriptElement);
-  } else if (scriptNodeMaybe.childNodes.length > 0) {
-    scriptNodeMaybe.childNodes.forEach(childNode => {
-      hasInvalidScripts(childNode);
-    });
-  }
-}
-
-export function storeFoundJS(scriptNode: HTMLScriptElement): void {
-  if (!isTopWindow() && isSameDomainAsTopWindow()) {
-    // this means that content utils is running in an iframe - disable timer and call processFoundJS on manifest processed in top level frame
-    clearTimeout(manifestTimeoutID);
-    manifestTimeoutID = '';
-    FOUND_SCRIPTS.forEach((_val, key) => {
-      window.setTimeout(() => processFoundJS(key), 0);
-    });
-  }
-
-  // check if it's the manifest node
-  if (
-    (isTopWindow() || !isSameDomainAsTopWindow()) &&
-    (scriptNode.id === 'binary-transparency-manifest' ||
-      scriptNode.getAttribute('name') === 'binary-transparency-manifest')
-  ) {
-    handleManifestNode(scriptNode);
-  }
-
-  // Only a document/doctype can have textContent as null
-  const nodeTextContent = scriptNode.textContent ?? '';
-  if (scriptNode.getAttribute('type') === 'application/json') {
-    try {
-      JSON.parse(nodeTextContent);
-    } catch (parseError) {
-      setTimeout(() => parseFailedJSON({node: scriptNode, retry: 1500}), 20);
-    }
-    return;
-  }
-
-  if (
-    scriptNode.src != null &&
-    scriptNode.src !== '' &&
-    scriptNode.src.indexOf('blob:') === 0
-  ) {
-    // TODO: try to process the blob. For now, flag as warning.
-    updateCurrentState(STATES.INVALID, 'blob: src');
-    return;
-  }
-
-  if (scriptNode.src !== '' || scriptNode.innerHTML !== '') {
-    handleScriptNode(scriptNode);
-  }
-}
-
-export const scanForScripts = (): void => {
-  const allElements = document.getElementsByTagName('script');
-  Array.from(allElements).forEach(element => {
-    storeFoundJS(element);
-  });
-
-  try {
-    // track any new scripts that get loaded in
-    const scriptMutationObserver = new MutationObserver(mutationsList => {
-      mutationsList.forEach(mutation => {
-        if (mutation.type === 'childList') {
-          Array.from(mutation.addedNodes).forEach(checkScript => {
-            // Code within a script tag has changed
-            if (
-              checkScript.nodeType === Node.TEXT_NODE &&
-              mutation.target.nodeName.toLocaleLowerCase() === 'script'
-            ) {
-              hasInvalidScripts(mutation.target);
-            } else {
-              hasInvalidScripts(checkScript);
-            }
-          });
-        }
-      });
-    });
-
-    scriptMutationObserver.observe(document, {
-      attributes: true,
-      childList: true,
-      subtree: true,
-    });
-  } catch (_UnknownError) {
-    updateCurrentState(STATES.INVALID, 'unknown');
-  }
-};
-
-export const processFoundJS = async (version: string): Promise<void> => {
-  const scriptsForVersion = FOUND_SCRIPTS.get(version);
-  if (!scriptsForVersion) {
-    invalidateAndThrow(
-      `attempting to process scripts for nonexistent version ${version}`,
-    );
-  }
-  const scripts = scriptsForVersion.splice(0).filter(script => {
+  const elements = elementsForVersion.splice(0).filter(element => {
     if (
-      script.otherType === currentFilterType ||
+      element.otherType === currentFilterType ||
       [BOTH, UNINITIALIZED].includes(currentFilterType)
     ) {
       return true;
     } else {
-      scriptsForVersion.push(script);
+      elementsForVersion.push(element);
     }
   });
-  let pendingScriptCount = scripts.length;
-  for (const script of scripts) {
-    await processJSWithSrc(script, version).then(response => {
-      pendingScriptCount--;
+  let pendingElementCount = elements.length;
+  for (const element of elements) {
+    await processSrc(element, version).then(response => {
+      const tagIdentifier = getTagIdentifier(element);
+
+      pendingElementCount--;
       if (response.valid) {
-        if (pendingScriptCount == 0) {
+        if (pendingElementCount == 0) {
           updateCurrentState(STATES.VALID);
         }
       } else {
         if (response.type === 'EXTENSION') {
           updateCurrentState(STATES.RISK);
         } else {
-          updateCurrentState(
-            STATES.INVALID,
-            `Invalid ScriptDetailsWithSrc ${script.src}`,
-          );
+          updateCurrentState(STATES.INVALID, `Invalid Tag ${tagIdentifier}`);
         }
       }
       sendMessageToBackground({
@@ -351,11 +236,166 @@ export const processFoundJS = async (version: string): Promise<void> => {
         log:
           'processed JS with SRC response is ' +
           JSON.stringify(response).substring(0, 500),
-        src: script.src,
+        src: tagIdentifier,
       });
     });
   }
-  window.setTimeout(() => processFoundJS(version), 3000);
+  window.setTimeout(() => processFoundElements(version), 3000);
+};
+
+function handleScriptNode(scriptNode: HTMLScriptElement): void {
+  const [version, otherType] = getManifestVersionAndTypeFromNode(scriptNode);
+  ALL_FOUND_TAGS_URLS.add(scriptNode.src);
+  ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
+  pushToOrCreateArrayInMap(FOUND_ELEMENTS, version, {
+    src: scriptNode.src,
+    otherType,
+    type: 'script',
+  });
+  updateCurrentState(STATES.PROCESSING);
+}
+
+function handleStyleNode(style: HTMLStyleElement): void {
+  const versionAndOtherType = tryToGetManifestVersionAndTypeFromNode(style);
+  if (versionAndOtherType == null) {
+    // Will be handled by manualCSSInspector
+    return;
+  }
+  const [version, otherType] = versionAndOtherType;
+  ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
+  pushToOrCreateArrayInMap(FOUND_ELEMENTS, version, {
+    tag: style,
+    otherType: otherType,
+    type: 'style',
+  });
+  updateCurrentState(STATES.PROCESSING);
+}
+
+function handleLinkNode(link: HTMLLinkElement): void {
+  const [version, otherType] = getManifestVersionAndTypeFromNode(link);
+  ALL_FOUND_TAGS_URLS.add(link.href);
+  ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
+  pushToOrCreateArrayInMap(FOUND_ELEMENTS, version, {
+    href: link.href,
+    otherType,
+    type: 'link',
+  });
+  updateCurrentState(STATES.PROCESSING);
+}
+
+export function storeFoundElement(element: HTMLElement): void {
+  if (!isTopWindow() && isSameDomainAsTopWindow()) {
+    // this means that content utils is running in an iframe - disable timer and call processFoundElements on manifest processed in top level frame
+    clearTimeout(manifestTimeoutID);
+    manifestTimeoutID = '';
+    FOUND_ELEMENTS.forEach((_val, key) => {
+      window.setTimeout(() => processFoundElements(key), 0);
+    });
+  }
+
+  // check if it's the manifest node
+  if (
+    (isTopWindow() || !isSameDomainAsTopWindow()) &&
+    (element.id === 'binary-transparency-manifest' ||
+      element.getAttribute('name') === 'binary-transparency-manifest')
+  ) {
+    handleManifestNode(element as HTMLScriptElement);
+  }
+
+  // Only a document/doctype can have textContent as null
+  const nodeTextContent = element.textContent ?? '';
+  if (element.getAttribute('type') === 'application/json') {
+    try {
+      JSON.parse(nodeTextContent);
+    } catch (parseError) {
+      setTimeout(() => parseFailedJSON({node: element, retry: 1500}), 20);
+    }
+    return;
+  }
+
+  if (element.nodeName.toLowerCase() === 'script') {
+    const script = element as HTMLScriptElement;
+    if (
+      script.src != null &&
+      script.src !== '' &&
+      script.src.indexOf('blob:') === 0
+    ) {
+      // TODO: try to process the blob. For now, flag as warning.
+      updateCurrentState(STATES.INVALID, 'blob: src');
+      return;
+    }
+    if (script.src !== '' || script.innerHTML !== '') {
+      handleScriptNode(script);
+    }
+  } else if (element.nodeName.toLowerCase() === 'style') {
+    const style = element as HTMLStyleElement;
+    if (style.innerHTML !== '') {
+      handleStyleNode(style);
+    }
+  } else if (element.nodeName.toLowerCase() === 'link') {
+    handleLinkNode(element as HTMLLinkElement);
+  }
+}
+
+export function hasInvalidScriptsOrStyles(scriptNodeMaybe: Node): void {
+  // if not an HTMLElement ignore it!
+  if (scriptNodeMaybe.nodeType !== Node.ELEMENT_NODE) {
+    return;
+  }
+
+  const nodeName = scriptNodeMaybe.nodeName.toLowerCase();
+
+  if (
+    nodeName === 'script' ||
+    nodeName === 'style' ||
+    (nodeName === 'link' &&
+      (scriptNodeMaybe as HTMLElement).getAttribute('rel') == 'stylesheet')
+  ) {
+    storeFoundElement(scriptNodeMaybe as HTMLElement);
+  } else if (scriptNodeMaybe.childNodes.length > 0) {
+    scriptNodeMaybe.childNodes.forEach(childNode => {
+      hasInvalidScriptsOrStyles(childNode);
+    });
+  }
+}
+
+export const scanForScriptsAndStyles = (): void => {
+  const allElements = document.querySelectorAll(
+    'script,style,link[rel="stylesheet"]',
+  );
+  Array.from(allElements).forEach(element => {
+    storeFoundElement(element as HTMLElement);
+  });
+
+  try {
+    // track any new tags that get loaded in
+    const mutationObserver = new MutationObserver(mutationsList => {
+      mutationsList.forEach(mutation => {
+        if (mutation.type === 'childList') {
+          Array.from(mutation.addedNodes).forEach(node => {
+            // Code within a script or style tag has changed
+            const targetNodeName = mutation.target.nodeName.toLocaleLowerCase();
+            if (
+              node.nodeType === Node.TEXT_NODE &&
+              (targetNodeName === 'script' || targetNodeName === 'style')
+            ) {
+              hasInvalidScriptsOrStyles(mutation.target);
+            } else {
+              hasInvalidScriptsOrStyles(node);
+            }
+          });
+        }
+      });
+    });
+
+    mutationObserver.observe(document, {
+      attributes: true,
+      childList: true,
+      subtree: true,
+    });
+  } catch (_UnknownError) {
+    updateCurrentState(STATES.INVALID, 'unknown');
+  }
 };
 
 let isUserLoggedIn = false;
@@ -405,8 +445,8 @@ export function startFor(origin: Origin, config: ContentScriptConfig): void {
   }
   if (isUserLoggedIn) {
     updateCurrentState(STATES.PROCESSING);
-    scanForScripts();
-    scanForCSS();
+    scanForScriptsAndStyles();
+    scanForCSSNeedingManualInspsection();
     // set the timeout once, in case there's an iframe and contentUtils sets another manifest timer
     if (manifestTimeoutID === '') {
       manifestTimeoutID = window.setTimeout(() => {
@@ -419,14 +459,14 @@ export function startFor(origin: Origin, config: ContentScriptConfig): void {
 
 chrome.runtime.onMessage.addListener(request => {
   if (request.greeting === 'downloadSource' && DOWNLOAD_JS_ENABLED) {
-    downloadJS();
+    downloadSrc();
   } else if (request.greeting === 'nocacheHeaderFound') {
     updateCurrentState(
       STATES.INVALID,
-      `Detected uncached script ${request.uncachedUrl}`,
+      `Detected uncached script/style ${request.uncachedUrl}`,
     );
   } else if (request.greeting === 'checkIfScriptWasProcessed') {
-    if (isUserLoggedIn && !ALL_FOUND_SCRIPT_TAGS.has(request.response.url)) {
+    if (isUserLoggedIn && !ALL_FOUND_TAGS_URLS.has(request.response.url)) {
       const hostname = window.location.hostname;
       const resourceURL = new URL(request.response.url);
       if (resourceURL.hostname === hostname) {
@@ -448,15 +488,16 @@ chrome.runtime.onMessage.addListener(request => {
         type: MESSAGE_TYPE.DEBUG,
         log: `Tab is processing ${request.response.url}`,
       });
-      ALL_FOUND_SCRIPT_TAGS.add(request.response.url);
-      const uninitializedScripts = FOUND_SCRIPTS.get(
-        FOUND_SCRIPTS.keys().next().value,
+      ALL_FOUND_TAGS_URLS.add(request.response.url);
+      const uninitializedScripts = FOUND_ELEMENTS.get(
+        FOUND_ELEMENTS.keys().next().value,
       );
       if (uninitializedScripts) {
         uninitializedScripts.push({
           src: request.response.url,
           otherType: currentFilterType,
           isServiceWorker: hasVaryServiceWorkerHeader(request.response),
+          type: 'script',
         });
       }
       updateCurrentState(STATES.PROCESSING);
@@ -467,7 +508,7 @@ chrome.runtime.onMessage.addListener(request => {
       `Sniffable MIME type resource: ${request.src}`,
     );
   } else if (request.greeting === 'downloadReleaseSource') {
-    for (const key of FOUND_SCRIPTS.keys()) {
+    for (const key of FOUND_ELEMENTS.keys()) {
       if (key !== 'UNINITIALIZED') {
         window.open(
           `https://www.facebook.com/btarchive/${key}/${getCurrentOrigin().toLowerCase()}`,

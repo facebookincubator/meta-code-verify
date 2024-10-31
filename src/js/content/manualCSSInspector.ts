@@ -6,44 +6,48 @@
  */
 
 import {STATES} from '../config';
+import {tryToGetManifestVersionAndTypeFromNode} from './getManifestVersionAndTypeFromNode';
 import {updateCurrentState} from './updateCurrentState';
 
-const CHECKED_STYLESHEET_HREFS = new Set<string>();
 const CHECKED_STYLESHEET_HASHES = new Set<string>();
 
-export default function scanForCSS(): void {
+export function scanForCSSNeedingManualInspsection(): void {
   checkForStylesheetChanges();
-
   setInterval(checkForStylesheetChanges, 1000);
 }
 
 async function checkForStylesheetChanges() {
-  [...document.styleSheets].forEach(async sheet => {
-    const isValid = await checkIsStylesheetValid(sheet);
-    updateStateOnInvalidStylesheet(isValid, sheet);
-  });
+  [...document.styleSheets, ...document.adoptedStyleSheets].forEach(
+    async sheet => {
+      const potentialOwnerNode = sheet.ownerNode;
+
+      if (sheet.href && potentialOwnerNode instanceof HTMLLinkElement) {
+        // Link style tags are checked agains the manifest
+        return;
+      }
+
+      if (
+        potentialOwnerNode instanceof HTMLStyleElement &&
+        tryToGetManifestVersionAndTypeFromNode(potentialOwnerNode) != null
+      ) {
+        // Inline style covered by the main checks
+        return;
+      }
+
+      updateStateOnInvalidStylesheet(
+        await checkIsStylesheetValid(sheet),
+        sheet,
+      );
+    },
+  );
 }
 
 async function checkIsStylesheetValid(
   styleSheet: CSSStyleSheet,
 ): Promise<boolean> {
   const potentialOwnerNode = styleSheet.ownerNode;
-  if (
-    // CSS external resource
-    styleSheet.href &&
-    potentialOwnerNode instanceof Element &&
-    potentialOwnerNode.tagName === 'LINK'
-  ) {
-    if (CHECKED_STYLESHEET_HREFS.has(styleSheet.href)) {
-      return true;
-    }
-    CHECKED_STYLESHEET_HREFS.add(styleSheet.href);
-    ensureCORSEnabledForStylesheet(styleSheet);
-  } else if (
-    // Inline css
-    potentialOwnerNode instanceof Element &&
-    potentialOwnerNode.tagName === 'STYLE'
-  ) {
+
+  if (potentialOwnerNode instanceof HTMLStyleElement) {
     const hashedContent = await hashString(
       potentialOwnerNode.textContent ?? '',
     );
@@ -52,6 +56,8 @@ async function checkIsStylesheetValid(
     }
     CHECKED_STYLESHEET_HASHES.add(hashedContent);
   }
+
+  // We have to look at every CSS rule
   return [...styleSheet.cssRules].every(isValidCSSRule);
 }
 

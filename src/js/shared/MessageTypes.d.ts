@@ -19,8 +19,8 @@ export type MessagePayload =
       workaround: string;
     }
   | {
-      type: typeof MESSAGE_TYPE.RAW_JS;
-      rawjs: string;
+      type: typeof MESSAGE_TYPE.RAW_SRC;
+      pkgRaw: string;
       origin: Origin;
       version: string;
     }

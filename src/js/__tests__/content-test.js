@@ -10,10 +10,10 @@
 import {jest} from '@jest/globals';
 import {MESSAGE_TYPE} from '../config';
 import {
-  hasInvalidScripts,
-  scanForScripts,
-  FOUND_SCRIPTS,
-  storeFoundJS,
+  hasInvalidScriptsOrStyles,
+  scanForScriptsAndStyles,
+  FOUND_ELEMENTS,
+  storeFoundElement,
   UNINITIALIZED,
 } from '../content';
 import {setCurrentOrigin} from '../content/updateCurrentState';
@@ -22,10 +22,10 @@ describe('content', () => {
   beforeEach(() => {
     window.chrome.runtime.sendMessage = jest.fn(() => {});
     setCurrentOrigin('FACEBOOK');
-    FOUND_SCRIPTS.clear();
-    FOUND_SCRIPTS.set(UNINITIALIZED, []);
+    FOUND_ELEMENTS.clear();
+    FOUND_ELEMENTS.set(UNINITIALIZED, []);
   });
-  describe('storeFoundJS', () => {
+  describe('storeFoundElement', () => {
     it('should handle scripts with src correctly', () => {
       const fakeUrl = 'https://fancytestingyouhere.com/';
       const fakeScriptNode = {
@@ -33,10 +33,11 @@ describe('content', () => {
         getAttribute: () => {
           return '123_main';
         },
+        nodeName: 'SCRIPT',
       };
-      storeFoundJS(fakeScriptNode);
-      expect(FOUND_SCRIPTS.get('123').length).toEqual(1);
-      expect(FOUND_SCRIPTS.get('123')[0].src).toEqual(fakeUrl);
+      storeFoundElement(fakeScriptNode);
+      expect(FOUND_ELEMENTS.get('123').length).toEqual(1);
+      expect(FOUND_ELEMENTS.get('123')[0].src).toEqual(fakeUrl);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
     it('should send update icon message if valid', () => {
@@ -46,23 +47,24 @@ describe('content', () => {
         getAttribute: () => {
           return '123_main';
         },
+        nodeName: 'SCRIPT',
       };
-      storeFoundJS(fakeScriptNode);
+      storeFoundElement(fakeScriptNode);
       const sentMessage = window.chrome.runtime.sendMessage.mock.calls[0][0];
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
       expect(sentMessage.type).toEqual(MESSAGE_TYPE.UPDATE_STATE);
     });
-    it.skip('storeFoundJS keeps existing icon if not valid', () => {
+    it.skip('storeFoundElement keeps existing icon if not valid', () => {
       // TODO: come back to this after testing processFoundJS
     });
   });
-  describe('hasInvalidScripts', () => {
+  describe('hasInvalidScriptsOrStyles', () => {
     it('should not check for non-HTMLElements', () => {
       const fakeElement = {
         nodeType: 2,
         tagName: 'tagName',
       };
-      hasInvalidScripts(fakeElement);
+      hasInvalidScriptsOrStyles(fakeElement);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
     });
     it('should store any script elements we find', () => {
@@ -74,10 +76,10 @@ describe('content', () => {
         nodeName: 'SCRIPT',
         nodeType: 1,
         tagName: 'tagName',
-        src: '',
+        src: 'fakeurl',
       };
-      hasInvalidScripts(fakeElement);
-      expect(FOUND_SCRIPTS.get('123').length).toBe(1);
+      hasInvalidScriptsOrStyles(fakeElement);
+      expect(FOUND_ELEMENTS.get('123').length).toBe(1);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
       expect(window.chrome.runtime.sendMessage.mock.calls[0][0].type).toBe(
         MESSAGE_TYPE.UPDATE_STATE,
@@ -110,8 +112,8 @@ describe('content', () => {
         nodeName: 'nodename',
         tagName: 'tagName',
       };
-      hasInvalidScripts(fakeElement);
-      expect(FOUND_SCRIPTS.get(UNINITIALIZED).length).toBe(0);
+      hasInvalidScriptsOrStyles(fakeElement);
+      expect(FOUND_ELEMENTS.get(UNINITIALIZED).length).toBe(0);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(0);
     });
     it('should store any script element direct children', () => {
@@ -134,7 +136,7 @@ describe('content', () => {
             nodeType: 1,
             childNodes: [],
             tagName: 'tagName',
-            src: '',
+            src: 'fakeUrl',
           },
         ],
         getAttribute: () => {
@@ -144,8 +146,8 @@ describe('content', () => {
         nodeName: 'nodename',
         tagName: 'tagName',
       };
-      hasInvalidScripts(fakeElement);
-      expect(FOUND_SCRIPTS.get('123').length).toBe(1);
+      hasInvalidScriptsOrStyles(fakeElement);
+      expect(FOUND_ELEMENTS.get('123').length).toBe(1);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
       expect(window.chrome.runtime.sendMessage.mock.calls[0][0].type).toBe(
         MESSAGE_TYPE.UPDATE_STATE,
@@ -197,19 +199,19 @@ describe('content', () => {
         nodeName: 'nodename',
         tagName: 'tagName',
       };
-      hasInvalidScripts(fakeElement);
-      expect(FOUND_SCRIPTS.get('123').length).toBe(2);
+      hasInvalidScriptsOrStyles(fakeElement);
+      expect(FOUND_ELEMENTS.get('123').length).toBe(2);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(2);
     });
   });
-  describe('scanForScripts', () => {
+  describe('scanForScriptsAndStyles', () => {
     it('should find existing script tags in the DOM and check them', () => {
       jest.resetModules();
       document.body.innerHTML =
         '<div>' +
         '  <script data-btmanifest="123_main" src="https://facebook.com/"></script>' +
         '</div>';
-      scanForScripts();
+      scanForScriptsAndStyles();
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
     });
   });
