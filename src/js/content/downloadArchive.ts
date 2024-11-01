@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-export default async function downloadJSArchive(
+export default async function downloadArchive(
   sourceScripts: Map<string, ReadableStream>,
 ): Promise<void> {
   const fileHandle = await window.showSaveFilePicker({

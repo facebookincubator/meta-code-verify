@@ -7,7 +7,7 @@
 
 import {
   MESSAGE_TYPE,
-  DOWNLOAD_JS_ENABLED,
+  DOWNLOAD_SRC_ENABLED,
   STATES,
   Origin,
   ORIGIN_TYPE,
@@ -179,7 +179,7 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
   }
 
   sendMessageToBackground(messagePayload, response => {
-    // then start processing of it's JS
+    // then start processing its JS/CSS
     if (response.valid) {
       if (manifestTimeoutID !== '') {
         clearTimeout(manifestTimeoutID);
@@ -225,16 +225,12 @@ export const processFoundElements = async (version: string): Promise<void> => {
           updateCurrentState(STATES.VALID);
         }
       } else {
-        if (response.type === 'EXTENSION') {
-          updateCurrentState(STATES.RISK);
-        } else {
-          updateCurrentState(STATES.INVALID, `Invalid Tag ${tagIdentifier}`);
-        }
+        updateCurrentState(STATES.INVALID, `Invalid Tag ${tagIdentifier}`);
       }
       sendMessageToBackground({
         type: MESSAGE_TYPE.DEBUG,
         log:
-          'processed JS with SRC response is ' +
+          'processed SRC response is ' +
           JSON.stringify(response).substring(0, 500),
         src: tagIdentifier,
       });
@@ -324,7 +320,7 @@ export function storeFoundElement(element: HTMLElement): void {
       updateCurrentState(STATES.INVALID, 'blob: src');
       return;
     }
-    if (script.src !== '' || script.innerHTML !== '') {
+    if (script.src !== '') {
       handleScriptNode(script);
     }
   } else if (element.nodeName.toLowerCase() === 'style') {
@@ -458,7 +454,7 @@ export function startFor(origin: Origin, config: ContentScriptConfig): void {
 }
 
 chrome.runtime.onMessage.addListener(request => {
-  if (request.greeting === 'downloadSource' && DOWNLOAD_JS_ENABLED) {
+  if (request.greeting === 'downloadSource' && DOWNLOAD_SRC_ENABLED) {
     downloadSrc();
   } else if (request.greeting === 'nocacheHeaderFound') {
     updateCurrentState(

@@ -6,7 +6,7 @@
  */
 
 import {
-  DOWNLOAD_JS_ENABLED,
+  DOWNLOAD_SRC_ENABLED,
   MESSAGE_TYPE,
   ORIGIN_TYPE,
   STATES,
@@ -105,7 +105,7 @@ function attachListeners(origin: string | null): void {
   )[0];
   const downloadSrcButton = document.getElementById('i18nDownloadSourceButton');
 
-  if (DOWNLOAD_JS_ENABLED) {
+  if (DOWNLOAD_SRC_ENABLED) {
     const downloadPageSourceMenuItem = menuRowList[1];
     downloadPageSourceMenuItem.addEventListener('click', () =>
       updateDisplay('download'),
