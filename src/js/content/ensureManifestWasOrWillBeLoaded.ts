@@ -19,7 +19,7 @@ export default function ensureManifestWasOrWillBeLoaded(
     if (!loadedVersions.has(version)) {
       updateCurrentState(
         STATES.INVALID,
-        'Detected script from manifest that has not been loaded',
+        `Detected script from manifest version ${version} that has not been loaded`,
       );
     }
   }, MANIFEST_TIMEOUT);

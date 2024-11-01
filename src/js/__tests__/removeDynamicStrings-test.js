@@ -19,9 +19,9 @@ describe('removeDynamicStrings', () => {
     ).toEqual(`const foo = /*BTDS*/"";`);
   });
   it('Handles empty strings', () => {
-    expect(
-      removeDynamicStrings(`const foo = /*BTDS*/'';`),
-    ).toEqual(`const foo = /*BTDS*/'';`);
+    expect(removeDynamicStrings(`const foo = /*BTDS*/'';`)).toEqual(
+      `const foo = /*BTDS*/'';`,
+    );
   });
   it('Handles strings in different scenarios', () => {
     expect(removeDynamicStrings(`/*BTDS*/'dynamic string';`)).toEqual(
