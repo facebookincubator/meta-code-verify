@@ -8,11 +8,11 @@
 import alertBackgroundOfImminentFetch from './alertBackgroundOfImminentFetch';
 
 import {TagDetails} from '../content';
-import {DOWNLOAD_JS_ENABLED, MESSAGE_TYPE} from '../config';
+import {DOWNLOAD_SRC_ENABLED, MESSAGE_TYPE} from '../config';
 import genSourceText from './genSourceText';
 import {sendMessageToBackground} from '../shared/sendMessageToBackground';
 import {getCurrentOrigin} from './updateCurrentState';
-import downloadJSArchive from './downloadJSArchive';
+import downloadArchive from './downloadArchive';
 
 const SOURCE_SCRIPTS_AND_STYLES = new Map();
 
@@ -40,7 +40,7 @@ async function processSrc(
         // If this is missing it will cause a cache miss, resulting in invalidation.
         headers: isServiceWorker ? {'Service-Worker': 'script'} : undefined,
       });
-      if (DOWNLOAD_JS_ENABLED) {
+      if (DOWNLOAD_SRC_ENABLED) {
         const fileNameArr = url.split('/');
         const fileName = fileNameArr[fileNameArr.length - 1].split('?')[0];
         const responseBody = sourceResponse.clone().body;
@@ -90,7 +90,7 @@ async function processSrc(
 }
 
 function downloadSrc(): void {
-  downloadJSArchive(SOURCE_SCRIPTS_AND_STYLES);
+  downloadArchive(SOURCE_SCRIPTS_AND_STYLES);
 }
 
 export {processSrc, downloadSrc};
