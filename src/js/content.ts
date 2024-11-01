@@ -225,11 +225,7 @@ export const processFoundElements = async (version: string): Promise<void> => {
           updateCurrentState(STATES.VALID);
         }
       } else {
-        if (response.type === 'EXTENSION') {
-          updateCurrentState(STATES.RISK);
-        } else {
-          updateCurrentState(STATES.INVALID, `Invalid Tag ${tagIdentifier}`);
-        }
+        updateCurrentState(STATES.INVALID, `Invalid Tag ${tagIdentifier}`);
       }
       sendMessageToBackground({
         type: MESSAGE_TYPE.DEBUG,
@@ -324,7 +320,7 @@ export function storeFoundElement(element: HTMLElement): void {
       updateCurrentState(STATES.INVALID, 'blob: src');
       return;
     }
-    if (script.src !== '' || script.innerHTML !== '') {
+    if (script.src !== '') {
       handleScriptNode(script);
     }
   } else if (element.nodeName.toLowerCase() === 'style') {
