@@ -4,7 +4,7 @@
 
 Code Verify is an extension for verifying the integrity of a web page.
 
-The idea is you can publish what JavaScript should appear on your site into a "manifest". The manifest consists of the hashes of all the JavaScript files in a given release. This browser extension can consume the manifest and verify that _only_ that code executes, or else display a warning to the user.
+The idea is you can publish what JavaScript/CSS should appear on your site into a "manifest". The manifest consists of the hashes of all the JavaScript/CSS files in a given release. This browser extension can consume the manifest and verify that _only_ that code executes, or else display a warning to the user.
 
 ## Installation
 
