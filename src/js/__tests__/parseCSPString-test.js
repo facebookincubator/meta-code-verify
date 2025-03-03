@@ -67,4 +67,16 @@ describe('parseCSPString', () => {
       ]),
     );
   });
+  it('Correctly parses other whitespace chars', () => {
+    expect(
+      parseCSPString(
+        `default-src\t'self' blob:;` + `script-src 'self'\f'wasm-unsafe-eval';`,
+      ),
+    ).toEqual(
+      new Map([
+        ['default-src', new Set(["'self'", 'blob:'])],
+        ['script-src', new Set(["'self'", "'wasm-unsafe-eval'"])],
+      ]),
+    );
+  });
 });

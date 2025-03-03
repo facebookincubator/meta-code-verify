@@ -11,7 +11,7 @@ export function parseCSPString(csp: string): Map<string, Set<string>> {
     const [directive, ...values] = directiveString
       .trim()
       .toLowerCase()
-      .split(' ');
+      .split(/\s+/);
     // Ignore subsequent keys for a directive, if it's specified more than once
     if (!map.has(directive)) {
       map.set(directive, new Set(values));
