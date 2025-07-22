@@ -36,6 +36,7 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "acorn": "^8.11.3"
+    "acorn": "^8.11.3",
+    "jsdom": "^20.0.0"
   }
 }
