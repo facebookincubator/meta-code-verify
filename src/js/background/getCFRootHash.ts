@@ -11,7 +11,7 @@ export function getCFRootHash(
 ): Promise<Response | null> {
   return new Promise(resolve => {
     fetch(
-      'https://staging-api.privacy-auditability.cloudflare.com/v1/hash/' +
+      'https://api.privacy-auditability.cloudflare.com/v1/hash/' +
         `${encodeURIComponent(host)}/${encodeURIComponent(version)}`,
       {method: 'GET'},
     )
