@@ -54,6 +54,7 @@
     ],
     "permissions": [
         "webRequest",
+        "storage",
         "https://*.privacy-auditability.cloudflare.com/*",
         "https://static.xx.fbcdn.net/",
         "https://static.cdninstagram.com/",

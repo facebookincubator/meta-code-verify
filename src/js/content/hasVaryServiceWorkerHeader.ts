@@ -6,7 +6,7 @@
  */
 
 export function hasVaryServiceWorkerHeader(
-  response: chrome.webRequest.WebResponseCacheDetails,
+  response: chrome.webRequest.OnResponseStartedDetails,
 ): boolean {
   return (
     response.responseHeaders?.find(
