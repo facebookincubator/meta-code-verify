@@ -6,7 +6,7 @@
  */
 
 import {DYNAMIC_STRING_MARKER, Origin, STATES} from './config';
-import {MESSAGE_TYPE, ORIGIN_HOST, ORIGIN_TIMEOUT} from './config';
+import {MESSAGE_TYPE, ORIGIN_HOST} from './config';
 
 import {
   recordContentScriptStart,
@@ -44,20 +44,10 @@ type Manifest = {
 
 function getManifestMapForOrigin(origin: Origin): Map<string, Manifest> {
   // store manifest to subsequently validate JS/CSS
-  let manifestMap = MANIFEST_CACHE.get(origin);
-  if (manifestMap == null) {
-    manifestMap = new Map();
-    MANIFEST_CACHE.set(origin, manifestMap);
+  if (!MANIFEST_CACHE.has(origin)) {
+    MANIFEST_CACHE.set(origin, new Map());
   }
-  // roll through the existing manifests and remove expired ones
-  if (ORIGIN_TIMEOUT[origin] > 0) {
-    for (const [key, manif] of manifestMap.entries()) {
-      if (manif.start + ORIGIN_TIMEOUT[origin] < Date.now()) {
-        manifestMap.delete(key);
-      }
-    }
-  }
-  return manifestMap;
+  return MANIFEST_CACHE.get(origin)!;
 }
 
 function logReceivedMessage(
