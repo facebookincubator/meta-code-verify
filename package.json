@@ -22,7 +22,7 @@
     "@rollup/plugin-eslint": "^9.0.5",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-typescript": "^11.1.5",
-    "@types/chrome": "^0.0.248",
+    "@types/chrome": "^0.1.4",
     "@types/jest": "^29.4.0",
     "@typescript-eslint/eslint-plugin": "^6.8.0",
     "@typescript-eslint/parser": "^6.8.0",

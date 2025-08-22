@@ -6,7 +6,7 @@
  */
 
 const isMetaInitiatedResponse = (
-  response: chrome.webRequest.WebResponseCacheDetails,
+  response: chrome.webRequest.OnResponseStartedDetails,
 ) => {
   const initiator = response.initiator;
   if (!initiator) {
@@ -22,7 +22,7 @@ const isMetaInitiatedResponse = (
 };
 
 function checkResponseMIMEType(
-  response: chrome.webRequest.WebResponseCacheDetails,
+  response: chrome.webRequest.OnResponseStartedDetails,
 ): void {
   // Sniffable MIME types are a violation
   if (

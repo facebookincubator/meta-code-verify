@@ -76,7 +76,7 @@ export function areBlobAndDataExcluded(cspHeaders: string[]): boolean {
  * See checkWorkerEndpointCSP for enforcement.
  */
 export function isWorkerEndpointCSPValid(
-  response: chrome.webRequest.WebResponseCacheDetails,
+  response: chrome.webRequest.OnResponseStartedDetails,
   documentWorkerCSPs: Array<Set<string>>,
   origin: Origin,
 ): [true] | [false, string] {
@@ -112,7 +112,7 @@ export function isWorkerEndpointCSPValid(
 }
 
 export function checkWorkerEndpointCSP(
-  response: chrome.webRequest.WebResponseCacheDetails,
+  response: chrome.webRequest.OnResponseStartedDetails,
   documentWorkerCSPs: Array<Set<string>>,
   origin: Origin,
 ): void {

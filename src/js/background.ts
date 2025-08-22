@@ -19,6 +19,10 @@ import {validateSender} from './background/validateSender';
 import {removeDynamicStrings} from './background/removeDynamicStrings';
 import {MessagePayload, MessageResponse} from './shared/MessageTypes';
 import {setOrUpdateSetInMap} from './shared/nestedDataHelpers';
+import {
+  setUpHistoryCleaner,
+  trackViolationForTab,
+} from './background/historyManager';
 
 const MANIFEST_CACHE = new Map<Origin, Map<string, Manifest>>();
 
@@ -172,6 +176,13 @@ function handleMessages(
         if (manifestObj.leaves.includes(hash)) {
           sendResponse({valid: true, hash: hash});
         } else {
+          trackViolationForTab(
+            validSender.tab.id,
+            message.pkgRaw,
+            message.origin,
+            message.version,
+            hash,
+          );
           sendResponse({
             valid: false,
             hash: hash,
@@ -215,7 +226,6 @@ function handleMessages(
     case MESSAGE_TYPE.UPDATED_CACHED_SCRIPT_URLS: {
       setOrUpdateSetInMap(CACHED_SCRIPTS_URLS, validSender.tab.id, message.url);
       sendResponse({success: true});
-
       return true;
     }
 
@@ -229,6 +239,7 @@ function handleMessages(
 
 chrome.runtime.onMessage.addListener(handleMessages);
 
+setUpHistoryCleaner();
 setupCSPListener(CSP_HEADERS, CSP_REPORT_HEADERS);
 setUpWebRequestsListener(CACHED_SCRIPTS_URLS);
 

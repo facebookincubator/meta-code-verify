@@ -6,7 +6,7 @@
  */
 
 export function getCSPHeadersFromWebRequestResponse(
-  response: chrome.webRequest.WebResponseHeadersDetails,
+  response: chrome.webRequest.OnHeadersReceivedDetails,
   reportHeader = false,
 ): Array<chrome.webRequest.HttpHeader> {
   const responseHeaders = response.responseHeaders;

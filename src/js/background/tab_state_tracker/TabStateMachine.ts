@@ -16,6 +16,7 @@ import {
 
 import StateMachine from './StateMachine';
 import FrameStateMachine from './FrameStateMachine';
+import {upsertInvalidRecord} from '../historyManager';
 import {sendMessageToBackground} from '../../shared/sendMessageToBackground';
 
 function getChromeV3Action() {
@@ -41,11 +42,13 @@ export default class TabStateMachine extends StateMachine {
   private _tabId: number;
   private _origin: Origin;
   private _frameStates: {[key: number]: FrameStateMachine};
+  private _creationTime: number;
 
   constructor(tabId: number, origin: Origin) {
     super();
     this._tabId = tabId;
     this._origin = origin;
+    this._creationTime = Date.now();
     this._frameStates = {};
   }
 
@@ -73,6 +76,9 @@ export default class TabStateMachine extends StateMachine {
       )
     ) {
       return;
+    }
+    if (newState === STATES.INVALID) {
+      upsertInvalidRecord(this._tabId, this._creationTime);
     }
     super.updateStateIfValid(newState);
   }

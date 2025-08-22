@@ -23,9 +23,7 @@ export default function setupCSPListener(
         );
         let frameId = details.frameId;
         if (
-          // @ts-expect-error Missing: type definitions in @types/chrome
           details?.documentLifecycle === 'prerender' &&
-          // @ts-expect-error Missing: type definitions in @types/chrome
           details?.frameType === 'outermost_frame' &&
           details.type === 'main_frame' &&
           details.frameId !== 0
@@ -81,6 +79,7 @@ export default function setupCSPListener(
           });
         }
       }
+      return undefined;
     },
     {
       types: ['main_frame', 'sub_frame'],
