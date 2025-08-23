@@ -38,7 +38,6 @@ const CACHED_SCRIPTS_URLS = new Map<number, Set<string>>();
 
 type Manifest = {
   root: string;
-  start: number;
   leaves: Array<string>;
 };
 
@@ -111,7 +110,6 @@ function handleMessages(
           const manifest = manifestMap.get(message.version) ?? {
             leaves: [],
             root: message.rootHash,
-            start: Date.now(),
           };
           if (!manifestMap.has(message.version)) {
             manifestMap.set(message.version, manifest);
