@@ -71,13 +71,6 @@ export const ORIGIN_HOST: Record<Origin, string> = {
   INSTAGRAM: 'instagram.com',
 };
 
-export const ORIGIN_TIMEOUT = {
-  FACEBOOK: 176400000,
-  WHATSAPP: 0,
-  MESSENGER: 0,
-  INSTAGRAM: 0,
-};
-
 export const ORIGIN_TYPE = Object.freeze({
   FACEBOOK: 'FACEBOOK',
   WHATSAPP: 'WHATSAPP',
