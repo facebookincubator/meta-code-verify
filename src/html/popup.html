@@ -4,132 +4,48 @@
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body class="valid_body">
-    <div class="state_boundary" id="valid">
-      <header>
-        <img class="badge" src="default_32.png" />
-        <div class="menu_button">
-          <object
-            class="menu"
-            type="image/svg+xml"
-            data="menu-badge.svg"></object>
-        </div>
-      </header>
-      <div class="content_body">
-        <object
-          class="validated_body_image"
-          type="image/svg+xml"
-          data="validated-header.svg"></object>
-        <div id="i18nValidatedStatusHeader" class="status_header"></div>
-        <div id="i18nValidatedStatusMessage" class="status_message"></div>
-      </div>
-    </div>
-    <div class="state_boundary" id="loading">
-      <header>
-        <img class="badge" src="default_32.png" />
-        <div class="menu_button">
-          <object
-            class="menu"
-            type="image/svg+xml"
-            data="menu-badge.svg"></object>
-        </div>
-      </header>
-      <div class="content_body">
-        <object
-          class="loading_body_image"
-          type="image/svg+xml"
-          data="loading-header.svg"></object>
-        <div id="i18nCheckingStatusHeader" class="status_header"></div>
-      </div>
-    </div>
-    <div class="state_boundary" id="warning_risk">
-      <header>
-        <img class="badge" src="default_32.png" />
-        <div class="menu_button">
-          <object
-            class="menu"
-            type="image/svg+xml"
-            data="menu-badge.svg"></object>
-        </div>
-      </header>
-      <div class="content_body">
-        <object
-          class="warning_body_image"
-          type="image/svg+xml"
-          data="warning-header.svg"></object>
-        <div id="i18nRiskDetectedStatusHeader" class="status_header"></div>
-        <div id="i18nRiskDetectedStatusMessage" class="status_message"></div>
-        <div class="action_bar">
-          <button
-            id="i18nRiskDetectedLearnMoreButton"
-            class="risk_learn_more_button"
-            type="button"></button>
-          <button
-            id="i18nRiskDetectedRetryButton"
-            class="retry_button"
-            type="button"></button>
-        </div>
-      </div>
-    </div>
-    <div class="state_boundary" id="warning_timeout">
-      <header>
-        <img class="badge" src="default_32.png" />
-        <div class="menu_button">
-          <object
-            class="menu"
-            type="image/svg+xml"
-            data="menu-badge.svg"></object>
-        </div>
-      </header>
-      <div class="content_body">
-        <object
-          class="warning_body_image"
-          type="image/svg+xml"
-          data="warning-header.svg"></object>
-        <div id="i18nNetworkTimeoutStatusHeader" class="status_header"></div>
-        <div id="i18nNetworkTimeoutStatusMessage" class="status_message"></div>
-        <div class="action_bar">
-          <button
-            id="i18nTimeoutLearnMoreButton"
-            class="timeout_learn_more_button"
-            type="button"></button>
-          <button
-            id="i18nTimeoutRetryButton"
-            class="retry_button"
-            type="button"></button>
-        </div>
-      </div>
-    </div>
-    <div class="state_boundary" id="error">
-      <header>
-        <img class="badge" src="default_32.png" />
-        <div class="menu_button">
-          <object
-            class="menu"
-            type="image/svg+xml"
-            data="menu-badge.svg"></object>
-        </div>
-      </header>
-      <div class="content_body">
-        <object
-          class="error_body_image"
-          type="image/svg+xml"
-          data="error-header.svg"></object>
-        <div id="i18nValidationFailureStatusHeader" class="status_header"></div>
-        <div class="status_message">
-          <span id="i18nValidationFailureStatusMessagePartOne"></span>
-          <span
-            id="i18nstatusValidationFailureMessageHighlighted"
-            class="status_message_highlight"></span>
-          <span id="i18nValidationFailureStatusMessagePartTwo"></span>
-        </div>
-        <div class="action_bar">
-          <button
-            id="i18nAnomalyLearnMoreButton"
-            class="anomaly_learn_more_button"
-            type="button"></button>
-        </div>
-      </div>
-    </div>
+    <state-element
+      inner-id="valid"
+      type="validated"
+      status-header="i18nValidatedStatusHeader"
+      status-message="i18nValidatedStatusMessage"></state-element>
+    <state-element
+      inner-id="loading"
+      type="loading"
+      status-header="i18nCheckingStatusHeader"></state-element>
+    <state-element
+      inner-id="warning_risk"
+      type="warning"
+      status-header="i18nRiskDetectedStatusHeader"
+      status-message="i18nRiskDetectedStatusMessage"
+      primary-button-id="i18nRiskDetectedRetryButton"
+      primary-button-action="retry"
+      secondary-button-id="i18nRiskDetectedLearnMoreButton"
+      secondary-button-action="learn_more"></state-element>
+    <state-element
+      inner-id="warning_timeout"
+      type="warning"
+      status-header="i18nNetworkTimeoutStatusHeader"
+      status-message="i18nNetworkTimeoutStatusMessage"
+      primary-button-id="i18nTimeoutRetryButton"
+      primary-button-action="retry"
+      secondary-button-id="i18nTimeoutLearnMoreButton"
+      secondary-button-action="learn_more"></state-element>
+    <state-element
+      inner-id="error"
+      type="error"
+      status-header="i18nValidationFailureStatusHeader"
+      status-message="i18nValidationFailureStatusMessage"
+      secondary-button-id="i18nAnomalyLearnMoreButton"
+      secondary-button-action="learn_more"
+      primary-button-id="i18nDownloadPrompt"
+      primary-button-action="download"></state-element>
+    <state-element
+      inner-id="download"
+      header-message="i18nDownloadPrompt"
+      status-message="i18ndownloadSourceDescription"
+      primary-button-id="i18nDownloadSourceButton"
+      primary-button-action="download"></state-element>
     <div class="state_boundary" id="menu">
       <div class="menu_top_level">
         <img class="badge" src="default_32.png" />
@@ -176,29 +92,6 @@
               type="image/svg+xml"
               data="chevron-right.svg"></object>
           </div>
-        </div>
-      </div>
-    </div>
-    <div class="state_boundary" id="download">
-      <header>
-        <span class="download_header">
-          <img class="badge" src="default_32.png" />
-          <p id="i18nDownloadPrompt" class="download_title"></p>
-        </span>
-        <div class="menu_button">
-          <object
-            class="menu"
-            type="image/svg+xml"
-            data="menu-badge.svg"></object>
-        </div>
-      </header>
-      <div class="content_body">
-        <div id="i18ndownloadSourceDescription" class="status_message"></div>
-        <div class="action_bar">
-          <button
-            id="i18nDownloadSourceButton"
-            class="download_button"
-            type="button"></button>
         </div>
       </div>
     </div>

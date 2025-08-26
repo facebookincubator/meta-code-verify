@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import type {Origin, State} from './config';
 import {
   DOWNLOAD_SRC_ENABLED,
   MESSAGE_TYPE,
@@ -12,7 +13,16 @@ import {
   STATES,
 } from './config.js';
 
-const STATE_TO_POPUP_STATE: Record<string, string> = {
+type PopupState =
+  | 'loading'
+  | 'warning_risk'
+  | 'warning_timeout'
+  | 'error'
+  | 'valid'
+  | 'menu'
+  | 'download';
+
+const STATE_TO_POPUP_STATE: Record<State, PopupState> = {
   [STATES.START]: 'loading',
   [STATES.PROCESSING]: 'loading',
   [STATES.IGNORE]: 'loading',
@@ -22,37 +32,30 @@ const STATE_TO_POPUP_STATE: Record<string, string> = {
   [STATES.TIMEOUT]: 'warning_timeout',
 };
 
-type TranslatedMessages = {
-  about: string;
-  failure: string;
-  risk: string;
-  timeout: string;
-};
-
-const ORIGIN_TO_LEARN_MORE_PAGES: Record<string, TranslatedMessages> = {
+const ORIGIN_TO_LEARN_MORE_PAGES: Record<Origin, Record<string, string>> = {
   [ORIGIN_TYPE.FACEBOOK]: {
     about: chrome.i18n.getMessage('about_code_verify_faq_url_fb'),
-    failure: chrome.i18n.getMessage('validation_failure_faq_url_fb'),
-    risk: chrome.i18n.getMessage('possible_risk_detected_faq_url_fb'),
-    timeout: chrome.i18n.getMessage('network_timeout_faq_url_fb'),
+    error: chrome.i18n.getMessage('validation_failure_faq_url_fb'),
+    warning_risk: chrome.i18n.getMessage('possible_risk_detected_faq_url_fb'),
+    warning_timeout: chrome.i18n.getMessage('network_timeout_faq_url_fb'),
   },
   [ORIGIN_TYPE.MESSENGER]: {
     about: chrome.i18n.getMessage('about_code_verify_faq_url_msgr'),
-    failure: chrome.i18n.getMessage('validation_failure_faq_url_msgr'),
-    risk: chrome.i18n.getMessage('possible_risk_detected_faq_url_msgr'),
-    timeout: chrome.i18n.getMessage('network_timeout_faq_url_msgr'),
+    error: chrome.i18n.getMessage('validation_failure_faq_url_msgr'),
+    warning_risk: chrome.i18n.getMessage('possible_risk_detected_faq_url_msgr'),
+    warning_timeout: chrome.i18n.getMessage('network_timeout_faq_url_msgr'),
   },
   [ORIGIN_TYPE.WHATSAPP]: {
     about: chrome.i18n.getMessage('about_code_verify_faq_url_wa'),
-    failure: chrome.i18n.getMessage('validation_failure_faq_url_wa'),
-    risk: chrome.i18n.getMessage('possible_risk_detected_faq_url_wa'),
-    timeout: chrome.i18n.getMessage('network_timeout_faq_url_wa'),
+    error: chrome.i18n.getMessage('validation_failure_faq_url_wa'),
+    warning_risk: chrome.i18n.getMessage('possible_risk_detected_faq_url_wa'),
+    warning_timeout: chrome.i18n.getMessage('network_timeout_faq_url_wa'),
   },
   [ORIGIN_TYPE.INSTAGRAM]: {
     about: chrome.i18n.getMessage('about_code_verify_faq_url_ig'),
-    failure: chrome.i18n.getMessage('validation_failure_faq_url_ig'),
-    risk: chrome.i18n.getMessage('possible_risk_detected_faq_url_ig'),
-    timeout: chrome.i18n.getMessage('network_timeout_faq_url_ig'),
+    error: chrome.i18n.getMessage('validation_failure_faq_url_ig'),
+    warning_risk: chrome.i18n.getMessage('possible_risk_detected_faq_url_ig'),
+    warning_timeout: chrome.i18n.getMessage('network_timeout_faq_url_ig'),
   },
 };
 
@@ -64,135 +67,38 @@ function attachTextToHtml(): void {
   });
 }
 
-function attachListeners(origin: string | null): void {
-  if (!(origin && origin in ORIGIN_TO_LEARN_MORE_PAGES)) {
-    throw new Error(
-      `Learn more pages for origin type: ${origin} do not exist!`,
-    );
-  }
-  const learnMoreUrls = ORIGIN_TO_LEARN_MORE_PAGES[origin];
+function attachMenuListeners(origin: Origin): void {
+  document
+    .getElementById('close_menu')
+    ?.addEventListener('click', () => window.close());
 
-  const menuButtonsList = document.getElementsByClassName('menu_button');
-  Array.from(menuButtonsList).forEach(menuButton => {
-    menuButton.addEventListener('click', () => updateDisplay('menu'));
+  const menuRows = document.getElementsByClassName('menu_row');
+
+  menuRows[0].addEventListener('click', _evt => {
+    chrome.tabs.create({url: ORIGIN_TO_LEARN_MORE_PAGES[origin].about});
   });
 
-  const closeMenuButton = document.getElementById('close_menu');
-  closeMenuButton?.addEventListener('click', () => window.close());
-
-  const menuRowList = document.getElementsByClassName('menu_row');
-
-  const learnMoreMenuItem = menuRowList[0];
-  learnMoreMenuItem.addEventListener('click', _evt => {
-    chrome.tabs.create({url: learnMoreUrls.about});
-  });
-  if (learnMoreMenuItem instanceof HTMLElement) {
-    learnMoreMenuItem.style.cursor = 'pointer';
-  }
-  const downloadReleaseSourceMenuItem = menuRowList[2];
-  downloadReleaseSourceMenuItem.addEventListener('click', _evt => {
+  menuRows[2].addEventListener('click', _evt => {
     sendMessageToActiveTab('downloadReleaseSource');
   });
-  if (downloadReleaseSourceMenuItem instanceof HTMLElement) {
-    downloadReleaseSourceMenuItem.style.cursor = 'pointer';
-  }
-  if (origin === ORIGIN_TYPE.WHATSAPP) {
-    downloadReleaseSourceMenuItem.remove();
-  }
-
-  const downloadPageSourceText = document.getElementsByClassName(
-    'status_message_highlight',
-  )[0];
-  const downloadSrcButton = document.getElementById('i18nDownloadSourceButton');
 
   if (DOWNLOAD_SRC_ENABLED) {
-    const downloadPageSourceMenuItem = menuRowList[1];
-    downloadPageSourceMenuItem.addEventListener('click', () =>
-      updateDisplay('download'),
-    );
-    if (downloadPageSourceMenuItem instanceof HTMLElement) {
-      downloadPageSourceMenuItem.style.cursor = 'pointer';
-    }
-
-    downloadPageSourceText.addEventListener('click', () => {
-      sendMessageToActiveTab('downloadSource');
-    });
-    if (downloadPageSourceText instanceof HTMLElement) {
-      downloadPageSourceText.style.cursor = 'pointer';
-    }
-
-    if (downloadSrcButton) {
-      downloadSrcButton.onclick = () => {
-        sendMessageToActiveTab('downloadSource');
-      };
-      downloadSrcButton.style.cursor = 'pointer';
-    }
-
-    downloadPageSourceText.addEventListener('click', () =>
-      updateDisplay('download'),
-    );
-    if (downloadPageSourceText instanceof HTMLElement) {
-      downloadPageSourceText.style.cursor = 'pointer';
-    }
+    menuRows[1].addEventListener('click', () => updateDisplay('download'));
   } else {
-    menuRowList[1].remove();
-    downloadPageSourceText.remove();
-    const downloadMessagePartTwo = document.getElementById(
-      'i18nValidationFailureStatusMessagePartTwo',
-    );
-    downloadMessagePartTwo?.remove();
-    downloadSrcButton?.remove();
-  }
-
-  const learnMoreList = document.getElementsByClassName(
-    'anomaly_learn_more_button',
-  );
-  learnMoreList[0].addEventListener('click', () => {
-    chrome.tabs.create({url: learnMoreUrls.failure});
-  });
-  if (learnMoreList[0] instanceof HTMLElement) {
-    learnMoreList[0].style.cursor = 'pointer';
-  }
-
-  const riskLearnMoreList = document.getElementsByClassName(
-    'risk_learn_more_button',
-  );
-  riskLearnMoreList[0].addEventListener('click', () => {
-    chrome.tabs.create({url: learnMoreUrls.risk});
-  });
-  if (riskLearnMoreList[0] instanceof HTMLElement) {
-    riskLearnMoreList[0].style.cursor = 'pointer';
-  }
-
-  const retryButtonList = document.getElementsByClassName('retry_button');
-  Array.from(retryButtonList).forEach(retryButton => {
-    retryButton.addEventListener('click', () => {
-      chrome.tabs.reload();
-    });
-    if (retryButton instanceof HTMLElement) {
-      retryButton.style.cursor = 'pointer';
-    }
-  });
-
-  const timeoutLearnMoreList = document.getElementsByClassName(
-    'timeout_learn_more_button',
-  );
-  timeoutLearnMoreList[0].addEventListener('click', () => {
-    chrome.tabs.create({url: learnMoreUrls.timeout});
-  });
-  if (timeoutLearnMoreList[0] instanceof HTMLElement) {
-    timeoutLearnMoreList[0].style.cursor = 'pointer';
+    menuRows[1].remove();
   }
 }
 
-function updateDisplay(state: string): void {
-  const popupState = STATE_TO_POPUP_STATE[state] || state;
+function updateDisplay(state: State | PopupState): void {
+  const popupState: PopupState =
+    state in STATE_TO_POPUP_STATE
+      ? STATE_TO_POPUP_STATE[state as State]
+      : (state as PopupState);
   Array.from(document.getElementsByClassName('state_boundary')).forEach(
     (element: Element) => {
       if (element instanceof HTMLElement) {
         if (element.id == popupState) {
           element.style.display = 'flex';
-          document.body.className = popupState + '_body';
         } else {
           element.style.display = 'none';
         }
@@ -228,11 +134,152 @@ function sendMessageToActiveTab(message: string): void {
   });
 }
 
+class PopupHeader extends HTMLElement {
+  static observedAttributes = ['header-message'];
+
+  connectedCallback() {
+    const headerMessage = this.getAttribute('header-message');
+    this.innerHTML = `
+       <header>
+        <span class="header_title">
+          <img class="badge" src="default_32.png" />
+          ${
+            headerMessage
+              ? `<p id="${headerMessage}" class="header_label"></p>`
+              : ''
+          }
+        </span>
+        <div class="menu_button">
+          <object
+            class="menu"
+            type="image/svg+xml"
+            data="menu-badge.svg"></object>
+        </div>
+      </header>
+    `;
+
+    document.querySelectorAll('.menu_button')?.forEach(menuButton => {
+      menuButton.addEventListener('click', () => {
+        updateDisplay('menu');
+      });
+    });
+  }
+}
+
+customElements.define('popup-header', PopupHeader);
+
+class StateElement extends HTMLElement {
+  static observedAttributes = [
+    'inner-id',
+    'type',
+    'status-header',
+    'status-message',
+    'secondary-button-id',
+    'primary-button-id',
+    'primary-button-action',
+    'secondary-button-id',
+    'secondary-button-action',
+    'header-message',
+  ];
+
+  connectedCallback() {
+    const type = this.getAttribute('type');
+    const innerId = this.getAttribute('inner-id')!;
+    const headerMessage = this.getAttribute('header-message');
+    const statusHeader = this.getAttribute('status-header');
+    const statusMessage = this.getAttribute('status-message');
+    const secondaryButtonId = this.getAttribute('secondary-button-id');
+    const primaryButtonId = this.getAttribute('primary-button-id');
+    const primaryButtonAction = this.getAttribute('primary-button-action');
+    const secondaryButtonAction = this.getAttribute('secondary-button-action');
+    const secondaryButton = secondaryButtonId
+      ? `<button
+          id="${secondaryButtonId}"
+          class="button secondary_button"
+          type="button"></button>`
+      : '';
+    const primaryButton = primaryButtonId
+      ? `<button
+          id="${primaryButtonId}"
+          class="button primary_button"
+          type="button"></button>`
+      : '';
+    const actionBar =
+      primaryButton || secondaryButton
+        ? `<div class="action_bar">
+              ${secondaryButton}
+              ${primaryButton}
+            </div>`
+        : '';
+    this.innerHTML = `
+        <div class="state_boundary" id="${innerId}">
+          <popup-header header-message=${headerMessage}></popup-header>
+          <div class="content_body">
+            ${
+              type
+                ? `<img
+                    class="body_image"
+                    src="${type}-header.svg"></object>`
+                : ''
+            }
+            ${
+              statusHeader
+                ? `<div id="${statusHeader}" class="status_header"></div>`
+                : ''
+            }
+            ${
+              statusMessage
+                ? `<div id="${statusMessage}" class="status_message"></div>`
+                : ''
+            }
+            ${actionBar}
+          </div>
+        </div>
+    `;
+
+    if (primaryButtonAction != null && primaryButtonId != null) {
+      const button = document.getElementById(primaryButtonId);
+      handleButtonAction(button!, primaryButtonAction, innerId);
+    }
+    if (secondaryButtonAction != null && secondaryButtonId != null) {
+      const button = document.getElementById(secondaryButtonId);
+      handleButtonAction(button!, secondaryButtonAction, innerId);
+    }
+  }
+}
+
+const handleButtonAction = (
+  button: HTMLElement,
+  action: string,
+  id: string,
+) => {
+  if (action === 'download' && !DOWNLOAD_SRC_ENABLED) {
+    button.remove();
+    return;
+  }
+  button?.addEventListener('click', () => {
+    if (action === 'retry') {
+      chrome.tabs.reload();
+    } else if (action === 'learn_more') {
+      chrome.tabs.create({
+        url: ORIGIN_TO_LEARN_MORE_PAGES[currentOrigin][id],
+      });
+    } else if (action === 'download') {
+      sendMessageToActiveTab('downloadSource');
+    }
+  });
+};
+
+customElements.define('state-element', StateElement);
+
+let currentOrigin: Origin;
+
 (function (): void {
   const params = new URL(document.location.href).searchParams;
   setUpBackgroundMessageHandler(params.get('tab_id'));
-  const state = params.get('state');
+  const state = params.get('state') as State;
   state && updateDisplay(state);
   attachTextToHtml();
-  attachListeners(params.get('origin'));
+  currentOrigin = params.get('origin') as Origin;
+  attachMenuListeners(currentOrigin);
 })();
