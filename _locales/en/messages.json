@@ -109,5 +109,11 @@
 	},
 	"i18nDownloadSourceButton": {
 		"message": "Download"
+	},
+	"i18nViewAllViolations": {
+		"message": "View All Violations"
+	},
+	"i18nViolations": {
+		"message": "All Violations"
 	}
 }

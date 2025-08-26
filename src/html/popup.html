@@ -3,7 +3,7 @@
   <head>
     <link rel="stylesheet" href="popup.css" />
   </head>
-  <body class="valid_body">
+  <body>
     <state-element
       inner-id="valid"
       type="validated"
@@ -74,6 +74,17 @@
             <object
               class="row_image"
               type="image/svg+xml"
+              data="circle-info.svg"></object>
+            <p id="i18nViewAllViolations"></p>
+            <object
+              class="row_nav"
+              type="image/svg+xml"
+              data="chevron-right.svg"></object>
+          </div>
+          <div class="menu_row">
+            <object
+              class="row_image"
+              type="image/svg+xml"
               data="circle-download-cta.svg"></object>
             <p id="i18ndownloadSourcePrompt"></p>
             <object
@@ -94,6 +105,9 @@
           </div>
         </div>
       </div>
+    </div>
+    <div class="state_boundary" id="violation_list">
+      <violation-list></violation-list>
     </div>
     <script src="popup.js"></script>
   </body>

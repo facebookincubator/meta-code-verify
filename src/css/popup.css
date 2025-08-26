@@ -5,14 +5,21 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@import 'violations.css';
+
 /* We only use objects to render out SVGs so disable pointer events */
 object {
   pointer-events: none;
 }
 
 body {
-  width: 262px;
   margin: 0;
+  overflow: hidden;
+}
+
+state-element {
+  display: block;
+  width: 262px;
 }
 
 .badge,
@@ -41,8 +48,8 @@ body {
   margin-top: 16px;
   width: 100%;
   gap: 12px;
-	padding: 0 12px;
-	box-sizing: border-box;
+  padding: 0 12px;
+  box-sizing: border-box;
 }
 
 .button {
@@ -82,9 +89,7 @@ header {
   cursor: pointer;
 }
 
-
 .state_boundary {
-  flex-direction: column;
   display: none;
 }
 
@@ -127,7 +132,6 @@ header {
   letter-spacing: 0.24px;
   color: #000000;
   height: 22px;
-  width: 84px;
   margin: 0;
   padding: 0;
 }
@@ -198,6 +202,7 @@ header {
 .menu_top_level {
   display: flex;
   flex-direction: row;
+  width: 262px;
 }
 
 .menu_top_level > .badge {
