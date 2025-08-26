@@ -10,14 +10,19 @@ object {
   pointer-events: none;
 }
 
-.action_bar {
-  flex-direction: row;
-  justify-content: space-between;
-  margin: 24px 13px 0 13px;
+body {
+  width: 262px;
+  margin: 0;
 }
 
-.badge {
+.badge,
+.menu {
   height: 20px;
+}
+
+.body_image {
+  height: 32px;
+  width: 158px;
 }
 
 .content_body {
@@ -25,16 +30,28 @@ object {
   display: flex;
   justify-content: center;
   flex-direction: column;
+  margin-bottom: 16px;
+  padding-top: 24px;
 }
 
-.anomaly_learn_more_button,
-.download_button {
+.action_bar {
+  flex-direction: row;
+  display: flex;
+  justify-content: space-evenly;
+  margin-top: 16px;
+  width: 100%;
+  gap: 12px;
+	padding: 0 12px;
+	box-sizing: border-box;
+}
+
+.button {
+  flex: 1;
   border: 1px solid #cbd2d9;
   box-sizing: border-box;
   border-radius: 4px;
+  cursor: pointer;
   height: 36px;
-  width: 230px;
-  background: #1c2b33;
   font-family: SF Pro Text;
   font-style: normal;
   font-weight: 500;
@@ -42,32 +59,66 @@ object {
   line-height: 20px;
   text-align: center;
   letter-spacing: -0.23px;
+}
+
+.primary_button {
+  background: #1c2b33;
   color: #ffffff;
 }
 
-.risk_learn_more_button,
-.timeout_learn_more_button {
-  border: 1px solid #cbd2d9;
-  box-sizing: border-box;
-  border-radius: 4px;
-  height: 36px;
-  width: 111px;
+.secondary_button {
   background: #ffffff;
-  font-family: SF Pro Text;
-  font-style: normal;
-  font-weight: 500;
-  font-size: 15px;
-  line-height: 20px;
-  text-align: center;
-  letter-spacing: -0.23px;
   color: #1c2b33;
 }
 
-.download_header {
+header {
   display: flex;
+  justify-content: space-between;
+  padding: 16px 16px 0 16px;
 }
 
-.download_title {
+.menu_button,
+#close_menu {
+  cursor: pointer;
+}
+
+
+.state_boundary {
+  flex-direction: column;
+  display: none;
+}
+
+.status_header {
+  font-family: SF Pro Text;
+  font-style: normal;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 18px;
+  text-align: center;
+  letter-spacing: -0.08px;
+  color: #1c2b33;
+  margin-top: 12px;
+}
+
+.status_message {
+  font-family: SF Pro Text;
+  font-style: normal;
+  font-weight: normal;
+  font-size: 13px;
+  line-height: 18px;
+  text-align: center;
+  letter-spacing: -0.08px;
+  color: #63788a;
+  margin: 0 36px;
+}
+
+.header_title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header_label {
   font-family: Optimistic Display;
   font-style: normal;
   font-weight: bold;
@@ -77,44 +128,11 @@ object {
   color: #000000;
   height: 22px;
   width: 84px;
-  margin: 0px 0px 0px 12px;
-  padding-bottom: 21px;
-}
-
-.download_body {
-  width: 262px;
-  height: 164px;
-  padding-bottom: 12px;
-}
-
-.error_body {
-  width: 262px;
-  height: 288px;
-  background: #ffffff;
   margin: 0;
+  padding: 0;
 }
 
-header {
-  display: flex;
-  justify-content: space-between;
-  padding: 16px 16px 0 16px;
-}
-
-.menu {
-  height: 20px;
-}
-
-.menu_button,
-#close_menu {
-  cursor: pointer;
-}
-
-.menu_body {
-  height: 227px;
-  width: 256px;
-  margin: 0px;
-}
-
+/* Menu Page */
 .menu_right_sidebar {
   display: flex;
   flex-direction: column;
@@ -126,6 +144,7 @@ header {
 
 .menu_row {
   display: flex;
+  cursor: pointer;
   flex-direction: row;
   align-items: center;
   padding: 8px 16px;
@@ -185,36 +204,6 @@ header {
   margin: 13px 12px 0 15px;
 }
 
-.loading_body {
-  width: 257px;
-  height: 154px;
-  background: #ffffff;
-  margin: 0;
-}
-
-.loading_body_image {
-  height: 32px;
-  margin-top: 24px;
-  width: 158px;
-}
-
-.retry_button {
-  border: 1px solid #cbd2d9;
-  box-sizing: border-box;
-  border-radius: 4px;
-  height: 36px;
-  width: 111px;
-  background: #1c2b33;
-  font-family: SF Pro Text;
-  font-style: normal;
-  font-weight: 500;
-  font-size: 15px;
-  line-height: 20px;
-  text-align: center;
-  letter-spacing: -0.23px;
-  color: #ffffff;
-}
-
 .row_image {
   flex: none;
   order: 0;
@@ -226,72 +215,4 @@ header {
   order: 2;
   flex-grow: 0;
   margin: 0px 12px;
-}
-
-.state_boundary {
-  flex-direction: column;
-  display: none;
-}
-
-.status_header {
-  font-family: SF Pro Text;
-  font-style: normal;
-  font-weight: 600;
-  font-size: 13px;
-  line-height: 18px;
-
-  text-align: center;
-  letter-spacing: -0.08px;
-
-  color: #1c2b33;
-  margin-top: 12px;
-}
-
-.status_message {
-  font-family: SF Pro Text;
-  font-style: normal;
-  font-weight: normal;
-  font-size: 13px;
-  line-height: 18px;
-  text-align: center;
-  letter-spacing: -0.08px;
-  color: #63788a;
-  margin: 0 36px;
-}
-
-.status_message_highlight {
-  color: #1c2b33;
-}
-
-.valid_body {
-  width: 262px;
-  height: 164px;
-  background: #ffffff;
-  margin: 0;
-}
-
-.validated_body_image {
-  height: 32px;
-  margin-top: 24px;
-  width: 158px;
-}
-
-.warning_risk_body {
-  width: 262px;
-  height: 270px;
-  background: #ffffff;
-  margin: 0;
-}
-
-.warning_timeout_body {
-  width: 262px;
-  height: 216px;
-  background: #ffffff;
-  margin: 0;
-}
-
-.warning_body_image {
-  height: 32px;
-  margin-top: 24px;
-  width: 158px;
 }
