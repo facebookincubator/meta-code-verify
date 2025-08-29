@@ -32,21 +32,14 @@ export default async function genSourceText(
   // after the sourceURL comment, which would execute on the browser but get
   // stripped away by the extension before getting hashed + verified.
   // As a result, we're always starting our search from the bottom.
-  const lastPart = sourceTextParts[sourceTextParts.length - 1];
-  if (lastPart.startsWith('//# sourceURL=')) {
-    sourceTextParts.pop();
-    const sourceURL = lastPart.split('//# sourceURL=')[1] ?? '';
-    if (!sourceURL.startsWith('http')) {
-      throw new Error(`Invalid sourceUrl in inlined data script: ${sourceURL}`);
-    }
-  }
-  while (
-    sourceTextParts[sourceTextParts.length - 1] === '\n' ||
-    sourceTextParts[sourceTextParts.length - 1].startsWith(
-      '//# sourceMappingURL=',
-    )
-  ) {
+  while (isValidSourceURL(sourceTextParts[sourceTextParts.length - 1])) {
     sourceTextParts.pop();
   }
   return sourceTextParts.join('\n').trim();
 }
+
+const isValidSourceURL = (sourceURL: string): boolean => {
+  return /^\/\/#\s*source(Mapping)?URL=https?:\/\/[^\s]+.js(\.map)?(?!\s)$/u.test(
+    sourceURL,
+  );
+};
