@@ -1,0 +1,187 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+violation-list {
+  display: block;
+  width: 800px;
+  height: 600px;
+  overflow: auto;
+}
+
+violation-list popup-header {
+  margin-bottom: 12px;
+  display: block;
+}
+
+violation-list table {
+  background: #fdf5e6;
+  color: #8b6914;
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font: 12px SF Pro Text;
+}
+
+violation-list th,
+violation-list td {
+  border: 1px solid #e6c547;
+  padding: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-wrap-mode: nowrap;
+  box-sizing: border-box;
+}
+
+violation-list th {
+  background: #f2e6a6;
+  font-weight: 600;
+  text-align: start;
+}
+
+/* Column widths */
+violation-list th:nth-child(1),
+violation-list td:nth-child(1) {
+  width: 54%;
+}
+
+violation-list th:nth-child(2),
+violation-list td:nth-child(2) {
+  width: 21%;
+}
+
+violation-list th:nth-child(3),
+violation-list td:nth-child(3) {
+  width: 12%;
+}
+
+violation-list th:nth-child(4),
+violation-list td:nth-child(4) {
+  width: 13%;
+  text-align: end;
+}
+
+/* Hashes table */
+violation-list .subtable_wrapper {
+  display: none;
+}
+
+violation-list .subtable_wrapper > td {
+  padding: 0;
+  border: 0;
+}
+
+violation-list .hashes_table {
+  background: #fef9e7;
+  color: #996515;
+  font-size: 11px;
+}
+
+violation-list .hashes_table thead th {
+  border-top: 0;
+  background: #f0e6b8;
+}
+
+violation-list .hashes_table tr td:last-child,
+violation-list .hashes_table thead th:last-child {
+  border-right: 0;
+}
+
+violation-list .hashes_table tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Indent */
+violation-list .hashes_table tr {
+  position: relative;
+}
+
+violation-list .hashes_table tr::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  background: linear-gradient(to right, #f8f2d3 0%, #fef9e7 100%);
+  border-right: 2px solid #e6c547;
+}
+
+violation-list .hashes_table tr th:first-child,
+violation-list .hashes_table tr td:first-child {
+  padding-left: 42px;
+}
+
+/* Override column Widths for first 2 columns */
+violation-list .hashes_table th:nth-child(1),
+violation-list .hashes_table td:nth-child(1) {
+  width: 64%;
+}
+
+violation-list .hashes_table th:nth-child(2),
+violation-list .hashes_table td:nth-child(2) {
+  width: 11%;
+}
+
+/* Hashes */
+violation-list code {
+  padding: 4px;
+  border-radius: 3px;
+  font-family: SF Mono, Monaco, monospace;
+  min-width: 100%;
+  text-align: center;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: #f7f2c4;
+  border: 1px solid #e6d878;
+  color: #5c5200;
+  box-sizing: border-box;
+}
+
+.download_img {
+  cursor: pointer;
+  opacity: 0.8;
+  width: 16px;
+  height: 16px;
+}
+
+violation-list .subtable_wrapper.expanded {
+  display: table-row;
+}
+
+.expand-row {
+  cursor: pointer;
+}
+
+/* Current tab row styling */
+violation-list tr.current-tab {
+  background: #fef4e8;
+  border: 2px solid #e67e22;
+  box-shadow: 0 2px 4px rgba(230, 126, 34, 0.2);
+}
+
+violation-list tr.current-tab td {
+  color: #b8540e;
+  border-color: #e67e22;
+}
+
+violation-list tr.current-tab td:first-child {
+  position: relative;
+}
+
+violation-list tr.current-tab td:first-child::after {
+  content: 'CURRENT TAB';
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #e67e22;
+  color: white;
+  font-size: 8px;
+  font-weight: bold;
+  padding: 2px 4px;
+  border-radius: 0 0 0 4px;
+}

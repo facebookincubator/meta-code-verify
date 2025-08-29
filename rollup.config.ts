@@ -49,7 +49,7 @@ const config: Array<RollupOptions> = contentScriptSteps.concat([
     plugins: [typescript(), prettierSrc(), eslint(), nodeResolve()],
   },
   {
-    input: 'src/js/popup.ts',
+    input: 'src/js/popup/popup.ts',
     output: TARGETS.map(([target, version]) => ({
       file: `dist/${target}/popup.js`,
       format: 'iife',

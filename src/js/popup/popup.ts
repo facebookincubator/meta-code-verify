@@ -5,13 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type {Origin, State} from './config';
+import type {Origin, State} from '../config';
 import {
   DOWNLOAD_SRC_ENABLED,
   MESSAGE_TYPE,
   ORIGIN_TYPE,
   STATES,
-} from './config.js';
+} from '../config.js';
+
+import './violation-list';
 
 type PopupState =
   | 'loading'
@@ -20,7 +22,8 @@ type PopupState =
   | 'error'
   | 'valid'
   | 'menu'
-  | 'download';
+  | 'download'
+  | 'violation_list';
 
 const STATE_TO_POPUP_STATE: Record<State, PopupState> = {
   [STATES.START]: 'loading',
@@ -78,14 +81,18 @@ function attachMenuListeners(origin: Origin): void {
     chrome.tabs.create({url: ORIGIN_TO_LEARN_MORE_PAGES[origin].about});
   });
 
-  menuRows[2].addEventListener('click', _evt => {
+  menuRows[1].addEventListener('click', _evt => {
+    updateDisplay('violation_list');
+  });
+
+  menuRows[3].addEventListener('click', _evt => {
     sendMessageToActiveTab('downloadReleaseSource');
   });
 
   if (DOWNLOAD_SRC_ENABLED) {
-    menuRows[1].addEventListener('click', () => updateDisplay('download'));
+    menuRows[2].addEventListener('click', () => updateDisplay('download'));
   } else {
-    menuRows[1].remove();
+    menuRows[2].remove();
   }
 }
 
@@ -98,7 +105,7 @@ function updateDisplay(state: State | PopupState): void {
     (element: Element) => {
       if (element instanceof HTMLElement) {
         if (element.id == popupState) {
-          element.style.display = 'flex';
+          element.style.display = 'block';
         } else {
           element.style.display = 'none';
         }
@@ -145,7 +152,11 @@ class PopupHeader extends HTMLElement {
           <img class="badge" src="default_32.png" />
           ${
             headerMessage
-              ? `<p id="${headerMessage}" class="header_label"></p>`
+              ? `
+                <p class="header_label">
+                  ${chrome.i18n.getMessage(headerMessage)}
+                </p>
+              `
               : ''
           }
         </span>

@@ -9,14 +9,48 @@ import type {Origin} from '../config';
 
 const HISTORY_TTL_MSEC = 120 * 86400 * 1000; // 120 Days
 
-const TAB_TO_VIOLATING_SRCS = new Map<
-  number,
-  Set<{
-    origin: Origin;
-    version: string;
-    hash: string;
-  }>
->();
+type Violation = {
+  origin: Origin;
+  version: string;
+  hash: string;
+};
+
+const TAB_TO_VIOLATING_SRCS = new Map<number, Set<Violation>>();
+
+export async function getRecords(): Promise<
+  Array<
+    [string, {creationTime: number; violations: Array<Violation>; url: string}]
+  >
+> {
+  const tabIDs = await chrome.storage.local.getKeys();
+  const entries = await chrome.storage.local.get(tabIDs);
+  return Object.entries(entries);
+}
+
+export async function downloadHashSource(
+  tabID: string,
+  hash: string,
+): Promise<void> {
+  const opfsRoot = await navigator.storage.getDirectory();
+  const dir = await opfsRoot.getDirectoryHandle(tabID);
+  const fileHandle = await dir.getFileHandle(hash);
+  const file = await fileHandle.getFile();
+
+  const decompressedStream = file
+    .stream()
+    .pipeThrough(new DecompressionStream('gzip'));
+
+  const src = await new Response(decompressedStream).text();
+
+  const url = URL.createObjectURL(new Blob([src], {type: 'text/plain'}));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${tabID}-${hash}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 export async function upsertInvalidRecord(
   tabID: number,
