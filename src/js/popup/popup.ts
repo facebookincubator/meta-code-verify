@@ -190,6 +190,8 @@ class StateElement extends HTMLElement {
     'primary-button-action',
     'secondary-button-id',
     'secondary-button-action',
+    'tertiary-button-id',
+    'tertiary-button-action',
     'header-message',
   ];
 
@@ -199,26 +201,35 @@ class StateElement extends HTMLElement {
     const headerMessage = this.getAttribute('header-message');
     const statusHeader = this.getAttribute('status-header');
     const statusMessage = this.getAttribute('status-message');
-    const secondaryButtonId = this.getAttribute('secondary-button-id');
     const primaryButtonId = this.getAttribute('primary-button-id');
+    const secondaryButtonId = this.getAttribute('secondary-button-id');
+    const tertiaryButtonId = this.getAttribute('tertiary-button-id');
     const primaryButtonAction = this.getAttribute('primary-button-action');
     const secondaryButtonAction = this.getAttribute('secondary-button-action');
-    const secondaryButton = secondaryButtonId
-      ? `<button
-          id="${secondaryButtonId}"
-          class="button secondary_button"
-          type="button"></button>`
-      : '';
+    const tertiaryButtonAction = this.getAttribute('tertiary-button-action');
     const primaryButton = primaryButtonId
       ? `<button
           id="${primaryButtonId}"
           class="button primary_button"
           type="button"></button>`
       : '';
+    const secondaryButton = secondaryButtonId
+      ? `<button
+          id="${secondaryButtonId}"
+          class="button secondary_button"
+          type="button"></button>`
+      : '';
+    const tertiaryButton = tertiaryButtonId
+      ? `<button
+          id="${tertiaryButtonId}"
+          class="button tertiary_button"
+          type="button"></button>`
+      : '';
     const actionBar =
       primaryButton || secondaryButton
         ? `<div class="action_bar">
               ${secondaryButton}
+              ${tertiaryButton}
               ${primaryButton}
             </div>`
         : '';
@@ -256,6 +267,10 @@ class StateElement extends HTMLElement {
       const button = document.getElementById(secondaryButtonId);
       handleButtonAction(button!, secondaryButtonAction, innerId);
     }
+    if (tertiaryButtonAction != null && tertiaryButtonId != null) {
+      const button = document.getElementById(tertiaryButtonId);
+      handleButtonAction(button!, tertiaryButtonAction, innerId);
+    }
   }
 }
 
@@ -277,6 +292,8 @@ const handleButtonAction = (
       });
     } else if (action === 'download') {
       sendMessageToActiveTab('downloadSource');
+    } else if (action === 'violations_list') {
+      updateDisplay('violation_list');
     }
   });
 };
