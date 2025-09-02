@@ -72,7 +72,7 @@ function attachTextToHtml(): void {
 
 function attachMenuListeners(origin: Origin): void {
   document
-    .getElementById('close_menu')
+    .getElementById('close_button')
     ?.addEventListener('click', () => window.close());
 
   const menuRows = document.getElementsByClassName('menu_row');
@@ -149,7 +149,7 @@ class PopupHeader extends HTMLElement {
     this.innerHTML = `
        <header>
         <span class="header_title">
-          <img class="badge" src="default_32.png" />
+          <img src="default_32.png" width="20px" height="20px" />
           ${
             headerMessage
               ? `
@@ -160,12 +160,11 @@ class PopupHeader extends HTMLElement {
               : ''
           }
         </span>
-        <div class="menu_button">
-          <object
-            class="menu"
-            type="image/svg+xml"
-            data="menu-badge.svg"></object>
-        </div>
+        <img
+          class="menu_button"
+          height="20px"
+          width="20px"
+          src="menu-badge.svg" />
       </header>
     `;
 
@@ -241,7 +240,7 @@ class StateElement extends HTMLElement {
               type
                 ? `<img
                     class="body_image"
-                    src="${type}-header.svg"></object>`
+                    src="${type}-header.svg"/>`
                 : ''
             }
             ${
