@@ -115,5 +115,8 @@
 	},
 	"i18nViolations": {
 		"message": "All Violations"
+	},
+	"i18nCurrentViolations": {
+		"message": "View Violations"
 	}
 }

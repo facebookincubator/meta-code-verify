@@ -53,11 +53,11 @@ state-element {
   box-sizing: border-box;
   border-radius: 4px;
   cursor: pointer;
-  height: 36px;
+  min-height: 36px;
   font-family: SF Pro Text;
   font-style: normal;
   font-weight: 500;
-  font-size: 15px;
+  font-size: 13px;
   line-height: 20px;
   text-align: center;
   letter-spacing: -0.23px;
@@ -68,7 +68,7 @@ state-element {
   color: #ffffff;
 }
 
-.secondary_button {
+.secondary_button, .tertiary_button {
   background: #ffffff;
   color: #1c2b33;
 }
