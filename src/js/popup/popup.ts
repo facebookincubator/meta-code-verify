@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import '../globals';
+
 import type {Origin, State} from '../config';
 import {
   DOWNLOAD_SRC_ENABLED,

@@ -22,8 +22,6 @@ declare global {
     showSaveFilePicker: (_: {
       suggestedName: string;
     }) => Promise<FileSystemFileHandle>;
-  }
-  interface FileSystemFileHandle {
-    createWritable: () => Promise<WritableStream>;
+    browser: typeof chrome;
   }
 }
