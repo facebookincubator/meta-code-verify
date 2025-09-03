@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import './globals';
+
 import {DYNAMIC_STRING_MARKER, Origin, STATES} from './config';
 import {MESSAGE_TYPE, ORIGIN_HOST} from './config';
 

@@ -22,9 +22,7 @@ export async function getRecords(): Promise<
     [string, {creationTime: number; violations: Array<Violation>; url: string}]
   >
 > {
-  const tabIDs = await chrome.storage.local.getKeys();
-  const entries = await chrome.storage.local.get(tabIDs);
-  return Object.entries(entries);
+  return Object.entries(await chrome.storage.local.get(null));
 }
 
 export async function downloadHashSource(
@@ -105,10 +103,8 @@ export async function trackViolationForTab(
 
 export async function setUpHistoryCleaner(): Promise<void> {
   const now = Date.now();
-  const keys = await chrome.storage.local.getKeys();
-  const entries = await chrome.storage.local.get(keys);
 
-  const entriesToDelete = Object.entries(entries)
+  const entriesToDelete = (await getRecords())
     .filter(([_keys, entry]) => now - entry.creationTime >= HISTORY_TTL_MSEC)
     .map(entry => entry[0]);
 
