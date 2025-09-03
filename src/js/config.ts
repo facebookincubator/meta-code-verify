@@ -80,10 +80,6 @@ export const ORIGIN_TYPE = Object.freeze({
 
 export type Origin = keyof typeof ORIGIN_TYPE;
 
-// Firefox and Safari currently do not support CompressionStream/showSaveFilePicker
-export const DOWNLOAD_SRC_ENABLED =
-  'CompressionStream' in window && 'showSaveFilePicker' in window;
-
 export const MANIFEST_TIMEOUT = 45000;
 
 export const DYNAMIC_STRING_MARKER = '/*BTDS*/';

@@ -8,13 +8,13 @@
 import alertBackgroundOfImminentFetch from './alertBackgroundOfImminentFetch';
 
 import {TagDetails} from '../content';
-import {DOWNLOAD_SRC_ENABLED, MESSAGE_TYPE} from '../config';
+import {MESSAGE_TYPE} from '../config';
 import genSourceText from './genSourceText';
 import {sendMessageToBackground} from '../shared/sendMessageToBackground';
 import {getCurrentOrigin} from './updateCurrentState';
 import downloadArchive from './downloadArchive';
 
-const SOURCE_SCRIPTS_AND_STYLES = new Map();
+const SOURCE_SCRIPTS_AND_STYLES = new Map<string, Response>();
 
 async function processSrc(
   tagDetails: TagDetails,
@@ -40,18 +40,13 @@ async function processSrc(
         // If this is missing it will cause a cache miss, resulting in invalidation.
         headers: isServiceWorker ? {'Service-Worker': 'script'} : undefined,
       });
-      if (DOWNLOAD_SRC_ENABLED) {
-        const fileNameArr = url.split('/');
-        const fileName = fileNameArr[fileNameArr.length - 1].split('?')[0];
-        const responseBody = sourceResponse.clone().body;
-        if (!responseBody) {
-          throw new Error('Response for fetched script has no body');
-        }
-        SOURCE_SCRIPTS_AND_STYLES.set(
-          fileName,
-          responseBody.pipeThrough(new window.CompressionStream('gzip')),
-        );
+      const fileNameArr = url.split('/');
+      const fileName = fileNameArr[fileNameArr.length - 1].split('?')[0];
+      const responseBody = sourceResponse.clone();
+      if (!responseBody.body) {
+        throw new Error('Response for fetched script has no body');
       }
+      SOURCE_SCRIPTS_AND_STYLES.set(fileName, responseBody);
       const sourceText = await genSourceText(sourceResponse);
 
       // split package up if necessary

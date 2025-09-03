@@ -38,16 +38,25 @@ export async function downloadHashSource(
     .stream()
     .pipeThrough(new DecompressionStream('gzip'));
 
-  const src = await new Response(decompressedStream).text();
+  const fileName = `${tabID}-${hash}.txt`;
 
-  const url = URL.createObjectURL(new Blob([src], {type: 'text/plain'}));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${tabID}-${hash}.txt`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  if ('showSaveFilePicker' in window) {
+    const fileHandle = await window.showSaveFilePicker({
+      suggestedName: fileName,
+    });
+    const writable = await fileHandle.createWritable();
+    await decompressedStream.pipeTo(writable);
+  } else {
+    const src = await new Response(decompressedStream).blob();
+    const url = URL.createObjectURL(src);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 }
 
 export async function upsertInvalidRecord(

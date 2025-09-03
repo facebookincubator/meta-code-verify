@@ -8,12 +8,7 @@
 import '../globals';
 
 import type {Origin, State} from '../config';
-import {
-  DOWNLOAD_SRC_ENABLED,
-  MESSAGE_TYPE,
-  ORIGIN_TYPE,
-  STATES,
-} from '../config.js';
+import {MESSAGE_TYPE, ORIGIN_TYPE, STATES} from '../config.js';
 
 import './violation-list';
 
@@ -79,23 +74,19 @@ function attachMenuListeners(origin: Origin): void {
 
   const menuRows = document.getElementsByClassName('menu_row');
 
-  menuRows[0].addEventListener('click', _evt => {
+  menuRows[0].addEventListener('click', () => {
     chrome.tabs.create({url: ORIGIN_TO_LEARN_MORE_PAGES[origin].about});
   });
 
-  menuRows[1].addEventListener('click', _evt => {
+  menuRows[1].addEventListener('click', () => {
     updateDisplay('violation_list');
   });
 
-  menuRows[3].addEventListener('click', _evt => {
+  menuRows[2].addEventListener('click', () => updateDisplay('download'));
+
+  menuRows[3].addEventListener('click', () => {
     sendMessageToActiveTab('downloadReleaseSource');
   });
-
-  if (DOWNLOAD_SRC_ENABLED) {
-    menuRows[2].addEventListener('click', () => updateDisplay('download'));
-  } else {
-    menuRows[2].remove();
-  }
 }
 
 function updateDisplay(state: State | PopupState): void {
@@ -280,10 +271,6 @@ const handleButtonAction = (
   action: string,
   id: string,
 ) => {
-  if (action === 'download' && !DOWNLOAD_SRC_ENABLED) {
-    button.remove();
-    return;
-  }
   button?.addEventListener('click', () => {
     if (action === 'retry') {
       chrome.tabs.reload();
