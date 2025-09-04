@@ -103,7 +103,7 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
   const manifestNodeTextContent = manifestNode.textContent ?? '';
   try {
     rawManifest = JSON.parse(manifestNodeTextContent);
-  } catch (manifestParseError) {
+  } catch {
     setTimeout(() => parseFailedJSON({node: manifestNode, retry: 5000}), 20);
     return;
   }
@@ -304,7 +304,7 @@ export function storeFoundElement(element: HTMLElement): void {
   if (element.getAttribute('type') === 'application/json') {
     try {
       JSON.parse(nodeTextContent);
-    } catch (parseError) {
+    } catch {
       setTimeout(() => parseFailedJSON({node: element, retry: 1500}), 20);
     }
     return;
@@ -390,7 +390,7 @@ export const scanForScriptsAndStyles = (): void => {
       childList: true,
       subtree: true,
     });
-  } catch (_UnknownError) {
+  } catch {
     updateCurrentState(STATES.INVALID, 'unknown');
   }
 };

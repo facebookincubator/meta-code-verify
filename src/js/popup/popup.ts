@@ -294,7 +294,7 @@ let currentOrigin: Origin;
   const params = new URL(document.location.href).searchParams;
   setUpBackgroundMessageHandler(params.get('tab_id'));
   const state = params.get('state') as State;
-  state && updateDisplay(state);
+  updateDisplay(state);
   attachTextToHtml();
   currentOrigin = params.get('origin') as Origin;
   attachMenuListeners(currentOrigin);
