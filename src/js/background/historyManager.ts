@@ -67,14 +67,17 @@ export async function upsertInvalidRecord(
   const tabIDKey = String(tabID);
   const entry = await chrome.storage.local.get(tabIDKey);
 
+  const violations = TAB_TO_VIOLATING_SRCS.get(tabID) ?? new Set();
+
   if (Object.keys(entry).length !== 0) {
     creationTime = entry[tabIDKey].creationTime;
+    entry[tabIDKey].violations.forEach(violation => {violations.add(violation)});
   }
 
   return chrome.storage.local.set({
     [tabIDKey]: {
       creationTime,
-      violations: Array.from(TAB_TO_VIOLATING_SRCS.get(tabID) ?? new Set()),
+      violations: Array.from(violations),
       url: tab.url,
     },
   });
