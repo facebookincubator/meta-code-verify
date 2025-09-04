@@ -9,7 +9,6 @@ import './globals';
 
 import {
   MESSAGE_TYPE,
-  DOWNLOAD_SRC_ENABLED,
   STATES,
   Origin,
   ORIGIN_TYPE,
@@ -456,7 +455,7 @@ export function startFor(origin: Origin, config: ContentScriptConfig): void {
 }
 
 chrome.runtime.onMessage.addListener(request => {
-  if (request.greeting === 'downloadSource' && DOWNLOAD_SRC_ENABLED) {
+  if (request.greeting === 'downloadSource') {
     downloadSrc();
   } else if (request.greeting === 'nocacheHeaderFound') {
     updateCurrentState(
@@ -488,7 +487,7 @@ chrome.runtime.onMessage.addListener(request => {
       });
       ALL_FOUND_TAGS_URLS.add(request.response.url);
       const uninitializedScripts = FOUND_ELEMENTS.get(
-        FOUND_ELEMENTS.keys().next().value,
+        FOUND_ELEMENTS.keys().next().value!,
       );
       if (uninitializedScripts) {
         uninitializedScripts.push({

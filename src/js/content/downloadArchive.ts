@@ -6,28 +6,45 @@
  */
 
 export default async function downloadArchive(
-  sourceScripts: Map<string, ReadableStream>,
+  sourceScripts: Map<string, Response>,
 ): Promise<void> {
-  const fileHandle = await window.showSaveFilePicker({
-    suggestedName: 'meta_source_files.gz',
-  });
-
-  const writableStream = await fileHandle.createWritable();
-  // delimiter between files
-  const delimPrefix = '\n********** new file: ';
-  const delimSuffix = ' **********\n';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const chunks: Array<any> = [];
   const enc = new TextEncoder();
+  const compressionStream = new CompressionStream('gzip');
 
-  for (const [fileName, compressedStream] of sourceScripts.entries()) {
-    const delim = delimPrefix + fileName + delimSuffix;
-    const encodedDelim = enc.encode(delim);
-    const delimStream = new window.CompressionStream('gzip');
-    const writer = delimStream.writable.getWriter();
-    writer.write(encodedDelim);
-    writer.close();
-    await delimStream.readable.pipeTo(writableStream, {preventClose: true});
-    await compressedStream.pipeTo(writableStream, {preventClose: true});
+  for (const [fileName, response] of sourceScripts.entries()) {
+    const delim = `\n********** new file: ${fileName} **********\n`;
+    const chunk = await response.bytes();
+    chunks.push(enc.encode(delim), chunk);
   }
 
-  writableStream.close();
+  const readableFromChunks = new ReadableStream({
+    start(controller) {
+      for (const chunk of chunks) {
+        controller.enqueue(chunk);
+      }
+      controller.close();
+    },
+  });
+
+  if ('showSaveFilePicker' in window) {
+    const fileHandle = await window.showSaveFilePicker({
+      suggestedName: 'meta_source_files.gz',
+    });
+    const fileStream = await fileHandle.createWritable();
+    readableFromChunks.pipeThrough(compressionStream).pipeTo(fileStream);
+  } else {
+    const src = await new Response(
+      readableFromChunks.pipeThrough(compressionStream),
+    ).blob();
+    const url = URL.createObjectURL(src);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `meta_source_files.gz`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 }
