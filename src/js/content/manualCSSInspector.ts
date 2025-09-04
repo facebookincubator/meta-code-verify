@@ -98,8 +98,9 @@ function isValidCSSRule(rule: CSSRule): boolean {
 function ensureCORSEnabledForStylesheet(styleSheet: CSSStyleSheet): void {
   try {
     // Ensure all non same origin stylesheets can be accessed (CORS)
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     styleSheet.cssRules;
-  } catch (e) {
+  } catch {
     updateStateOnInvalidStylesheet(false, styleSheet);
   }
 }

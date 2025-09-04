@@ -147,7 +147,7 @@ function handleMessages(
       if (message.pkgRaw.includes(DYNAMIC_STRING_MARKER)) {
         try {
           message.pkgRaw = removeDynamicStrings(message.pkgRaw);
-        } catch (e) {
+        } catch {
           sendResponse({valid: false, reason: 'failed parsing AST'});
           return;
         }

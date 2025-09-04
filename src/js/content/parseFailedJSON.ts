@@ -27,7 +27,7 @@ export function parseFailedJSON(queuedJsonToParse: {
   const nodeTextContent = queuedJsonToParse.node.textContent ?? '';
   try {
     JSON.parse(nodeTextContent);
-  } catch (parseError) {
+  } catch {
     if (queuedJsonToParse.retry > 0) {
       queuedJsonToParse.retry--;
       setTimeout(() => parseFailedJSON(queuedJsonToParse), 20);
