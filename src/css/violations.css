@@ -142,11 +142,10 @@ violation-list code {
   box-sizing: border-box;
 }
 
-.download_img {
+.download_button {
   cursor: pointer;
   opacity: 0.8;
-  width: 16px;
-  height: 16px;
+  display: inline-flex;
 }
 
 violation-list .subtable_wrapper.expanded {

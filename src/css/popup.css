@@ -82,6 +82,7 @@ header {
 .menu_button,
 #close_button {
   cursor: pointer;
+  display: flex;
 }
 
 .state_boundary {
