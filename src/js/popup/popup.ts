@@ -153,11 +153,13 @@ class PopupHeader extends HTMLElement {
               : ''
           }
         </span>
-        <img
-          class="menu_button"
-          height="20px"
-          width="20px"
-          src="menu-badge.svg" />
+        <span class="menu_button">
+          <object
+            type="image/svg+xml"
+            height="20px"
+            width="20px"
+            data="menu-badge.svg"></object>
+        </span>
       </header>
     `;
 
@@ -231,9 +233,10 @@ class StateElement extends HTMLElement {
           <div class="content_body">
             ${
               type
-                ? `<img
+                ? `<object
                     class="body_image"
-                    src="${type}-header.svg"/>`
+                    type="image/svg+xml"
+                    data="${type}-header.svg"></object>`
                 : ''
             }
             ${

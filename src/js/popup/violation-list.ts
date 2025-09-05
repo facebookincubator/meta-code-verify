@@ -33,11 +33,16 @@ class ViolationList extends HTMLElement {
                 <td>${v.version}</td>
                 <td>${v.origin}</td>
                 <td>
-                  <img
-                    class="download_img"
+                  <span
                     data-tab-id="${tabID}"
                     data-hash="${v.hash}"
-                    src="circle-download-cta.svg"/>
+                    class="download_button">
+                    <object
+                      type="image/svg+xml"
+                      width="16px"
+                      height="16px"
+                      data="circle-download-cta.svg"></object>
+                  </span>
                 </td>
               </tr>
             `;
@@ -100,7 +105,7 @@ class ViolationList extends HTMLElement {
         </table>
       `;
 
-      document.querySelectorAll('.download_img').forEach(img => {
+      document.querySelectorAll('.download_button').forEach(img => {
         img.addEventListener('click', () => {
           const tabID = img.getAttribute('data-tab-id')!;
           const hash = img.getAttribute('data-hash')!;
