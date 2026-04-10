@@ -76,6 +76,11 @@ export type TagDetails =
       otherType: string;
       tag: HTMLStyleElement;
       type: 'style';
+    }
+  | {
+      otherType: string;
+      tag: HTMLScriptElement;
+      type: 'inline_script';
     };
 let manifestTimeoutID: string | number = '';
 
@@ -268,6 +273,21 @@ function handleStyleNode(style: HTMLStyleElement): void {
   updateCurrentState(STATES.PROCESSING);
 }
 
+function handleInlineScriptNode(script: HTMLScriptElement): void {
+  const versionAndOtherType = tryToGetManifestVersionAndTypeFromNode(script);
+  if (versionAndOtherType == null) {
+    return;
+  }
+  const [version, otherType] = versionAndOtherType;
+  ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
+  pushToOrCreateArrayInMap(FOUND_ELEMENTS, version, {
+    tag: script,
+    otherType,
+    type: 'inline_script',
+  });
+  updateCurrentState(STATES.PROCESSING);
+}
+
 function handleLinkNode(link: HTMLLinkElement): void {
   const [version, otherType] = getManifestVersionAndTypeFromNode(link);
   ALL_FOUND_TAGS_URLS.add(link.href);
@@ -323,6 +343,8 @@ export function storeFoundElement(element: HTMLElement): void {
     }
     if (script.src !== '') {
       handleScriptNode(script);
+    } else if (script.innerHTML !== '') {
+      handleInlineScriptNode(script);
     }
   } else if (element.nodeName.toLowerCase() === 'style') {
     const style = element as HTMLStyleElement;

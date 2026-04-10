@@ -38,4 +38,34 @@ describe('checkCSPForUnsafeInline', () => {
     ]);
     expect(valid).toBeFalsy();
   });
+  it('Valid despite nonce in script-src', () => {
+    const [valid] = checkCSPForUnsafeInline([
+      `script-src 'self' 'nonce-abc123';`,
+    ]);
+    expect(valid).toBeTruthy();
+  });
+  it('Invalid due to unsafe-hashes in script-src', () => {
+    const [valid] = checkCSPForUnsafeInline([
+      `script-src 'self' 'unsafe-hashes' 'sha256-abc123';`,
+    ]);
+    expect(valid).toBeFalsy();
+  });
+  it('Valid despite nonce in default-src', () => {
+    const [valid] = checkCSPForUnsafeInline([
+      `default-src 'self' 'nonce-xyz789';`,
+    ]);
+    expect(valid).toBeTruthy();
+  });
+  it('Invalid due to unsafe-hashes in default-src', () => {
+    const [valid] = checkCSPForUnsafeInline([
+      `default-src 'self' 'unsafe-hashes' 'sha256-xyz789';`,
+    ]);
+    expect(valid).toBeFalsy();
+  });
+  it('Invalid due to nonce and unsafe-hashes combined', () => {
+    const [valid] = checkCSPForUnsafeInline([
+      `script-src 'self' 'nonce-abc123' 'unsafe-hashes' 'sha256-abc123';`,
+    ]);
+    expect(valid).toBeFalsy();
+  });
 });
