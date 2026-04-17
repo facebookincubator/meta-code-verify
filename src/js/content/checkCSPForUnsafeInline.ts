@@ -8,14 +8,14 @@
 import {parseCSPString} from './parseCSPString';
 
 function rejectUnsafeHeaders(values: Set<string>): boolean {
-  if (values.has(`'unsafe-inline'`) || values.has(`'unsafe-hashes'`)) {
+  if (values.has(`'unsafe-inline'`)) {
     return false;
   }
   return true;
 }
 
 /**
- * Enforces that CSP headers do not allow unsafe-inline or unsafe-hashes
+ * Enforces that CSP headers do not allow unsafe-inline
  */
 export function checkCSPForUnsafeInline(
   cspHeaders: Array<string>,
@@ -39,9 +39,6 @@ export function checkCSPForUnsafeInline(
   if (preventsUnsafeInline) {
     return [true];
   } else {
-    return [
-      false,
-      'CSP Headers do not prevent unsafe-inline or unsafe-hashes.',
-    ];
+    return [false, 'CSP Headers do not prevent unsafe-inline.'];
   }
 }

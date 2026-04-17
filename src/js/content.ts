@@ -274,11 +274,7 @@ function handleStyleNode(style: HTMLStyleElement): void {
 }
 
 function handleInlineScriptNode(script: HTMLScriptElement): void {
-  const versionAndOtherType = tryToGetManifestVersionAndTypeFromNode(script);
-  if (versionAndOtherType == null) {
-    return;
-  }
-  const [version, otherType] = versionAndOtherType;
+  const [version, otherType] = getManifestVersionAndTypeFromNode(script);
   ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
   pushToOrCreateArrayInMap(FOUND_ELEMENTS, version, {
     tag: script,
