@@ -7,6 +7,13 @@
 
 import {parseCSPString} from './parseCSPString';
 
+function rejectUnsafeHeaders(values: Set<string>): boolean {
+  if (values.has(`'unsafe-inline'`)) {
+    return false;
+  }
+  return true;
+}
+
 /**
  * Enforces that CSP headers do not allow unsafe-inline
  */
@@ -18,12 +25,12 @@ export function checkCSPForUnsafeInline(
 
     const scriptSrc = headers.get('script-src');
     if (scriptSrc) {
-      return !scriptSrc.has(`'unsafe-inline'`);
+      return rejectUnsafeHeaders(scriptSrc);
     }
 
     const defaultSrc = headers.get('default-src');
     if (defaultSrc) {
-      return !defaultSrc.has(`'unsafe-inline'`);
+      return rejectUnsafeHeaders(defaultSrc);
     }
 
     return false;

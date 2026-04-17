@@ -51,7 +51,10 @@ async function processSrc(
 
       // split package up if necessary
       packages = sourceText.split('/*FB_PKG_DELIM*/\n');
-    } else if (tagDetails.type === 'style') {
+    } else if (
+      tagDetails.type === 'style' ||
+      tagDetails.type === 'inline_script'
+    ) {
       packages = [tagDetails.tag.innerHTML];
     }
 
