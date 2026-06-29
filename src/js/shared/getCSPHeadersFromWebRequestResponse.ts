@@ -21,17 +21,21 @@ export function getCSPHeadersFromWebRequestResponse(
         : 'content-security-policy'),
   );
 
-  // A single header value can be a comma seperated list of headers
+  // A single header value can be a comma separated list of policies. The
+  // separator is a bare comma; the surrounding whitespace is optional.
   // https://www.w3.org/TR/CSP3/#parse-serialized-policy-list
   const individualHeaders: Array<chrome.webRequest.HttpHeader> = [];
   cspHeaders.forEach(header => {
-    if (header.value?.includes(', ')) {
-      header.value.split(', ').forEach(headerValue => {
-        individualHeaders.push({name: header.name, value: headerValue});
-      });
-    } else {
+    if (header.value == null) {
       individualHeaders.push(header);
+      return;
     }
+    header.value.split(',').forEach(headerValue => {
+      const trimmed = headerValue.trim();
+      if (trimmed !== '') {
+        individualHeaders.push({name: header.name, value: trimmed});
+      }
+    });
   });
   return individualHeaders;
 }
