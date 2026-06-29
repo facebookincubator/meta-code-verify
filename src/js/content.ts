@@ -42,7 +42,7 @@ import {
   getManifestVersionAndTypeFromNode,
   tryToGetManifestVersionAndTypeFromNode,
 } from './content/getManifestVersionAndTypeFromNode';
-import {scanForCSSNeedingManualInspsection} from './content/manualCSSInspector';
+import {scanForCSSNeedingManualInspection} from './content/manualCSSInspector';
 
 type ContentScriptConfig = {
   checkLoggedInFromCookie: boolean;
@@ -461,7 +461,7 @@ export function startFor(origin: Origin, config: ContentScriptConfig): void {
   if (isUserLoggedIn) {
     updateCurrentState(STATES.PROCESSING);
     scanForScriptsAndStyles();
-    scanForCSSNeedingManualInspsection();
+    scanForCSSNeedingManualInspection();
     // set the timeout once, in case there's an iframe and contentUtils sets another manifest timer
     if (manifestTimeoutID === '') {
       manifestTimeoutID = window.setTimeout(() => {
