@@ -11,8 +11,10 @@ export function hasVaryServiceWorkerHeader(
   return (
     response.responseHeaders?.find(
       header =>
-        header.name.includes('vary') &&
-        header.value?.includes('Service-Worker'),
+        // HTTP header names are case-insensitive, and the field names listed
+        // in a Vary value are too, so normalize before matching.
+        header.name.toLowerCase().includes('vary') &&
+        header.value?.toLowerCase().includes('service-worker'),
     ) !== undefined
   );
 }
