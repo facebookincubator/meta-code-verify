@@ -70,13 +70,11 @@ function isValidCSSRule(rule: CSSRule): boolean {
     return false;
   }
 
-  if (
-    !(
-      rule instanceof CSSGroupingRule ||
-      rule instanceof CSSKeyframesRule ||
-      rule instanceof CSSImportRule
-    )
-  ) {
+  if (!(
+    rule instanceof CSSGroupingRule ||
+    rule instanceof CSSKeyframesRule ||
+    rule instanceof CSSImportRule
+  )) {
     return true;
   }
 
