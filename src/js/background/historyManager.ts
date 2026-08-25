@@ -15,14 +15,18 @@ type Violation = {
   hash: string;
 };
 
+type HistoryRecord = {
+  creationTime: number;
+  violations: Array<Violation>;
+  url: string;
+};
+
+type HistoryStorage = Record<string, HistoryRecord>;
+
 const TAB_TO_VIOLATING_SRCS = new Map<number, Set<Violation>>();
 
-export async function getRecords(): Promise<
-  Array<
-    [string, {creationTime: number; violations: Array<Violation>; url: string}]
-  >
-> {
-  return Object.entries(await chrome.storage.local.get(null));
+export async function getRecords(): Promise<Array<[string, HistoryRecord]>> {
+  return Object.entries(await chrome.storage.local.get<HistoryStorage>(null));
 }
 
 export async function downloadHashSource(
@@ -65,7 +69,7 @@ export async function upsertInvalidRecord(
 ): Promise<void> {
   const tab = await chrome.tabs.get(tabID);
   const tabIDKey = String(tabID);
-  const entry = await chrome.storage.local.get(tabIDKey);
+  const entry = await chrome.storage.local.get<HistoryStorage>(tabIDKey);
 
   const violations = TAB_TO_VIOLATING_SRCS.get(tabID) ?? new Set();
 

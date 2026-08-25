@@ -773,10 +773,10 @@
   dependencies:
     "@babel/types" "^7.20.7"
 
-"@types/chrome@^0.1.4":
-  version "0.1.4"
-  resolved "https://registry.yarnpkg.com/@types/chrome/-/chrome-0.1.4.tgz#74a3a6c892e2c5d0a98997c4f038cb67cfbb0fa9"
-  integrity sha512-vfISO7SPppN3OKVUqWujtZ4vux3nhDqKaHYEHgfQuPARHuWJ3jjyc1s13H0ckzEc86/neTkCl1TeW72UK6jYKA==
+"@types/chrome@^0.2.7":
+  version "0.2.7"
+  resolved "https://registry.yarnpkg.com/@types/chrome/-/chrome-0.2.7.tgz#c6d1c71353a4b7fb97664a0631429498e26052ee"
+  integrity sha512-9kjBozQ+jyDVt1eai3VZqjHDTN95JCuRmbRHOryOltBJmzrTmUw/9r/DznmjRaQ8WlyIfeCA4WNzoj0IvormJA==
   dependencies:
     "@types/filesystem" "*"
     "@types/har-format" "*"
@@ -1854,10 +1854,10 @@ globals@^14.0.0:
   resolved "https://registry.yarnpkg.com/globals/-/globals-14.0.0.tgz#898d7413c29babcf6bafe56fcadded858ada724e"
   integrity sha512-oahGvuMGQlPw/ivIYBjVSrWAfWLBeku5tpPE2fOPLi+WHffIWbuh2tCjhyQhTBPMf5E9jDEH4FOmTYgYwbKwtQ==
 
-globals@^15.0.0:
-  version "15.15.0"
-  resolved "https://registry.yarnpkg.com/globals/-/globals-15.15.0.tgz#7c4761299d41c32b075715a4ce1ede7897ff72a8"
-  integrity sha512-7ACyT3wmyp3I61S4fG682L0VA2RGD9otkqGJIwNUMF1SWUombIIk+af1unuDYgMm082aHYwD+mzJvv9Iu8dsgg==
+globals@^17.11.0:
+  version "17.11.0"
+  resolved "https://registry.yarnpkg.com/globals/-/globals-17.11.0.tgz#d643485bb30220d7751e511cf4f68c73d3870d87"
+  integrity sha512-Z2I8hM+PbJDXQDq3Icgpzv+mPdwr68iZUU9d5WW4FuXfDUQfkZaZuvjMv42/5crNyw154+9+VWXbYrUgDXbxNw==
 
 gopd@^1.2.0:
   version "1.2.0"
