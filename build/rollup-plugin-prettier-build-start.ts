@@ -34,7 +34,7 @@ export default function rollupPrettierBuildStartPlugin(files: string): Plugin {
       }
       console.log('Running prettier for', Array.from(filesToFormat).join(' '));
       await genExec(
-        `yarn run prettier ${Array.from(filesToFormat).join(' ')} --write`,
+        `yarn run prettier ${Array.from(filesToFormat).join(' ')} --check`,
       );
       filesToFormat.clear();
     },

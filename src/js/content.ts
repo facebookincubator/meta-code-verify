@@ -42,7 +42,7 @@ import {
   getManifestVersionAndTypeFromNode,
   tryToGetManifestVersionAndTypeFromNode,
 } from './content/getManifestVersionAndTypeFromNode';
-import {scanForCSSNeedingManualInspsection} from './content/manualCSSInspector';
+import {scanForCSSNeedingManualInspection} from './content/manualCSSInspector';
 
 type ContentScriptConfig = {
   checkLoggedInFromCookie: boolean;
@@ -76,6 +76,11 @@ export type TagDetails =
       otherType: string;
       tag: HTMLStyleElement;
       type: 'style';
+    }
+  | {
+      otherType: string;
+      tag: HTMLScriptElement;
+      type: 'inline_script';
     };
 let manifestTimeoutID: string | number = '';
 
@@ -268,6 +273,17 @@ function handleStyleNode(style: HTMLStyleElement): void {
   updateCurrentState(STATES.PROCESSING);
 }
 
+function handleInlineScriptNode(script: HTMLScriptElement): void {
+  const [version, otherType] = getManifestVersionAndTypeFromNode(script);
+  ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
+  pushToOrCreateArrayInMap(FOUND_ELEMENTS, version, {
+    tag: script,
+    otherType,
+    type: 'inline_script',
+  });
+  updateCurrentState(STATES.PROCESSING);
+}
+
 function handleLinkNode(link: HTMLLinkElement): void {
   const [version, otherType] = getManifestVersionAndTypeFromNode(link);
   ALL_FOUND_TAGS_URLS.add(link.href);
@@ -323,6 +339,8 @@ export function storeFoundElement(element: HTMLElement): void {
     }
     if (script.src !== '') {
       handleScriptNode(script);
+    } else if (script.innerHTML !== '') {
+      handleInlineScriptNode(script);
     }
   } else if (element.nodeName.toLowerCase() === 'style') {
     const style = element as HTMLStyleElement;
@@ -443,7 +461,7 @@ export function startFor(origin: Origin, config: ContentScriptConfig): void {
   if (isUserLoggedIn) {
     updateCurrentState(STATES.PROCESSING);
     scanForScriptsAndStyles();
-    scanForCSSNeedingManualInspsection();
+    scanForCSSNeedingManualInspection();
     // set the timeout once, in case there's an iframe and contentUtils sets another manifest timer
     if (manifestTimeoutID === '') {
       manifestTimeoutID = window.setTimeout(() => {

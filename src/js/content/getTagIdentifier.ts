@@ -15,5 +15,7 @@ export function getTagIdentifier(tagDetails: TagDetails): string {
       return tagDetails.href;
     case 'style':
       return 'style_' + tagDetails.tag.innerHTML.substring(0, 100);
+    case 'inline_script':
+      return 'inline_script_' + tagDetails.tag.innerHTML.substring(0, 100);
   }
 }

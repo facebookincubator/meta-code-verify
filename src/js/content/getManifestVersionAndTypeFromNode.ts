@@ -16,7 +16,7 @@ export function getManifestVersionAndTypeFromNode(
 
   if (!versionAndType) {
     invalidateAndThrow(
-      `Missing manifest data attribute or invalid version/typeon attribute`,
+      `Missing manifest data attribute or invalid version/type on attribute`,
     );
   }
 

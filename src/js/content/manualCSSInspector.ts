@@ -11,7 +11,7 @@ import {updateCurrentState} from './updateCurrentState';
 
 const CHECKED_STYLESHEET_HASHES = new Set<string>();
 
-export function scanForCSSNeedingManualInspsection(): void {
+export function scanForCSSNeedingManualInspection(): void {
   checkForStylesheetChanges();
   setInterval(checkForStylesheetChanges, 1000);
 }
@@ -22,7 +22,7 @@ async function checkForStylesheetChanges() {
       const potentialOwnerNode = sheet.ownerNode;
 
       if (sheet.href && potentialOwnerNode instanceof HTMLLinkElement) {
-        // Link style tags are checked agains the manifest
+        // Link style tags are checked against the manifest
         return;
       }
 
