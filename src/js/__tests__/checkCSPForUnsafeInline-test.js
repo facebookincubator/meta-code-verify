@@ -28,6 +28,18 @@ describe('checkCSPForUnsafeInline', () => {
     ]);
     expect(valid).toBeFalsy();
   });
+  it('Valid when script-src-elem overrides an unsafe script-src', () => {
+    const [valid] = checkCSPForUnsafeInline([
+      `script-src 'unsafe-inline'; script-src-elem 'self';`,
+    ]);
+    expect(valid).toBeTruthy();
+  });
+  it('Invalid when script-src-elem overrides a safe script-src', () => {
+    const [valid] = checkCSPForUnsafeInline([
+      `script-src 'self'; script-src-elem 'unsafe-inline';`,
+    ]);
+    expect(valid).toBeFalsy();
+  });
   it('Valid due to default-src', () => {
     const [valid] = checkCSPForUnsafeInline([`default-src 'self';`]);
     expect(valid).toBeTruthy();
