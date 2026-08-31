@@ -15,25 +15,23 @@ function rejectUnsafeHeaders(values: Set<string>): boolean {
 }
 
 /**
- * Enforces that CSP headers do not allow unsafe-inline
+ * Enforces that CSP headers do not allow unsafe-inline script elements.
+ * script-src-elem falls back to script-src, then default-src.
  */
 export function checkCSPForUnsafeInline(
   cspHeaders: Array<string>,
 ): [true] | [false, string] {
   const preventsUnsafeInline = cspHeaders.some(cspHeader => {
     const headers = parseCSPString(cspHeader);
+    const effectiveScriptSources =
+      headers.get('script-src-elem') ??
+      headers.get('script-src') ??
+      headers.get('default-src');
 
-    const scriptSrc = headers.get('script-src');
-    if (scriptSrc) {
-      return rejectUnsafeHeaders(scriptSrc);
-    }
-
-    const defaultSrc = headers.get('default-src');
-    if (defaultSrc) {
-      return rejectUnsafeHeaders(defaultSrc);
-    }
-
-    return false;
+    return (
+      effectiveScriptSources != null &&
+      rejectUnsafeHeaders(effectiveScriptSources)
+    );
   });
 
   if (preventsUnsafeInline) {
