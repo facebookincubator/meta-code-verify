@@ -1,5 +1,29 @@
+# OS
+.DS_Store
+
+# Editors
+.vscode/
+*.code-workspace
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# Agents
+/.worktrees
+.claude/*.local.*
+.claude/worktrees
+CLAUDE.local.md
+.codex/worktrees
+AGENTS.override.md
+
+# Node Managers
+.node-version
+.nvmrc
+mise.local.toml
+
+# Project
 dist/*
 node_modules
-.DS_Store
 .yarn/
 .yarnrc.yml
