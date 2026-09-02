@@ -82,7 +82,7 @@ export type TagDetails =
       tag: HTMLScriptElement;
       type: 'inline_script';
     };
-let manifestTimeoutID: string | number = '';
+let manifestTimeoutID: number | null = null;
 
 export type RawManifestOtherHashes = {
   combined_hash: string;
@@ -187,9 +187,9 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
   sendMessageToBackground(messagePayload, response => {
     // then start processing its JS/CSS
     if (response.valid) {
-      if (manifestTimeoutID !== '') {
+      if (manifestTimeoutID != null) {
         clearTimeout(manifestTimeoutID);
-        manifestTimeoutID = '';
+        manifestTimeoutID = null;
       }
       FOUND_MANIFEST_VERSIONS.add(version);
       window.setTimeout(() => processFoundElements(version), 0);
@@ -299,8 +299,10 @@ function handleLinkNode(link: HTMLLinkElement): void {
 export function storeFoundElement(element: HTMLElement): void {
   if (!isTopWindow() && isSameDomainAsTopWindow()) {
     // this means that content utils is running in an iframe - disable timer and call processFoundElements on manifest processed in top level frame
-    clearTimeout(manifestTimeoutID);
-    manifestTimeoutID = '';
+    if (manifestTimeoutID != null) {
+      clearTimeout(manifestTimeoutID);
+      manifestTimeoutID = null;
+    }
     FOUND_ELEMENTS.forEach((_val, key) => {
       window.setTimeout(() => processFoundElements(key), 0);
     });
@@ -463,7 +465,7 @@ export function startFor(origin: Origin, config: ContentScriptConfig): void {
     scanForScriptsAndStyles();
     scanForCSSNeedingManualInspection();
     // set the timeout once, in case there's an iframe and contentUtils sets another manifest timer
-    if (manifestTimeoutID === '') {
+    if (manifestTimeoutID == null) {
       manifestTimeoutID = window.setTimeout(() => {
         // Manifest failed to load, flag a warning to the user.
         updateCurrentState(STATES.TIMEOUT);
