@@ -94,4 +94,21 @@ describe('getCSPHeadersFromWebRequestResponse', () => {
       },
     ]);
   });
+  it('Splits a policy list separated by a comma with no space', () => {
+    // https://www.w3.org/TR/CSP3/#parse-serialized-policy-list splits the
+    // serialized policy list on U+002C COMMA, the space is not required.
+    expect(
+      getCSPHeadersFromWebRequestResponse({
+        responseHeaders: [
+          {
+            name: KEY,
+            value: "default-src 'self';,script-src 'self';",
+          },
+        ],
+      }),
+    ).toEqual([
+      {name: KEY, value: "default-src 'self';"},
+      {name: KEY, value: "script-src 'self';"},
+    ]);
+  });
 });
