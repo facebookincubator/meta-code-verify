@@ -35,7 +35,11 @@ import {pushToOrCreateArrayInMap} from './shared/nestedDataHelpers';
 import ensureManifestWasOrWillBeLoaded from './content/ensureManifestWasOrWillBeLoaded';
 import {downloadSrc, processSrc} from './content/contentUtils';
 import {hasVaryServiceWorkerHeader} from './content/hasVaryServiceWorkerHeader';
-import {isSameDomainAsTopWindow, isTopWindow} from './content/iFrameUtils';
+import {
+  isBlankChildFrame,
+  isSameDomainAsTopWindow,
+  isTopWindow,
+} from './content/iFrameUtils';
 import {getTagIdentifier} from './content/getTagIdentifier';
 import {
   BOTH,
@@ -376,7 +380,7 @@ export function hasInvalidScriptsOrStyles(scriptNodeMaybe: Node): void {
   }
 }
 
-export const scanForScriptsAndStyles = (): void => {
+export function scanForScriptsAndStyles(): boolean {
   const allElements = document.querySelectorAll(
     'script,style,link[rel="stylesheet"]',
   );
@@ -413,7 +417,9 @@ export const scanForScriptsAndStyles = (): void => {
   } catch {
     updateCurrentState(STATES.INVALID, 'unknown');
   }
-};
+
+  return allElements.length > 0;
+}
 
 let isUserLoggedIn = false;
 let allowedWorkerCSPs: Array<Set<string>> = [];
@@ -462,9 +468,16 @@ export function startFor(origin: Origin, config: ContentScriptConfig): void {
   }
   if (isUserLoggedIn) {
     updateCurrentState(STATES.PROCESSING);
-    scanForScriptsAndStyles();
+    const foundScriptsOrStyles = scanForScriptsAndStyles();
     scanForCSSNeedingManualInspection();
-    // set the timeout once, in case there's an iframe and contentUtils sets another manifest timer
+
+    if (!foundScriptsOrStyles && isBlankChildFrame()) {
+      updateCurrentState(STATES.VALID);
+      return;
+    }
+
+    // set the timeout once, in case there's an iframe and contentUtils sets
+    // another manifest timer
     if (manifestTimeoutID == null) {
       manifestTimeoutID = window.setTimeout(() => {
         // Manifest failed to load, flag a warning to the user.
@@ -536,3 +549,5 @@ chrome.runtime.onMessage.addListener(request => {
     }
   }
 });
+
+console.log('karim-test');

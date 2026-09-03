@@ -16,6 +16,7 @@
 CLAUDE.local.md
 .codex/worktrees
 AGENTS.override.md
+.llms
 
 # Node Managers
 .node-version

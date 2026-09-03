@@ -21,6 +21,7 @@ import {setCurrentOrigin} from '../content/updateCurrentState';
 describe('content', () => {
   beforeEach(() => {
     window.chrome.runtime.sendMessage = jest.fn(() => {});
+    document.body.innerHTML = '';
     setCurrentOrigin('FACEBOOK');
     FOUND_ELEMENTS.clear();
     FOUND_ELEMENTS.set(UNINITIALIZED, []);
@@ -211,8 +212,13 @@ describe('content', () => {
         '<div>' +
         '  <script data-btmanifest="123_main" src="https://facebook.com/"></script>' +
         '</div>';
-      scanForScriptsAndStyles();
+      expect(scanForScriptsAndStyles()).toBe(true);
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
+    });
+
+    it('should report when no scripts or styles were found', () => {
+      expect(scanForScriptsAndStyles()).toBe(false);
+      expect(window.chrome.runtime.sendMessage).not.toHaveBeenCalled();
     });
   });
 });
