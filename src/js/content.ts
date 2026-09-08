@@ -32,16 +32,17 @@ import {doesWorkerUrlConformToCSP} from './content/doesWorkerUrlConformToCSP';
 import {checkWorkerEndpointCSP} from './content/checkWorkerEndpointCSP';
 import {MessagePayload} from './shared/MessageTypes';
 import {pushToOrCreateArrayInMap} from './shared/nestedDataHelpers';
-import ensureManifestWasOrWillBeLoaded from './content/ensureManifestWasOrWillBeLoaded';
-import {downloadSrc, processSrc} from './content/contentUtils';
+import {asyncThrottle} from './shared/asyncThrottle';
+import {downloadSrc, processSrc} from './content/sourceUtils';
 import {hasVaryServiceWorkerHeader} from './content/hasVaryServiceWorkerHeader';
 import {isSameDomainAsTopWindow, isTopWindow} from './content/iFrameUtils';
 import {getTagIdentifier} from './content/getTagIdentifier';
 import {
   BOTH,
+  ensureManifestWasOrWillBeLoaded,
   getManifestVersionAndTypeFromNode,
   tryToGetManifestVersionAndTypeFromNode,
-} from './content/getManifestVersionAndTypeFromNode';
+} from './content/manifestUtils';
 import {scanForCSSNeedingManualInspection} from './content/manualCSSInspector';
 
 type ContentScriptConfig = {
@@ -203,7 +204,7 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
   });
 }
 
-export const processFoundElements = async (version: string): Promise<void> => {
+export async function processFoundElements(version: string): Promise<void> {
   const elementsForVersion = FOUND_ELEMENTS.get(version);
   if (!elementsForVersion) {
     invalidateAndThrow(
@@ -243,7 +244,7 @@ export const processFoundElements = async (version: string): Promise<void> => {
     });
   }
   window.setTimeout(() => processFoundElements(version), 3000);
-};
+}
 
 function handleScriptNode(scriptNode: HTMLScriptElement): void {
   const [version, otherType] = getManifestVersionAndTypeFromNode(scriptNode);
@@ -374,7 +375,7 @@ export function hasInvalidScriptsOrStyles(scriptNodeMaybe: Node): void {
   }
 }
 
-export const scanForScriptsAndStyles = (): void => {
+export function scanForScriptsAndStyles(): void {
   const allElements = document.querySelectorAll(
     'script,style,link[rel="stylesheet"]',
   );
@@ -411,7 +412,7 @@ export const scanForScriptsAndStyles = (): void => {
   } catch {
     updateCurrentState(STATES.INVALID, 'unknown');
   }
-};
+}
 
 let isUserLoggedIn = false;
 let allowedWorkerCSPs: Array<Set<string>> = [];
