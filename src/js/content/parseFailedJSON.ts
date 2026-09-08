@@ -19,21 +19,23 @@ export function getFailedForTestDoNotUse(): boolean | null {
   return failed_FOR_TEST_DO_NOT_USE;
 }
 
-export function parseFailedJSON(queuedJsonToParse: {
-  node: Element;
-  retry: number;
-}): void {
+export function parseFailedJSON(
+  node: Element,
+  retry: number,
+  onSuccess?: () => void,
+): void {
   // Only a document/doctype can have textContent as null
-  const nodeTextContent = queuedJsonToParse.node.textContent ?? '';
+  const nodeTextContent = node.textContent ?? '';
   try {
     JSON.parse(nodeTextContent);
   } catch {
-    if (queuedJsonToParse.retry > 0) {
-      queuedJsonToParse.retry--;
-      setTimeout(() => parseFailedJSON(queuedJsonToParse), 20);
+    if (retry > 0) {
+      setTimeout(() => parseFailedJSON(node, retry - 1, onSuccess), 20);
     } else {
       updateCurrentState(STATES.INVALID);
       failed_FOR_TEST_DO_NOT_USE = true;
     }
+    return;
   }
+  onSuccess?.();
 }

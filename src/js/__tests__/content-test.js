@@ -54,6 +54,37 @@ describe('content', () => {
       expect(window.chrome.runtime.sendMessage.mock.calls.length).toBe(1);
       expect(sentMessage.type).toEqual(MESSAGE_TYPE.UPDATE_STATE);
     });
+    it('should process a manifest after its JSON becomes available', () => {
+      jest.useFakeTimers();
+      const manifestNode = document.createElement('script');
+      manifestNode.id = 'binary-transparency-manifest';
+      manifestNode.type = 'application/json';
+      manifestNode.setAttribute('data-manifest-type', 'main');
+      manifestNode.setAttribute('data-manifest-rev', '123');
+
+      storeFoundElement(manifestNode);
+      manifestNode.textContent = JSON.stringify({
+        manifest: [],
+        manifest_hashes: {
+          combined_hash: 'combined-hash',
+          longtail: 'longtail-hash',
+          main: 'main-hash',
+        },
+        leaves: [],
+        root: 'root-hash',
+        version: '123',
+      });
+      jest.advanceTimersByTime(20);
+
+      expect(window.chrome.runtime.sendMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: MESSAGE_TYPE.LOAD_COMPANY_MANIFEST,
+          version: '123',
+        }),
+        expect.any(Function),
+      );
+      jest.useRealTimers();
+    });
     it.skip('storeFoundElement keeps existing icon if not valid', () => {
       // TODO: come back to this after testing processFoundJS
     });
