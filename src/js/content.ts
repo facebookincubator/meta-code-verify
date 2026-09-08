@@ -59,7 +59,7 @@ export const FOUND_ELEMENTS = new Map<string, Array<TagDetails>>([
   [UNINITIALIZED, []],
 ]);
 const ALL_FOUND_TAGS_URLS = new Set<string>();
-const FOUND_MANIFEST_VERSIONS = new Set<string>();
+export const FOUND_MANIFEST_VERSIONS = new Set<string>();
 
 export type TagDetails =
   | {
@@ -193,7 +193,7 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
         manifestTimeoutID = '';
       }
       FOUND_MANIFEST_VERSIONS.add(version);
-      window.setTimeout(() => processFoundElements(version), 0);
+      processFoundElements();
     } else {
       if ('UNKNOWN_ENDPOINT_ISSUE' === response.reason) {
         updateCurrentState(STATES.TIMEOUT);
@@ -204,13 +204,20 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
   });
 }
 
-export async function processFoundElements(version: string): Promise<void> {
-  const elementsForVersion = FOUND_ELEMENTS.get(version);
-  if (!elementsForVersion) {
-    invalidateAndThrow(
-      `attempting to process elements for nonexistent version ${version}`,
-    );
+export async function processFoundElementsForVersion(
+  version: string,
+): Promise<void> {
+  // See if we have the manifest yet; Top-level window and X-Origin frames have
+  // their own manifest. Same-orgin frames rely on their parent window's
+  // manifest, so a missing manifest there is normal/expected.
+  if (
+    !FOUND_MANIFEST_VERSIONS.has(version) &&
+    (isTopWindow() || !isSameDomainAsTopWindow())
+  ) {
+    return;
   }
+
+  const elementsForVersion = FOUND_ELEMENTS.get(version) ?? [];
   const elements = elementsForVersion.splice(0).filter(element => {
     if (
       element.otherType === currentFilterType ||
@@ -223,34 +230,45 @@ export async function processFoundElements(version: string): Promise<void> {
   });
   let pendingElementCount = elements.length;
   for (const element of elements) {
-    await processSrc(element, version).then(response => {
-      const tagIdentifier = getTagIdentifier(element);
+    const response = await processSrc(element, version);
+    const tagIdentifier = getTagIdentifier(element);
 
-      pendingElementCount--;
-      if (response.valid) {
-        if (pendingElementCount == 0) {
-          updateCurrentState(STATES.VALID);
-        }
-      } else {
-        updateCurrentState(STATES.INVALID, `Invalid Tag ${tagIdentifier}`);
+    pendingElementCount--;
+    if (response.valid) {
+      if (pendingElementCount == 0) {
+        updateCurrentState(STATES.VALID);
       }
-      sendMessageToBackground({
-        type: MESSAGE_TYPE.DEBUG,
-        log:
-          'processed SRC response is ' +
-          JSON.stringify(response).substring(0, 500),
-        src: tagIdentifier,
-      });
+    } else {
+      updateCurrentState(STATES.INVALID, `Invalid Tag ${tagIdentifier}`);
+    }
+    sendMessageToBackground({
+      type: MESSAGE_TYPE.DEBUG,
+      log:
+        'processed SRC response is ' +
+        JSON.stringify(response).substring(0, 500),
+      src: tagIdentifier,
     });
   }
-  window.setTimeout(() => processFoundElements(version), 3000);
+}
+
+export const processFoundElements = asyncThrottle(async (): Promise<void> => {
+  await Promise.all(
+    Array.from(FOUND_ELEMENTS.keys(), version =>
+      processFoundElementsForVersion(version),
+    ),
+  );
+}, 3000);
+
+function addFoundElement(version: string, element: TagDetails): void {
+  pushToOrCreateArrayInMap(FOUND_ELEMENTS, version, element);
+  processFoundElements();
 }
 
 function handleScriptNode(scriptNode: HTMLScriptElement): void {
   const [version, otherType] = getManifestVersionAndTypeFromNode(scriptNode);
   ALL_FOUND_TAGS_URLS.add(scriptNode.src);
   ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
-  pushToOrCreateArrayInMap(FOUND_ELEMENTS, version, {
+  addFoundElement(version, {
     src: scriptNode.src,
     otherType,
     type: 'script',
@@ -266,7 +284,7 @@ function handleStyleNode(style: HTMLStyleElement): void {
   }
   const [version, otherType] = versionAndOtherType;
   ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
-  pushToOrCreateArrayInMap(FOUND_ELEMENTS, version, {
+  addFoundElement(version, {
     tag: style,
     otherType: otherType,
     type: 'style',
@@ -277,7 +295,7 @@ function handleStyleNode(style: HTMLStyleElement): void {
 function handleInlineScriptNode(script: HTMLScriptElement): void {
   const [version, otherType] = getManifestVersionAndTypeFromNode(script);
   ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
-  pushToOrCreateArrayInMap(FOUND_ELEMENTS, version, {
+  addFoundElement(version, {
     tag: script,
     otherType,
     type: 'inline_script',
@@ -289,7 +307,7 @@ function handleLinkNode(link: HTMLLinkElement): void {
   const [version, otherType] = getManifestVersionAndTypeFromNode(link);
   ALL_FOUND_TAGS_URLS.add(link.href);
   ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
-  pushToOrCreateArrayInMap(FOUND_ELEMENTS, version, {
+  addFoundElement(version, {
     href: link.href,
     otherType,
     type: 'link',
@@ -299,12 +317,9 @@ function handleLinkNode(link: HTMLLinkElement): void {
 
 export function storeFoundElement(element: HTMLElement): void {
   if (!isTopWindow() && isSameDomainAsTopWindow()) {
-    // this means that content utils is running in an iframe - disable timer and call processFoundElements on manifest processed in top level frame
+    // Same-origin iframes use the manifest processed in the top-level frame.
     clearTimeout(manifestTimeoutID);
     manifestTimeoutID = '';
-    FOUND_ELEMENTS.forEach((_val, key) => {
-      window.setTimeout(() => processFoundElements(key), 0);
-    });
   }
 
   // check if it's the manifest node
@@ -515,6 +530,7 @@ chrome.runtime.onMessage.addListener(request => {
           isServiceWorker: hasVaryServiceWorkerHeader(request.response),
           type: 'script',
         });
+        processFoundElements();
       }
       updateCurrentState(STATES.PROCESSING);
     }
