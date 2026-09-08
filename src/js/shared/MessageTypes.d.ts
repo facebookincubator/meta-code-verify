@@ -10,7 +10,7 @@ import {RawManifestOtherHashes} from '../content';
 
 export type MessagePayload =
   | {
-      type: typeof MESSAGE_TYPE.LOAD_COMPANY_MANIFEST;
+      type: MESSAGE_TYPE.LOAD_COMPANY_MANIFEST;
       origin: Origin;
       rootHash: string;
       otherHashes: RawManifestOtherHashes;
@@ -19,33 +19,33 @@ export type MessagePayload =
       workaround: string;
     }
   | {
-      type: typeof MESSAGE_TYPE.RAW_SRC;
+      type: MESSAGE_TYPE.RAW_SRC;
       pkgRaw: string;
       origin: Origin;
       version: string;
     }
   | {
-      type: typeof MESSAGE_TYPE.DEBUG;
+      type: MESSAGE_TYPE.DEBUG;
       log: string;
       src?: string;
     }
   | {
-      type: typeof MESSAGE_TYPE.STATE_UPDATED;
+      type: MESSAGE_TYPE.STATE_UPDATED;
       tabId: number;
       state: State;
     }
   | {
-      type: typeof MESSAGE_TYPE.UPDATE_STATE;
+      type: MESSAGE_TYPE.UPDATE_STATE;
       state: State;
       origin: Origin;
       details?: string;
     }
   | {
-      type: typeof MESSAGE_TYPE.CONTENT_SCRIPT_START;
+      type: MESSAGE_TYPE.CONTENT_SCRIPT_START;
       origin: Origin;
     }
   | {
-      type: typeof MESSAGE_TYPE.UPDATED_CACHED_SCRIPT_URLS;
+      type: MESSAGE_TYPE.UPDATED_CACHED_SCRIPT_URLS;
       url: string;
     };
 
