@@ -7,11 +7,13 @@
 
 import type {Origin, State} from '../config';
 import type {RawManifestOtherHashes} from '../content';
-import type {
+import sendMessage, {
   MessagePayload as BaseMessagePayload,
   MessageResponse as BaseMessageResponse,
+  MessageResponseExpectations,
   MessageWithResponder as BaseMessageWithResponder,
-} from './MessageProtocol';
+  SendMessageResult,
+} from './sendMessage';
 
 export enum MESSAGE_TYPE {
   DEBUG = 'DEBUG',
@@ -47,7 +49,7 @@ export type MessageProtocol = {
       log: string;
       src?: string;
     };
-    response: undefined;
+    response: never;
   };
   [MESSAGE_TYPE.UPDATE_STATE]: {
     request: {
@@ -84,16 +86,20 @@ export type MessageResponse<Payload extends Message> = BaseMessageResponse<
 
 export type MessageWithResponder = BaseMessageWithResponder<MessageProtocol>;
 
-export default async function sendMessageToBackground<Payload extends Message>(
+const EXPECTS_RESPONSE = {
+  [MESSAGE_TYPE.DEBUG]: false,
+  [MESSAGE_TYPE.LOAD_COMPANY_MANIFEST]: true,
+  [MESSAGE_TYPE.RAW_SRC]: true,
+  [MESSAGE_TYPE.UPDATE_STATE]: true,
+  [MESSAGE_TYPE.CONTENT_SCRIPT_START]: true,
+  [MESSAGE_TYPE.UPDATED_CACHED_SCRIPT_URLS]: true,
+} as const satisfies MessageResponseExpectations<MessageProtocol>;
+
+export default function sendMessageToBackground<Payload extends Message>(
   message: Payload,
-): Promise<MessageResponse<Payload>> {
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(message, (response: unknown): void => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-      } else {
-        resolve(response as MessageResponse<Payload>);
-      }
-    });
-  });
+): SendMessageResult<MessageProtocol, Payload> {
+  return sendMessage<MessageProtocol>(
+    message,
+    EXPECTS_RESPONSE,
+  ) as SendMessageResult<MessageProtocol, Payload>;
 }

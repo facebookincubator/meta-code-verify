@@ -6,10 +6,12 @@
  */
 
 import type {State} from '../config';
-import type {
+import sendMessage, {
   MessagePayload as BaseMessagePayload,
   MessageResponse as BaseMessageResponse,
-} from './MessageProtocol';
+  MessageResponseExpectations,
+  SendMessageResult,
+} from './sendMessage';
 
 export enum MESSAGE_TYPE {
   STATE_UPDATED = 'STATE_UPDATED',
@@ -21,7 +23,7 @@ export type MessageProtocol = {
       tabId: number;
       state: State;
     };
-    response: undefined;
+    response: never;
   };
 };
 
@@ -32,16 +34,15 @@ export type MessageResponse<Payload extends Message> = BaseMessageResponse<
   Payload
 >;
 
-export default async function sendMessageToPopup<Payload extends Message>(
+const EXPECTS_RESPONSE = {
+  [MESSAGE_TYPE.STATE_UPDATED]: false,
+} as const satisfies MessageResponseExpectations<MessageProtocol>;
+
+export default function sendMessageToPopup<Payload extends Message>(
   message: Payload,
-): Promise<MessageResponse<Payload>> {
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(message, (response: unknown): void => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-      } else {
-        resolve(response as MessageResponse<Payload>);
-      }
-    });
-  });
+): SendMessageResult<MessageProtocol, Payload> {
+  return sendMessage<MessageProtocol>(
+    message,
+    EXPECTS_RESPONSE,
+  ) as SendMessageResult<MessageProtocol, Payload>;
 }

@@ -5,10 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type {
+import sendMessage, {
   MessagePayload as BaseMessagePayload,
   MessageResponse as BaseMessageResponse,
-} from './MessageProtocol';
+  MessageResponseExpectations,
+  SendMessageResult,
+} from './sendMessage';
 
 export enum MESSAGE_TYPE {
   CHECK_IF_SCRIPT_WAS_PROCESSED = 'checkIfScriptWasProcessed',
@@ -21,23 +23,23 @@ export enum MESSAGE_TYPE {
 export type MessageProtocol = {
   [MESSAGE_TYPE.CHECK_IF_SCRIPT_WAS_PROCESSED]: {
     request: {response: chrome.webRequest.OnResponseStartedDetails};
-    response: undefined;
+    response: never;
   };
   [MESSAGE_TYPE.DOWNLOAD_RELEASE_SOURCE]: {
     request: Record<never, never>;
-    response: undefined;
+    response: never;
   };
   [MESSAGE_TYPE.DOWNLOAD_SOURCE]: {
     request: Record<never, never>;
-    response: undefined;
+    response: never;
   };
   [MESSAGE_TYPE.NOCACHE_HEADER_FOUND]: {
     request: {uncachedUrl: string};
-    response: undefined;
+    response: never;
   };
   [MESSAGE_TYPE.SNIFFABLE_MIME_TYPE_RESOURCE]: {
     request: {src: string};
-    response: undefined;
+    response: never;
   };
 };
 
@@ -48,23 +50,23 @@ export type MessageResponse<Payload extends Message> = BaseMessageResponse<
   Payload
 >;
 
-export default async function sendMessageToContent<Payload extends Message>(
+const EXPECTS_RESPONSE = {
+  [MESSAGE_TYPE.CHECK_IF_SCRIPT_WAS_PROCESSED]: false,
+  [MESSAGE_TYPE.DOWNLOAD_RELEASE_SOURCE]: false,
+  [MESSAGE_TYPE.DOWNLOAD_SOURCE]: false,
+  [MESSAGE_TYPE.NOCACHE_HEADER_FOUND]: false,
+  [MESSAGE_TYPE.SNIFFABLE_MIME_TYPE_RESOURCE]: false,
+} as const satisfies MessageResponseExpectations<MessageProtocol>;
+
+export default function sendMessageToContent<Payload extends Message>(
   tabId: number,
   message: Payload,
   options?: chrome.tabs.MessageSendOptions,
-): Promise<MessageResponse<Payload>> {
-  return new Promise((resolve, reject) => {
-    chrome.tabs.sendMessage(
-      tabId,
-      message,
-      options,
-      (response: unknown): void => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve(response as MessageResponse<Payload>);
-        }
-      },
-    );
-  });
+): SendMessageResult<MessageProtocol, Payload> {
+  return sendMessage<MessageProtocol>(
+    message,
+    EXPECTS_RESPONSE,
+    tabId,
+    options,
+  ) as SendMessageResult<MessageProtocol, Payload>;
 }

@@ -101,9 +101,6 @@ export default class TabStateMachine extends StateMachine {
       type: MESSAGE_TYPE.STATE_UPDATED,
       tabId: this._tabId,
       state,
-    }).catch((_: unknown) => {
-      // Suppresses an error that is thrown when we try to send this message to
-      // popup.js before it's listener is set up.
     });
     if (state === STATES.IGNORE) {
       this.genDisableTab();
