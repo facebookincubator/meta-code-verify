@@ -9,15 +9,33 @@ type CSPPolicy = Map<string, Set<string>>;
 export type CSPPolicies = Array<CSPPolicy>;
 export type CSPCheckResult = {valid: true} | {valid: false; reason: string};
 
+function isASCIIString(value: string): boolean {
+  for (let i = 0; i < value.length; i++) {
+    if (value.charCodeAt(i) > 0x7f) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function parseCSPHeaders(cspHeaders: Array<string>): CSPPolicies {
   return cspHeaders.map(csp =>
     csp.split(';').reduce((policy, directiveString) => {
-      const [directive, ...values] = directiveString
-        .trim()
+      // CSP only recognizes ASCII whitespace in serialized directives.
+      // trim() and \s would also accept Unicode whitespace, which could make us
+      // recognize a directive that the browser ignores.
+      const directiveToken = directiveString.replace(
+        /^[\t\n\f\r ]+|[\t\n\f\r ]+$/g,
+        '',
+      );
+      if (!directiveToken || !isASCIIString(directiveToken)) {
+        return policy;
+      }
+      const [directive, ...values] = directiveToken
         .toLowerCase()
-        .split(/\s+/);
+        .split(/[\t\n\f\r ]+/);
       // Ignore subsequent keys for a directive, if it's specified more than once
-      if (directive && !policy.has(directive)) {
+      if (!policy.has(directive)) {
         policy.set(directive, new Set(values));
       }
       return policy;

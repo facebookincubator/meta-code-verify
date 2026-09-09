@@ -57,15 +57,10 @@ describe('parseCSPHeaders', () => {
       ]),
     ]);
   });
-  it('Can still parse keys when invalid characters are present', () => {
+  it('Ignores directives containing non-ASCII characters', () => {
     expect(
-      parseCSPHeaders([`default-src 'self';          script-src 'none';`]),
-    ).toEqual([
-      new Map([
-        ['default-src', new Set(["'self'"])],
-        ['script-src', new Set(["'none'"])],
-      ]),
-    ]);
+      parseCSPHeaders([`default-src 'self';\u00a0script-src 'none';`]),
+    ).toEqual([new Map([['default-src', new Set(["'self'"])]])]);
   });
   it('Correctly parses other whitespace chars', () => {
     expect(

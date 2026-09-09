@@ -7,7 +7,10 @@
 
 'use strict';
 
-import {getCSPHeadersFromWebRequestResponse} from '../shared/getCSPHeadersFromWebRequestResponse';
+import getCSPHeadersFromWebRequestResponseModule from '../shared/getCSPHeadersFromWebRequestResponse';
+
+const {default: getCSPHeadersFromWebRequestResponse} =
+  getCSPHeadersFromWebRequestResponseModule;
 
 const KEY = 'Content-Security-Policy';
 
@@ -29,7 +32,7 @@ describe('getCSPHeadersFromWebRequestResponse', () => {
           {
             name: KEY,
             value:
-              'default-src facebook.com;, frame-ancestors https://www.facebook.com https://www.instagram.com;',
+              'default-src facebook.com;,frame-ancestors https://www.facebook.com https://www.instagram.com;',
           },
           {name: 'other-header', value: ''},
         ],
@@ -79,7 +82,7 @@ describe('getCSPHeadersFromWebRequestResponse', () => {
           {
             name: KEY,
             value:
-              'default-src facebook.com;, frame-ancestors https://www.facebook.com https://www.instagram.com;',
+              'default-src facebook.com; ,\t  \u00a0frame-ancestors https://www.facebook.com https://www.instagram.com;',
           },
           {name: 'other-header', value: ''},
         ],
@@ -90,7 +93,7 @@ describe('getCSPHeadersFromWebRequestResponse', () => {
       {
         name: KEY,
         value:
-          'frame-ancestors https://www.facebook.com https://www.instagram.com;',
+          '\u00a0frame-ancestors https://www.facebook.com https://www.instagram.com;',
       },
     ]);
   });

@@ -6,7 +6,7 @@
  */
 
 import {Origin, ORIGIN_HOST} from '../config';
-import {getCSPHeadersFromWebRequestResponse} from '../shared/getCSPHeadersFromWebRequestResponse';
+import getCSPHeadersFromWebRequestResponse from '../shared/getCSPHeadersFromWebRequestResponse';
 import {
   checkCSPForEvals,
   setUpCSPEvalReportViolationListenerIfNeeded,
