@@ -23,17 +23,24 @@ describe('parseFailedJSON', () => {
     clearFailedForTestDoNotUse();
   });
   it('Should correctly parse valid JSON', () => {
-    parseFailedJSON({
-      node: {textContent: '{}'},
-      retry: 10,
-    });
+    const onSuccess = jest.fn();
+    parseFailedJSON({textContent: '{}'}, 10, onSuccess);
     expect(getFailedForTestDoNotUse()).toBe(null);
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+  });
+  it('Should not retry when the success callback throws', () => {
+    const onSuccess = jest.fn(() => {
+      throw new Error('Callback failed');
+    });
+
+    expect(() => parseFailedJSON({textContent: '{}'}, 10, onSuccess)).toThrow(
+      'Callback failed',
+    );
+    jest.runAllTimers();
+    expect(onSuccess).toHaveBeenCalledTimes(1);
   });
   it('Should throw on invalid JSON', () => {
-    parseFailedJSON({
-      node: {textContent: ''},
-      retry: 10,
-    });
+    parseFailedJSON({textContent: ''}, 10);
     setTimeout(() => {
       expect(getFailedForTestDoNotUse()).toBe(true);
     }, 500);
@@ -41,13 +48,15 @@ describe('parseFailedJSON', () => {
   });
   it('Should eventually success', () => {
     const node = {textContent: ''};
-    parseFailedJSON({node, retry: 50});
+    const onSuccess = jest.fn();
+    parseFailedJSON(node, 50, onSuccess);
     setTimeout(() => {
       node.textContent = '{}';
     }, 200);
     jest.runAllTimers();
     setTimeout(() => {
       expect(getFailedForTestDoNotUse()).toBe(null);
+      expect(onSuccess).toHaveBeenCalledTimes(1);
     }, 200);
     jest.runAllTimers();
   });
