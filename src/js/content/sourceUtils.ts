@@ -8,8 +8,9 @@
 import alertBackgroundOfImminentFetch from './alertBackgroundOfImminentFetch';
 
 import {TagDetails} from '../content';
-import {MESSAGE_TYPE} from '../config';
-import {sendMessageToBackground} from '../shared/sendMessageToBackground';
+import sendMessageToBackground, {
+  MESSAGE_TYPE,
+} from '../shared/sendMessageToBackground';
 import {getCurrentOrigin} from './updateCurrentState';
 
 const SOURCE_SCRIPTS_AND_STYLES = new Map<string, Response>();

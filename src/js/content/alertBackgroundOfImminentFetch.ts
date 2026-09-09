@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {MESSAGE_TYPE} from '../config';
-import {sendMessageToBackground} from '../shared/sendMessageToBackground';
+import sendMessageToBackground, {
+  MESSAGE_TYPE,
+} from '../shared/sendMessageToBackground';
 
 export default async function alertBackgroundOfImminentFetch(
   url: string,

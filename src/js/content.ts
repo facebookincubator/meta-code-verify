@@ -7,13 +7,7 @@
 
 import './globals';
 
-import {
-  MESSAGE_TYPE,
-  STATES,
-  Origin,
-  ORIGIN_TYPE,
-  MANIFEST_TIMEOUT,
-} from './config';
+import {STATES, Origin, ORIGIN_TYPE, MANIFEST_TIMEOUT} from './config';
 
 import {
   checkDocumentCSPHeaders,
@@ -25,12 +19,18 @@ import {
   updateCurrentState,
   invalidateAndThrow,
 } from './content/updateCurrentState';
-import {sendMessageToBackground} from './shared/sendMessageToBackground';
 import {parseFailedJSON} from './content/parseFailedJSON';
 import isPathnameExcluded from './content/isPathNameExcluded';
 import {doesWorkerUrlConformToCSP} from './content/doesWorkerUrlConformToCSP';
 import {checkWorkerEndpointCSP} from './content/checkWorkerEndpointCSP';
-import {MessagePayload} from './shared/MessageTypes';
+import sendMessageToBackground, {
+  MESSAGE_TYPE as BACKGROUND_MESSAGE_TYPE,
+  type Message as BackgroundMessage,
+} from './shared/sendMessageToBackground';
+import {
+  MESSAGE_TYPE as CONTENT_MESSAGE_TYPE,
+  type Message as ContentMessage,
+} from './shared/sendMessageToContent';
 import {pushToOrCreateArrayInMap} from './shared/nestedDataHelpers';
 import {asyncThrottle} from './shared/asyncThrottle';
 import {downloadSrc, processSrc} from './content/sourceUtils';
@@ -157,8 +157,8 @@ async function handleManifestNode(
     currentFilterType = BOTH;
   }
 
-  const messagePayload: MessagePayload = {
-    type: MESSAGE_TYPE.LOAD_COMPANY_MANIFEST,
+  const messagePayload: BackgroundMessage = {
+    type: BACKGROUND_MESSAGE_TYPE.LOAD_COMPANY_MANIFEST,
     leaves,
     origin: getCurrentOrigin(),
     otherHashes: otherHashes,
@@ -244,7 +244,7 @@ export async function processFoundElementsForVersion(
       updateCurrentState(STATES.INVALID, `Invalid Tag ${tagIdentifier}`);
     }
     sendMessageToBackground({
-      type: MESSAGE_TYPE.DEBUG,
+      type: BACKGROUND_MESSAGE_TYPE.DEBUG,
       log:
         'processed SRC response is ' +
         JSON.stringify(response).substring(0, 500),
@@ -445,7 +445,7 @@ export async function startFor(
   setCurrentOrigin(origin);
   (async () => {
     const resp = await sendMessageToBackground({
-      type: MESSAGE_TYPE.CONTENT_SCRIPT_START,
+      type: BACKGROUND_MESSAGE_TYPE.CONTENT_SCRIPT_START,
       origin,
     });
     if (!resp.success) {
@@ -498,66 +498,82 @@ export async function startFor(
   }
 }
 
-chrome.runtime.onMessage.addListener(request => {
-  if (request.greeting === 'downloadSource') {
-    downloadSrc();
-  } else if (request.greeting === 'nocacheHeaderFound') {
-    updateCurrentState(
-      STATES.INVALID,
-      `Detected uncached script/style ${request.uncachedUrl}`,
-    );
-  } else if (request.greeting === 'checkIfScriptWasProcessed') {
-    if (isUserLoggedIn && !ALL_FOUND_TAGS_URLS.has(request.response.url)) {
-      const hostname = window.location.hostname;
-      const resourceURL = new URL(request.response.url);
-      if (resourceURL.hostname === hostname) {
-        // This can potentially be a worker, check if CSPs allow it as a worker
-        if (
-          allowedWorkerCSPs.every(csp =>
-            doesWorkerUrlConformToCSP(csp, resourceURL.toString()),
-          )
-        ) {
-          // This might be a worker, ensure it's CSP headers are valid
-          checkWorkerEndpointCSP(
-            request.response,
-            allowedWorkerCSPs,
-            getCurrentOrigin(),
+chrome.runtime.onMessage.addListener((message: ContentMessage) => {
+  switch (message.type) {
+    case CONTENT_MESSAGE_TYPE.DOWNLOAD_SOURCE: {
+      downloadSrc();
+      return;
+    }
+    case CONTENT_MESSAGE_TYPE.NOCACHE_HEADER_FOUND: {
+      updateCurrentState(
+        STATES.INVALID,
+        `Detected uncached script/style ${message.uncachedUrl}`,
+      );
+      return;
+    }
+    case CONTENT_MESSAGE_TYPE.CHECK_IF_SCRIPT_WAS_PROCESSED: {
+      if (isUserLoggedIn && !ALL_FOUND_TAGS_URLS.has(message.response.url)) {
+        const hostname = window.location.hostname;
+        const resourceURL = new URL(message.response.url);
+        if (resourceURL.hostname === hostname) {
+          // This can potentially be a worker, check if CSPs allow it as a
+          // worker
+          if (
+            allowedWorkerCSPs.every(csp =>
+              doesWorkerUrlConformToCSP(csp, resourceURL.toString()),
+            )
+          ) {
+            // This might be a worker, ensure it's CSP headers are valid
+            checkWorkerEndpointCSP(
+              message.response,
+              allowedWorkerCSPs,
+              getCurrentOrigin(),
+            );
+          }
+        }
+        sendMessageToBackground({
+          type: BACKGROUND_MESSAGE_TYPE.DEBUG,
+          log: `Tab is processing ${message.response.url}`,
+        });
+        ALL_FOUND_TAGS_URLS.add(message.response.url);
+        const uninitializedScripts = FOUND_ELEMENTS.get(
+          FOUND_ELEMENTS.keys().next().value!,
+        );
+        if (uninitializedScripts) {
+          uninitializedScripts.push({
+            src: message.response.url,
+            otherType: currentFilterType,
+            isServiceWorker: hasVaryServiceWorkerHeader(message.response),
+            type: 'script',
+          });
+          processFoundElements();
+        }
+        updateCurrentState(STATES.PROCESSING);
+      }
+      return;
+    }
+    case CONTENT_MESSAGE_TYPE.SNIFFABLE_MIME_TYPE_RESOURCE: {
+      updateCurrentState(
+        STATES.INVALID,
+        `Sniffable MIME type resource: ${message.src}`,
+      );
+      return;
+    }
+    case CONTENT_MESSAGE_TYPE.DOWNLOAD_RELEASE_SOURCE: {
+      for (const key of FOUND_ELEMENTS.keys()) {
+        if (key !== 'UNINITIALIZED') {
+          window.open(
+            `https://www.facebook.com/btarchive/${key}/${getCurrentOrigin().toLowerCase()}`,
+            '_blank',
+            'noopener,noreferrer',
           );
         }
       }
-      sendMessageToBackground({
-        type: MESSAGE_TYPE.DEBUG,
-        log: `Tab is processing ${request.response.url}`,
-      });
-      ALL_FOUND_TAGS_URLS.add(request.response.url);
-      const uninitializedScripts = FOUND_ELEMENTS.get(
-        FOUND_ELEMENTS.keys().next().value!,
-      );
-      if (uninitializedScripts) {
-        uninitializedScripts.push({
-          src: request.response.url,
-          otherType: currentFilterType,
-          isServiceWorker: hasVaryServiceWorkerHeader(request.response),
-          type: 'script',
-        });
-        processFoundElements();
-      }
-      updateCurrentState(STATES.PROCESSING);
+      return;
     }
-  } else if (request.greeting === 'sniffableMimeTypeResource') {
-    updateCurrentState(
-      STATES.INVALID,
-      `Sniffable MIME type resource: ${request.src}`,
-    );
-  } else if (request.greeting === 'downloadReleaseSource') {
-    for (const key of FOUND_ELEMENTS.keys()) {
-      if (key !== 'UNINITIALIZED') {
-        window.open(
-          `https://www.facebook.com/btarchive/${key}/${getCurrentOrigin().toLowerCase()}`,
-          '_blank',
-          'noopener,noreferrer',
-        );
-      }
+    default: {
+      const _exhaustiveCheck: never = message;
+      return _exhaustiveCheck;
     }
   }
 });

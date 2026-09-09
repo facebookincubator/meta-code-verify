@@ -7,8 +7,7 @@
 
 import './globals';
 
-import {DYNAMIC_STRING_MARKER, Origin, STATES} from './config';
-import {MESSAGE_TYPE, ORIGIN_HOST} from './config';
+import {DYNAMIC_STRING_MARKER, Origin, ORIGIN_HOST, STATES} from './config';
 
 import {
   recordContentScriptStart,
@@ -19,7 +18,11 @@ import setUpWebRequestsListener from './background/setUpWebRequestsListener';
 import {validateMetaCompanyManifest} from './background/validateMetaCompanyManifest';
 import {validateSender} from './background/validateSender';
 import {removeDynamicStrings} from './background/removeDynamicStrings';
-import {MessagePayload, MessageWithResponder} from './shared/MessageTypes';
+import {
+  MESSAGE_TYPE,
+  type Message,
+  type MessageWithResponder,
+} from './shared/sendMessageToBackground';
 import {setOrUpdateSetInMap} from './shared/nestedDataHelpers';
 import {
   setUpHistoryCleaner,
@@ -52,7 +55,7 @@ function getManifestMapForOrigin(origin: Origin): Map<string, Manifest> {
 }
 
 function logReceivedMessage(
-  message: MessagePayload,
+  message: Message,
   sender: chrome.runtime.MessageSender,
 ): void {
   let logger = console.log;
@@ -91,10 +94,6 @@ function handleMessages(
   switch (message.type) {
     // Log only
     case MESSAGE_TYPE.DEBUG:
-      return;
-
-    // Log only
-    case MESSAGE_TYPE.STATE_UPDATED:
       return;
 
     case MESSAGE_TYPE.LOAD_COMPANY_MANIFEST: {
@@ -221,7 +220,6 @@ function handleMessages(
     }
 
     default: {
-      // See: https://www.typescriptlang.org/docs/handbook/2/narrowing.html#exhaustiveness-checking
       const _exhaustiveCheck: never = message;
       return _exhaustiveCheck;
     }
@@ -229,7 +227,7 @@ function handleMessages(
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  logReceivedMessage(message as MessagePayload, sender);
+  logReceivedMessage(message as Message, sender);
 
   // Chrome provides the request and responder separately. Combine them once
   // at this untyped boundary so handleMessages can narrow them together.

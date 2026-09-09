@@ -6,7 +6,6 @@
  */
 
 import {
-  MESSAGE_TYPE,
   Origin,
   State,
   STATES,
@@ -17,7 +16,9 @@ import {
 import StateMachine from './StateMachine';
 import FrameStateMachine from './FrameStateMachine';
 import {upsertInvalidRecord} from '../historyManager';
-import {sendMessageToBackground} from '../../shared/sendMessageToBackground';
+import sendMessageToPopup, {
+  MESSAGE_TYPE,
+} from '../../shared/sendMessageToPopup';
 
 function getChromeV3Action() {
   if (self.chrome.runtime.getManifest().manifest_version >= 3) {
@@ -96,7 +97,7 @@ export default class TabStateMachine extends StateMachine {
       popup: `popup.html?tab_id=${this._tabId}&state=${state}&origin=${this._origin}`,
     });
     // Broadcast state update for relevant popup to update its contents.
-    sendMessageToBackground({
+    sendMessageToPopup({
       type: MESSAGE_TYPE.STATE_UPDATED,
       tabId: this._tabId,
       state,
