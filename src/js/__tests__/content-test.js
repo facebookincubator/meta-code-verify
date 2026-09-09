@@ -13,6 +13,8 @@ import {
   hasInvalidScriptsOrStyles,
   scanForScriptsAndStyles,
   FOUND_ELEMENTS,
+  FOUND_MANIFEST_VERSIONS,
+  processFoundElementsForVersion,
   storeFoundElement,
   UNINITIALIZED,
 } from '../content';
@@ -24,6 +26,7 @@ describe('content', () => {
     setCurrentOrigin('FACEBOOK');
     FOUND_ELEMENTS.clear();
     FOUND_ELEMENTS.set(UNINITIALIZED, []);
+    FOUND_MANIFEST_VERSIONS.clear();
   });
   describe('storeFoundElement', () => {
     it('should handle scripts with src correctly', () => {
@@ -87,6 +90,57 @@ describe('content', () => {
     });
     it.skip('storeFoundElement keeps existing icon if not valid', () => {
       // TODO: come back to this after testing processFoundJS
+    });
+  });
+  describe('processFoundElements', () => {
+    const createInlineScript = text => {
+      const tag = document.createElement('script');
+      tag.textContent = text;
+      return {otherType: 'main', tag, type: 'inline_script'};
+    };
+
+    it('keeps elements queued until their manifest has loaded', async () => {
+      const element = createInlineScript('queued script');
+      FOUND_ELEMENTS.set('123', [element]);
+
+      await processFoundElementsForVersion('123');
+
+      expect(FOUND_ELEMENTS.get('123')).toEqual([element]);
+      expect(window.chrome.runtime.sendMessage).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when a loaded manifest has no elements', async () => {
+      FOUND_MANIFEST_VERSIONS.add('123');
+
+      await processFoundElementsForVersion('123');
+
+      expect(window.chrome.runtime.sendMessage).not.toHaveBeenCalled();
+    });
+
+    it('processes elements from every loaded manifest version', async () => {
+      window.chrome.runtime.sendMessage = jest.fn((_message, callback) => {
+        callback?.({valid: true});
+      });
+      FOUND_ELEMENTS.set('123', [createInlineScript('first script')]);
+      FOUND_ELEMENTS.set('456', [createInlineScript('second script')]);
+      FOUND_MANIFEST_VERSIONS.add('123');
+      FOUND_MANIFEST_VERSIONS.add('456');
+
+      await Promise.all([
+        processFoundElementsForVersion('123'),
+        processFoundElementsForVersion('456'),
+      ]);
+
+      expect(FOUND_ELEMENTS.get('123')).toEqual([]);
+      expect(FOUND_ELEMENTS.get('456')).toEqual([]);
+      const rawSourceMessages = window.chrome.runtime.sendMessage.mock.calls
+        .map(([message]) => message)
+        .filter(message => message.type === MESSAGE_TYPE.RAW_SRC);
+      expect(rawSourceMessages).toHaveLength(2);
+      expect(rawSourceMessages.map(message => message.version).sort()).toEqual([
+        '123',
+        '456',
+      ]);
     });
   });
   describe('hasInvalidScriptsOrStyles', () => {

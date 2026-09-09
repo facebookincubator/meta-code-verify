@@ -32,16 +32,17 @@ import {doesWorkerUrlConformToCSP} from './content/doesWorkerUrlConformToCSP';
 import {checkWorkerEndpointCSP} from './content/checkWorkerEndpointCSP';
 import {MessagePayload} from './shared/MessageTypes';
 import {pushToOrCreateArrayInMap} from './shared/nestedDataHelpers';
-import ensureManifestWasOrWillBeLoaded from './content/ensureManifestWasOrWillBeLoaded';
-import {downloadSrc, processSrc} from './content/contentUtils';
+import {asyncThrottle} from './shared/asyncThrottle';
+import {downloadSrc, processSrc} from './content/sourceUtils';
 import {hasVaryServiceWorkerHeader} from './content/hasVaryServiceWorkerHeader';
 import {isSameDomainAsTopWindow, isTopWindow} from './content/iFrameUtils';
 import {getTagIdentifier} from './content/getTagIdentifier';
 import {
   BOTH,
+  ensureManifestWasOrWillBeLoaded,
   getManifestVersionAndTypeFromNode,
   tryToGetManifestVersionAndTypeFromNode,
-} from './content/getManifestVersionAndTypeFromNode';
+} from './content/manifestUtils';
 import {scanForCSSNeedingManualInspection} from './content/manualCSSInspector';
 
 type ContentScriptConfig = {
@@ -58,7 +59,7 @@ export const FOUND_ELEMENTS = new Map<string, Array<TagDetails>>([
   [UNINITIALIZED, []],
 ]);
 const ALL_FOUND_TAGS_URLS = new Set<string>();
-const FOUND_MANIFEST_VERSIONS = new Set<string>();
+export const FOUND_MANIFEST_VERSIONS = new Set<string>();
 
 export type TagDetails =
   | {
@@ -82,7 +83,8 @@ export type TagDetails =
       tag: HTMLScriptElement;
       type: 'inline_script';
     };
-let manifestTimeoutID: string | number = '';
+
+let manifestTimeoutID: number | null = null;
 
 export type RawManifestOtherHashes = {
   combined_hash: string;
@@ -187,12 +189,12 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
   sendMessageToBackground(messagePayload, response => {
     // then start processing its JS/CSS
     if (response.valid) {
-      if (manifestTimeoutID !== '') {
+      if (manifestTimeoutID != null) {
         clearTimeout(manifestTimeoutID);
-        manifestTimeoutID = '';
+        manifestTimeoutID = null;
       }
       FOUND_MANIFEST_VERSIONS.add(version);
-      window.setTimeout(() => processFoundElements(version), 0);
+      processFoundElements();
     } else {
       if ('UNKNOWN_ENDPOINT_ISSUE' === response.reason) {
         updateCurrentState(STATES.TIMEOUT);
@@ -203,13 +205,20 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
   });
 }
 
-export const processFoundElements = async (version: string): Promise<void> => {
-  const elementsForVersion = FOUND_ELEMENTS.get(version);
-  if (!elementsForVersion) {
-    invalidateAndThrow(
-      `attempting to process elements for nonexistent version ${version}`,
-    );
+export async function processFoundElementsForVersion(
+  version: string,
+): Promise<void> {
+  // See if we have the manifest yet; Top-level window and X-Origin frames have
+  // their own manifest. Same-orgin frames rely on their parent window's
+  // manifest, so a missing manifest there is normal/expected.
+  if (
+    !FOUND_MANIFEST_VERSIONS.has(version) &&
+    (isTopWindow() || !isSameDomainAsTopWindow())
+  ) {
+    return;
   }
+
+  const elementsForVersion = FOUND_ELEMENTS.get(version) ?? [];
   const elements = elementsForVersion.splice(0).filter(element => {
     if (
       element.otherType === currentFilterType ||
@@ -222,34 +231,45 @@ export const processFoundElements = async (version: string): Promise<void> => {
   });
   let pendingElementCount = elements.length;
   for (const element of elements) {
-    await processSrc(element, version).then(response => {
-      const tagIdentifier = getTagIdentifier(element);
+    const response = await processSrc(element, version);
+    const tagIdentifier = getTagIdentifier(element);
 
-      pendingElementCount--;
-      if (response.valid) {
-        if (pendingElementCount == 0) {
-          updateCurrentState(STATES.VALID);
-        }
-      } else {
-        updateCurrentState(STATES.INVALID, `Invalid Tag ${tagIdentifier}`);
+    pendingElementCount--;
+    if (response.valid) {
+      if (pendingElementCount == 0) {
+        updateCurrentState(STATES.VALID);
       }
-      sendMessageToBackground({
-        type: MESSAGE_TYPE.DEBUG,
-        log:
-          'processed SRC response is ' +
-          JSON.stringify(response).substring(0, 500),
-        src: tagIdentifier,
-      });
+    } else {
+      updateCurrentState(STATES.INVALID, `Invalid Tag ${tagIdentifier}`);
+    }
+    sendMessageToBackground({
+      type: MESSAGE_TYPE.DEBUG,
+      log:
+        'processed SRC response is ' +
+        JSON.stringify(response).substring(0, 500),
+      src: tagIdentifier,
     });
   }
-  window.setTimeout(() => processFoundElements(version), 3000);
-};
+}
+
+export const processFoundElements = asyncThrottle(async (): Promise<void> => {
+  await Promise.all(
+    Array.from(FOUND_ELEMENTS.keys(), version =>
+      processFoundElementsForVersion(version),
+    ),
+  );
+}, 3000);
+
+function addFoundElement(version: string, element: TagDetails): void {
+  pushToOrCreateArrayInMap(FOUND_ELEMENTS, version, element);
+  processFoundElements();
+}
 
 function handleScriptNode(scriptNode: HTMLScriptElement): void {
   const [version, otherType] = getManifestVersionAndTypeFromNode(scriptNode);
   ALL_FOUND_TAGS_URLS.add(scriptNode.src);
   ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
-  pushToOrCreateArrayInMap(FOUND_ELEMENTS, version, {
+  addFoundElement(version, {
     src: scriptNode.src,
     otherType,
     type: 'script',
@@ -265,7 +285,7 @@ function handleStyleNode(style: HTMLStyleElement): void {
   }
   const [version, otherType] = versionAndOtherType;
   ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
-  pushToOrCreateArrayInMap(FOUND_ELEMENTS, version, {
+  addFoundElement(version, {
     tag: style,
     otherType: otherType,
     type: 'style',
@@ -276,7 +296,7 @@ function handleStyleNode(style: HTMLStyleElement): void {
 function handleInlineScriptNode(script: HTMLScriptElement): void {
   const [version, otherType] = getManifestVersionAndTypeFromNode(script);
   ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
-  pushToOrCreateArrayInMap(FOUND_ELEMENTS, version, {
+  addFoundElement(version, {
     tag: script,
     otherType,
     type: 'inline_script',
@@ -288,7 +308,7 @@ function handleLinkNode(link: HTMLLinkElement): void {
   const [version, otherType] = getManifestVersionAndTypeFromNode(link);
   ALL_FOUND_TAGS_URLS.add(link.href);
   ensureManifestWasOrWillBeLoaded(FOUND_MANIFEST_VERSIONS, version);
-  pushToOrCreateArrayInMap(FOUND_ELEMENTS, version, {
+  addFoundElement(version, {
     href: link.href,
     otherType,
     type: 'link',
@@ -297,13 +317,12 @@ function handleLinkNode(link: HTMLLinkElement): void {
 }
 
 export function storeFoundElement(element: HTMLElement): void {
+  // Same-origin iframes use the manifest processed in the top-level frame.
   if (!isTopWindow() && isSameDomainAsTopWindow()) {
-    // this means that content utils is running in an iframe - disable timer and call processFoundElements on manifest processed in top level frame
-    clearTimeout(manifestTimeoutID);
-    manifestTimeoutID = '';
-    FOUND_ELEMENTS.forEach((_val, key) => {
-      window.setTimeout(() => processFoundElements(key), 0);
-    });
+    if (manifestTimeoutID != null) {
+      clearTimeout(manifestTimeoutID);
+      manifestTimeoutID = null;
+    }
   }
 
   // check if it's the manifest node
@@ -375,7 +394,7 @@ export function hasInvalidScriptsOrStyles(scriptNodeMaybe: Node): void {
   }
 }
 
-export const scanForScriptsAndStyles = (): void => {
+export function scanForScriptsAndStyles(): void {
   const allElements = document.querySelectorAll(
     'script,style,link[rel="stylesheet"]',
   );
@@ -412,7 +431,7 @@ export const scanForScriptsAndStyles = (): void => {
   } catch {
     updateCurrentState(STATES.INVALID, 'unknown');
   }
-};
+}
 
 let isUserLoggedIn = false;
 let allowedWorkerCSPs: Array<Set<string>> = [];
@@ -463,8 +482,7 @@ export function startFor(origin: Origin, config: ContentScriptConfig): void {
     updateCurrentState(STATES.PROCESSING);
     scanForScriptsAndStyles();
     scanForCSSNeedingManualInspection();
-    // set the timeout once, in case there's an iframe and contentUtils sets another manifest timer
-    if (manifestTimeoutID === '') {
+    if (manifestTimeoutID == null) {
       manifestTimeoutID = window.setTimeout(() => {
         // Manifest failed to load, flag a warning to the user.
         updateCurrentState(STATES.TIMEOUT);
@@ -515,6 +533,7 @@ chrome.runtime.onMessage.addListener(request => {
           isServiceWorker: hasVaryServiceWorkerHeader(request.response),
           type: 'script',
         });
+        processFoundElements();
       }
       updateCurrentState(STATES.PROCESSING);
     }

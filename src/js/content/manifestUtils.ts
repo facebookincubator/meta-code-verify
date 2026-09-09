@@ -6,6 +6,8 @@
  */
 
 import {invalidateAndThrow} from './updateCurrentState';
+import {MANIFEST_TIMEOUT, STATES} from '../config';
+import {updateCurrentState} from './updateCurrentState';
 
 export const BOTH = 'BOTH';
 
@@ -49,4 +51,21 @@ export function tryToGetManifestVersionAndTypeFromNode(
   }
 
   return [version, otherType];
+}
+
+export function ensureManifestWasOrWillBeLoaded(
+  loadedVersions: Set<string>,
+  version: string,
+): void {
+  if (loadedVersions.has(version)) {
+    return;
+  }
+  setTimeout(() => {
+    if (!loadedVersions.has(version)) {
+      updateCurrentState(
+        STATES.INVALID,
+        `Detected script from manifest version ${version} that has not been loaded`,
+      );
+    }
+  }, MANIFEST_TIMEOUT);
 }

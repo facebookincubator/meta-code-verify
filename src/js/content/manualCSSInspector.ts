@@ -6,7 +6,7 @@
  */
 
 import {STATES} from '../config';
-import {tryToGetManifestVersionAndTypeFromNode} from './getManifestVersionAndTypeFromNode';
+import {tryToGetManifestVersionAndTypeFromNode} from './manifestUtils';
 import {updateCurrentState} from './updateCurrentState';
 
 const CHECKED_STYLESHEET_HASHES = new Set<string>();

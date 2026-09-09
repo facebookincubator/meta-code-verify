@@ -5,11 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-function isTopWindow(): boolean {
+export function isTopWindow(): boolean {
   return window == window.top;
 }
 
-function isSameDomainAsTopWindow(): boolean {
+export function isSameDomainAsTopWindow(): boolean {
   try {
     // This is inside a try/catch because even attempting to access the `origin`
     // property will throw a SecurityError if the domains don't match.
@@ -18,5 +18,3 @@ function isSameDomainAsTopWindow(): boolean {
     return false;
   }
 }
-
-export {isTopWindow, isSameDomainAsTopWindow};
