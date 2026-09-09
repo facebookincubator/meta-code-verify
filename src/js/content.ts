@@ -111,7 +111,7 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
   try {
     rawManifest = JSON.parse(manifestNodeTextContent);
   } catch {
-    setTimeout(() => parseFailedJSON({node: manifestNode, retry: 5000}), 20);
+    parseFailedJSON(manifestNode, 5000, () => handleManifestNode(manifestNode));
     return;
   }
 
@@ -332,6 +332,7 @@ export function storeFoundElement(element: HTMLElement): void {
       element.getAttribute('name') === 'binary-transparency-manifest')
   ) {
     handleManifestNode(element as HTMLScriptElement);
+    return;
   }
 
   // Only a document/doctype can have textContent as null
@@ -340,7 +341,7 @@ export function storeFoundElement(element: HTMLElement): void {
     try {
       JSON.parse(nodeTextContent);
     } catch {
-      setTimeout(() => parseFailedJSON({node: element, retry: 1500}), 20);
+      parseFailedJSON(element, 1500);
     }
     return;
   }
