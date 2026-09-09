@@ -99,7 +99,9 @@ type RawManifest = {
   version: string;
 };
 
-function handleManifestNode(manifestNode: HTMLScriptElement): void {
+async function handleManifestNode(
+  manifestNode: HTMLScriptElement,
+): Promise<void> {
   if (manifestNode.getAttribute('type') !== 'application/json') {
     updateCurrentState(STATES.INVALID, 'Manifest script type is invalid');
     return;
@@ -186,23 +188,22 @@ function handleManifestNode(manifestNode: HTMLScriptElement): void {
     FOUND_ELEMENTS.set(version, []);
   }
 
-  sendMessageToBackground(messagePayload, response => {
-    // then start processing its JS/CSS
-    if (response.valid) {
-      if (manifestTimeoutID != null) {
-        clearTimeout(manifestTimeoutID);
-        manifestTimeoutID = null;
-      }
-      FOUND_MANIFEST_VERSIONS.add(version);
-      processFoundElements();
-    } else {
-      if ('UNKNOWN_ENDPOINT_ISSUE' === response.reason) {
-        updateCurrentState(STATES.TIMEOUT);
-        return;
-      }
-      updateCurrentState(STATES.INVALID);
+  const response = await sendMessageToBackground(messagePayload);
+  // then start processing its JS/CSS
+  if (response && response.valid) {
+    if (manifestTimeoutID != null) {
+      clearTimeout(manifestTimeoutID);
+      manifestTimeoutID = null;
     }
-  });
+    FOUND_MANIFEST_VERSIONS.add(version);
+    processFoundElements();
+  } else {
+    if (response && response.reason === 'UNKNOWN_ENDPOINT_ISSUE') {
+      updateCurrentState(STATES.TIMEOUT);
+      return;
+    }
+    updateCurrentState(STATES.INVALID);
+  }
 }
 
 export async function processFoundElementsForVersion(
@@ -436,29 +437,35 @@ export function scanForScriptsAndStyles(): void {
 let isUserLoggedIn = false;
 let allowedWorkerCSPs: Array<Set<string>> = [];
 
-export function startFor(origin: Origin, config: ContentScriptConfig): void {
+export async function startFor(
+  origin: Origin,
+  config: ContentScriptConfig,
+): Promise<void> {
   originConfig = config;
   setCurrentOrigin(origin);
-  sendMessageToBackground(
-    {
+  (async () => {
+    const resp = await sendMessageToBackground({
       type: MESSAGE_TYPE.CONTENT_SCRIPT_START,
       origin,
-    },
-    resp => {
-      if (!resp.cspHeaders) {
-        invalidateAndThrow(
-          'Expected CSP Headers in CONTENT_SCRIPT_START response',
-        );
-      }
-      checkDocumentCSPHeaders(
-        resp.cspHeaders,
-        resp.cspReportHeaders,
-        getCurrentOrigin(),
-      );
+    });
+    if (!resp || !resp.success) {
+      invalidateAndThrow('Invalid CONTENT_SCRIPT_START response');
+    }
 
-      allowedWorkerCSPs = getAllowedWorkerCSPs(resp.cspHeaders);
-    },
-  );
+    if (!resp.cspHeaders) {
+      invalidateAndThrow(
+        'Expected CSP Headers in CONTENT_SCRIPT_START response',
+      );
+    }
+    checkDocumentCSPHeaders(
+      resp.cspHeaders,
+      resp.cspReportHeaders,
+      getCurrentOrigin(),
+    );
+
+    allowedWorkerCSPs = getAllowedWorkerCSPs(resp.cspHeaders);
+  })();
+
   if (isPathnameExcluded(originConfig.excludedPathnames)) {
     updateCurrentState(STATES.IGNORE);
     return;

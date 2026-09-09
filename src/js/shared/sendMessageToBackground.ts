@@ -7,13 +7,19 @@
 
 import {MessagePayload, MessageResponse} from './MessageTypes';
 
-export function sendMessageToBackground(
+export async function sendMessageToBackground(
   message: MessagePayload,
-  callback?: (response: MessageResponse) => void,
-): void {
-  if (callback != null) {
-    chrome.runtime.sendMessage(message, callback);
-  } else {
-    chrome.runtime.sendMessage(message);
-  }
+): Promise<MessageResponse | null> {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(
+      message,
+      (response: MessageResponse | null): void => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve(response);
+        }
+      },
+    );
+  });
 }

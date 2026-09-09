@@ -96,24 +96,14 @@ export default class TabStateMachine extends StateMachine {
       popup: `popup.html?tab_id=${this._tabId}&state=${state}&origin=${this._origin}`,
     });
     // Broadcast state update for relevant popup to update its contents.
-    sendMessageToBackground(
-      {
-        type: MESSAGE_TYPE.STATE_UPDATED,
-        tabId: this._tabId,
-        state,
-      },
-      () => {
-        /**
-         * The following suppresses an error that is thrown when we try to
-         * send this message to popup.js before it's listener is set up.
-         *
-         * For more details on how this suppresses the error:
-         * See: https://stackoverflow.com/questions/28431505/unchecked-runtime-lasterror-when-using-chrome-api/28432087#28432087
-         */
-        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-        chrome.runtime.lastError && chrome.runtime.lastError.message;
-      },
-    );
+    sendMessageToBackground({
+      type: MESSAGE_TYPE.STATE_UPDATED,
+      tabId: this._tabId,
+      state,
+    }).catch((_: unknown) => {
+      // Suppresses an error that is thrown when we try to send this message to
+      // popup.js before it's listener is set up.
+    });
     if (state === STATES.IGNORE) {
       this.genDisableTab();
     }
