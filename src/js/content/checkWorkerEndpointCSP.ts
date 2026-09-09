@@ -7,10 +7,23 @@
 
 import {Origin, ORIGIN_HOST} from '../config';
 import {getCSPHeadersFromWebRequestResponse} from '../shared/getCSPHeadersFromWebRequestResponse';
-import {checkCSPForEvals} from './checkCSPForEvals';
-import {doesWorkerUrlConformToCSP} from './doesWorkerUrlConformToCSP';
-import {parseCSPString} from './parseCSPString';
+import {
+  checkCSPForEvals,
+  setUpCSPEvalReportViolationListenerIfNeeded,
+} from './checkCSPForEvals';
+import doesWorkerUrlConformToCSP from './doesWorkerUrlConformToCSP';
+import {
+  type CSPCheckResult,
+  type CSPPolicies,
+  parseCSPHeaders,
+  somePolicySatisfiesDirective,
+} from './parseCSPString';
 import {invalidateAndThrow} from './updateCurrentState';
+
+type WorkerEndpointCSPValidation = {
+  cspPolicies: CSPPolicies;
+  result: CSPCheckResult;
+};
 
 /**
  * Dedicated Workers can nest workers, we need to check their CSPs.
@@ -20,33 +33,32 @@ import {invalidateAndThrow} from './updateCurrentState';
  * have already been validated, otherwise worker can spin
  * up arbitrary workers or blob:/data:.
  */
-export function isWorkerSrcValid(
-  cspHeaders: string[],
+function isWorkerSrcValid(
+  cspPolicies: CSPPolicies,
   host: string,
   documentWorkerCSPs: Set<string>[],
 ): boolean {
-  return cspHeaders.some(header => {
-    const allowedWorkers = parseCSPString(header).get('worker-src');
-
-    if (allowedWorkers) {
-      /**
-       * Filter out worker-src that aren't same origin because of the bellow bug
-       * This is safe to do since workers MUST be same-origin by definition
-       * https://bugzilla.mozilla.org/show_bug.cgi?id=1847548&fbclid=IwAR3qIyYr5K92_Cw3UJmgtSbgBKwZ5bLppP6LNwN6lC-kQVEdxr_52zeQUPE
-       */
-      const allowedWorkersToCheck = Array.from(allowedWorkers.values()).filter(
-        worker => worker.includes('.' + host) || worker.startsWith(host),
-      );
-
-      return documentWorkerCSPs.some(documentWorkerValues => {
-        return allowedWorkersToCheck.every(
-          workerSrcValue =>
-            doesWorkerUrlConformToCSP(documentWorkerValues, workerSrcValue) ||
-            documentWorkerValues.has(workerSrcValue),
-        );
-      });
+  return cspPolicies.some(policy => {
+    const allowedWorkers = policy.get('worker-src');
+    if (!allowedWorkers) {
+      return false;
     }
-    return false;
+    /**
+     * Filter out worker-src that aren't same origin because of the bellow bug
+     * This is safe to do since workers MUST be same-origin by definition
+     * https://bugzilla.mozilla.org/show_bug.cgi?id=1847548&fbclid=IwAR3qIyYr5K92_Cw3UJmgtSbgBKwZ5bLppP6LNwN6lC-kQVEdxr_52zeQUPE
+     */
+    const allowedWorkersToCheck = Array.from(allowedWorkers.values()).filter(
+      worker => worker.includes('.' + host) || worker.startsWith(host),
+    );
+
+    return documentWorkerCSPs.some(documentWorkerValues => {
+      return allowedWorkersToCheck.every(
+        workerSrcValue =>
+          doesWorkerUrlConformToCSP(documentWorkerValues, workerSrcValue) ||
+          documentWorkerValues.has(workerSrcValue),
+      );
+    });
   });
 }
 
@@ -55,60 +67,69 @@ export function isWorkerSrcValid(
  * Workers can call importScripts/import on arbitrary strings.
  * This CSP should be in place to prevent that.
  */
-export function areBlobAndDataExcluded(cspHeaders: string[]): boolean {
-  const [hasValidScriptSrcEnforcement, hasScriptSrcDirectiveForEnforce] =
-    getIsValidScriptSrcAndHasScriptSrcDirective(cspHeaders);
-  if (hasValidScriptSrcEnforcement) {
-    return true;
-  }
-
-  if (!hasScriptSrcDirectiveForEnforce) {
-    if (getIsValidDefaultSrc(cspHeaders)) {
-      return true;
-    }
-  }
-
-  return false;
+function areBlobAndDataExcluded(cspPolicies: CSPPolicies): boolean {
+  return somePolicySatisfiesDirective(
+    cspPolicies,
+    ['script-src', 'default-src'],
+    cspValues => !cspValues.has('blob:') && !cspValues.has('data:'),
+  );
 }
 
 /**
  * This function should not have side-effects (no throw, no invalidation).
  * See checkWorkerEndpointCSP for enforcement.
  */
+function validateWorkerEndpointCSP(
+  response: chrome.webRequest.OnResponseStartedDetails,
+  documentWorkerCSPs: Array<Set<string>>,
+  origin: Origin,
+): WorkerEndpointCSPValidation {
+  const host = ORIGIN_HOST[origin];
+  const cspPolicies = parseCSPHeaders(
+    getCSPHeadersFromWebRequestResponse(response).flatMap(header =>
+      header.value ? [header.value] : [],
+    ),
+  );
+  const cspReportPolicies = parseCSPHeaders(
+    getCSPHeadersFromWebRequestResponse(response, true).flatMap(header =>
+      header.value ? [header.value] : [],
+    ),
+  );
+
+  const evalResult = checkCSPForEvals(cspPolicies, cspReportPolicies);
+  if (!evalResult.valid) {
+    return {cspPolicies, result: evalResult};
+  }
+
+  if (!isWorkerSrcValid(cspPolicies, host, documentWorkerCSPs)) {
+    return {
+      cspPolicies,
+      result: {
+        valid: false,
+        reason: 'Nested worker-src does not conform to document worker-src CSP',
+      },
+    };
+  }
+
+  if (!areBlobAndDataExcluded(cspPolicies)) {
+    return {
+      cspPolicies,
+      result: {
+        valid: false,
+        reason: 'Worker allows blob:/data: importScripts/import',
+      },
+    };
+  }
+
+  return {cspPolicies, result: {valid: true}};
+}
+
 export function isWorkerEndpointCSPValid(
   response: chrome.webRequest.OnResponseStartedDetails,
   documentWorkerCSPs: Array<Set<string>>,
   origin: Origin,
-): [true] | [false, string] {
-  const host = ORIGIN_HOST[origin];
-  const cspHeaders = getCSPHeadersFromWebRequestResponse(response)
-    .map(h => h.value)
-    .filter((header): header is string => !!header);
-
-  const cspReportHeaders = getCSPHeadersFromWebRequestResponse(response, true)
-    .map(h => h.value)
-    .filter((header): header is string => !!header);
-
-  const [evalIsValid, evalReason] = checkCSPForEvals(
-    cspHeaders,
-    cspReportHeaders,
-  );
-  if (!evalIsValid) {
-    return [false, evalReason];
-  }
-
-  if (!isWorkerSrcValid(cspHeaders, host, documentWorkerCSPs)) {
-    return [
-      false,
-      'Nested worker-src does not conform to document worker-src CSP',
-    ];
-  }
-
-  if (!areBlobAndDataExcluded(cspHeaders)) {
-    return [false, 'Worker allows blob:/data: importScripts/import'];
-  }
-
-  return [true];
+): CSPCheckResult {
+  return validateWorkerEndpointCSP(response, documentWorkerCSPs, origin).result;
 }
 
 export function checkWorkerEndpointCSP(
@@ -116,47 +137,13 @@ export function checkWorkerEndpointCSP(
   documentWorkerCSPs: Array<Set<string>>,
   origin: Origin,
 ): void {
-  const [valid, reason] = isWorkerEndpointCSPValid(
+  const {cspPolicies, result} = validateWorkerEndpointCSP(
     response,
     documentWorkerCSPs,
     origin,
   );
-  if (!valid) {
-    invalidateAndThrow(reason);
+  if (!result.valid) {
+    invalidateAndThrow(result.reason);
   }
-}
-
-function cspValuesExcludeBlobAndData(cspValues: Set<string>): boolean {
-  return !cspValues.has('blob:') && !cspValues.has('data:');
-}
-
-function getIsValidDefaultSrc(cspHeaders: Array<string>): boolean {
-  return cspHeaders.some(cspHeader => {
-    const cspMap = parseCSPString(cspHeader);
-    const defaultSrc = cspMap.get('default-src');
-    if (!cspMap.has('script-src') && defaultSrc) {
-      if (cspValuesExcludeBlobAndData(defaultSrc)) {
-        return true;
-      }
-    }
-    return false;
-  });
-}
-
-function getIsValidScriptSrcAndHasScriptSrcDirective(
-  cspHeaders: Array<string>,
-): [boolean, boolean] {
-  let hasScriptSrcDirective = false;
-  const isValidScriptSrc = cspHeaders.some(cspHeader => {
-    const cspMap = parseCSPString(cspHeader);
-    const scriptSrc = cspMap.get('script-src');
-    if (scriptSrc) {
-      hasScriptSrcDirective = true;
-      if (cspValuesExcludeBlobAndData(scriptSrc)) {
-        return true;
-      }
-    }
-    return false;
-  });
-  return [isValidScriptSrc, hasScriptSrcDirective];
+  setUpCSPEvalReportViolationListenerIfNeeded(cspPolicies);
 }

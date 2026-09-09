@@ -7,26 +7,37 @@
 
 import {STATES} from '../config';
 import alertBackgroundOfImminentFetch from './alertBackgroundOfImminentFetch';
-import {parseCSPString} from './parseCSPString';
+import {
+  type CSPCheckResult,
+  type CSPPolicies,
+  somePolicySatisfiesDirective,
+} from './parseCSPString';
 import {updateCurrentState} from './updateCurrentState';
 
+let isScanningForCSPEvalReportViolations = false;
+
 function scanForCSPEvalReportViolations(): void {
-  document.addEventListener('securitypolicyviolation', e => {
+  if (isScanningForCSPEvalReportViolations) {
+    return;
+  }
+  isScanningForCSPEvalReportViolations = true;
+
+  document.addEventListener('securitypolicyviolation', evt => {
     // Older Browser can't distinguish between 'eval' and 'wasm-eval' violations
     // We need to check if there is an eval violation
-    if (e.blockedURI !== 'eval') {
+    if (evt.blockedURI !== 'eval') {
       return;
     }
 
-    if (e.disposition === 'enforce') {
+    if (evt.disposition === 'enforce') {
       return;
     }
 
-    alertBackgroundOfImminentFetch(e.sourceFile).then(() => {
-      fetch(e.sourceFile)
+    alertBackgroundOfImminentFetch(evt.sourceFile).then(() => {
+      fetch(evt.sourceFile)
         .then(response => response.text())
         .then(code => {
-          const violatingLine = code.split(/\r?\n/)[e.lineNumber - 1];
+          const violatingLine = code.split(/\r?\n/)[evt.lineNumber - 1];
           if (
             violatingLine.includes('WebAssembly') &&
             !violatingLine.includes('eval(') &&
@@ -38,69 +49,43 @@ function scanForCSPEvalReportViolations(): void {
           ) {
             return;
           }
-          updateCurrentState(STATES.INVALID, `Caught eval in ${e.sourceFile}`);
+          updateCurrentState(
+            STATES.INVALID,
+            `Caught eval in ${evt.sourceFile}`,
+          );
         });
     });
   });
 }
 
-function getIsValidDefaultSrc(cspHeaders: Array<string>): boolean {
-  return cspHeaders.some(cspHeader => {
-    const cspMap = parseCSPString(cspHeader);
-    const defaultSrc = cspMap.get('default-src');
-    const scriptSrc = cspMap.get('script-src');
-    if (!scriptSrc && defaultSrc) {
-      if (!defaultSrc.has("'unsafe-eval'")) {
-        return true;
-      }
-    }
-    return false;
-  });
+function preventsUnsafeEval(cspPolicies: CSPPolicies): boolean {
+  return somePolicySatisfiesDirective(
+    cspPolicies,
+    ['script-src', 'default-src'],
+    values => !values.has("'unsafe-eval'"),
+  );
 }
 
-function getIsValidScriptSrcAndHasScriptSrcDirective(
-  cspHeaders: Array<string>,
-): [boolean, boolean] {
-  let hasScriptSrcDirective = false;
-  const isValidScriptSrc = cspHeaders.some(cspHeader => {
-    const cspMap = parseCSPString(cspHeader);
-    const scriptSrc = cspMap.get('script-src');
-    if (scriptSrc) {
-      hasScriptSrcDirective = true;
-      if (!scriptSrc.has("'unsafe-eval'")) {
-        return true;
-      }
-    }
-    return false;
-  });
-  return [isValidScriptSrc, hasScriptSrcDirective];
+export function setUpCSPEvalReportViolationListenerIfNeeded(
+  cspPolicies: CSPPolicies,
+): void {
+  if (!preventsUnsafeEval(cspPolicies)) {
+    scanForCSPEvalReportViolations();
+  }
 }
 
 export function checkCSPForEvals(
-  cspHeaders: Array<string>,
-  cspReportHeaders: Array<string> | undefined,
-): [true] | [false, string] {
-  const [hasValidScriptSrcEnforcement, hasScriptSrcDirectiveForEnforce] =
-    getIsValidScriptSrcAndHasScriptSrcDirective(cspHeaders);
-
-  // 1. This means that at least one CSP-header declaration has a script-src
-  // directive that has no `unsafe-eval` keyword. This means the browser will
-  // enforce unsafe eval for us.
-  if (hasValidScriptSrcEnforcement) {
-    return [true];
+  cspPolicies: CSPPolicies,
+  cspReportPolicies: CSPPolicies,
+): CSPCheckResult {
+  // Multiple policies are intersected by the browser, so one policy that
+  // prevents unsafe eval is sufficient.
+  if (preventsUnsafeEval(cspPolicies)) {
+    return {valid: true};
   }
 
-  // 2. If we have no script-src directives, the browser will fall back to
-  // default-src. If at least one declaration has a default-src directive
-  // with no `unsafe-eval`, the browser will enforce for us.
-  if (!hasScriptSrcDirectiveForEnforce) {
-    if (getIsValidDefaultSrc(cspHeaders)) {
-      return [true];
-    }
-  }
-
-  // If we've gotten this far, it either means something is invalid, or this is
-  // an older browser. We want to execute WASM, but still prevent unsafe-eval.
+  // If we've gotten this far, this is either invalid or an older browser. We
+  // want to execute WASM, but still prevent unsafe-eval.
   // Newer browsers support the wasm-unsafe-eval keyword for this purpose, but
   // for older browsers we need to hack around this.
 
@@ -109,32 +94,19 @@ export function checkCSPForEvals(
   // cause the page to break, but will emit events that we can listen for in
   // scanForCSPEvalReportViolations.
 
-  // 3. Thus, if we've gotten this far and we have no report headers, the page
+  // Thus, if we've gotten this far and we have no report headers, the page
   // should be considered invalid.
-  if (!cspReportHeaders || cspReportHeaders.length === 0) {
-    return [false, 'Missing CSP report-only header'];
+  if (cspReportPolicies.length === 0) {
+    return {valid: false, reason: 'Missing CSP report-only header'};
   }
 
-  // Check if at least one header has the correct report setup
-  // If CSP is not reporting on evals we cannot catch them via event listeners
-  const [hasValidScriptSrcReport, hasScriptSrcDirectiveForReport] =
-    getIsValidScriptSrcAndHasScriptSrcDirective(cspReportHeaders);
-
-  let hasValidDefaultSrcReport = false;
-  if (!hasScriptSrcDirectiveForReport) {
-    hasValidDefaultSrcReport = getIsValidDefaultSrc(cspReportHeaders);
+  // If CSP is not reporting on evals, we cannot catch them via event listeners.
+  if (!preventsUnsafeEval(cspReportPolicies)) {
+    return {
+      valid: false,
+      reason: 'Missing unsafe-eval from CSP report-only header',
+    };
   }
 
-  // 4. If neither
-  //  a. We have at least one script-src without unsafe eval.
-  //  b. We have no script-src, and at least one default-src without unsafe-eval
-  // Then we must invalidate because there is nothing preventing unsafe-eval.
-  if (!hasValidScriptSrcReport && !hasValidDefaultSrcReport) {
-    return [false, 'Missing unsafe-eval from CSP report-only header'];
-  }
-
-  // 5. If we've gotten here without throwing, we can start scanning for violations
-  // from our report-only headers.
-  scanForCSPEvalReportViolations();
-  return [true];
+  return {valid: true};
 }

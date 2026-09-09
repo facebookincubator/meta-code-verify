@@ -7,32 +7,86 @@
 
 import {Origin, ORIGIN_HOST} from '../config';
 import {invalidateAndThrow} from './updateCurrentState';
-import {parseCSPString} from './parseCSPString';
-import {checkCSPForEvals} from './checkCSPForEvals';
-import {checkCSPForScriptSrcAttr} from './checkCSPForScriptSrcAttr';
-import {checkCSPForUnsafeInline} from './checkCSPForUnsafeInline';
+import {
+  checkCSPForEvals,
+  setUpCSPEvalReportViolationListenerIfNeeded,
+} from './checkCSPForEvals';
+import {
+  type CSPCheckResult,
+  type CSPPolicies,
+  parseCSPHeaders,
+  somePolicySatisfiesDirective,
+} from './parseCSPString';
 
-export function checkCSPForWorkerSrc(
-  cspHeaders: Array<string>,
-  origin: Origin,
-): [true] | [false, string] {
-  const host = ORIGIN_HOST[origin];
+function isHashSource(value: string): boolean {
+  return /^'sha(?:256|384|512)-/.test(value);
+}
 
-  const headersWithWorkerSrc = cspHeaders.filter(cspHeader =>
-    parseCSPString(cspHeader).has('worker-src'),
+function allowsUnverifiedScriptAttributes(values: Set<string>): boolean {
+  return (
+    values.has(`'unsafe-inline'`) ||
+    (values.has(`'unsafe-hashes'`) &&
+      // unsafe-hashes is benign when no hash is specified.
+      Array.from(values).some(isHashSource))
+  );
+}
+
+// Enforces that inline script elements cannot execute unverified code.
+export function checkCSPForUnsafeInline(
+  cspPolicies: CSPPolicies,
+): CSPCheckResult {
+  const preventsUnsafeInline = somePolicySatisfiesDirective(
+    cspPolicies,
+    ['script-src-elem', 'script-src', 'default-src'],
+    values => !values.has(`'unsafe-inline'`),
   );
 
-  if (headersWithWorkerSrc.length === 0) {
-    return [false, 'Missing worker-src directive on CSP of main document'];
+  return preventsUnsafeInline
+    ? {valid: true}
+    : {valid: false, reason: 'CSP Headers do not prevent unsafe-inline.'};
+}
+
+// Enforces that inline event-handler attributes cannot execute unverified code.
+export function checkCSPForScriptSrcAttr(
+  cspPolicies: CSPPolicies,
+): CSPCheckResult {
+  const preventsUnverifiedScriptAttributes = somePolicySatisfiesDirective(
+    cspPolicies,
+    ['script-src-attr', 'script-src', 'default-src'],
+    values => !allowsUnverifiedScriptAttributes(values),
+  );
+
+  return preventsUnverifiedScriptAttributes
+    ? {valid: true}
+    : {
+        valid: false,
+        reason: 'CSP Headers allow unverified script attributes.',
+      };
+}
+
+export function checkCSPForWorkerSrc(
+  cspPolicies: CSPPolicies,
+  origin: Origin,
+): CSPCheckResult {
+  const host = ORIGIN_HOST[origin];
+
+  const policiesWithWorkerSrc = cspPolicies.filter(policy =>
+    policy.has('worker-src'),
+  );
+
+  if (policiesWithWorkerSrc.length === 0) {
+    return {
+      valid: false,
+      reason: 'Missing worker-src directive on CSP of main document',
+    };
   }
 
   // Valid CSP if at least one CSP header is strict enough, since the browser
   // should apply all.
-  const isValid = headersWithWorkerSrc.some(cspHeader => {
-    const cspMap = parseCSPString(cspHeader);
-    const workersSrcValues = cspMap.get('worker-src');
+  const isValid = policiesWithWorkerSrc.some(policy => {
+    const workersSrcValues = policy.get('worker-src');
     return (
-      workersSrcValues &&
+      workersSrcValues != null &&
       !workersSrcValues.has('data:') &&
       !workersSrcValues.has('blob:') &&
       !workersSrcValues.has("'self'") &&
@@ -51,9 +105,12 @@ export function checkCSPForWorkerSrc(
   });
 
   if (isValid) {
-    return [true];
+    return {valid: true};
   } else {
-    return [false, 'Invalid worker-src directive on main document'];
+    return {
+      valid: false,
+      reason: 'Invalid worker-src directive on main document',
+    };
   }
 }
 
@@ -61,23 +118,26 @@ export function checkDocumentCSPHeaders(
   cspHeaders: Array<string>,
   cspReportHeaders: Array<string> | undefined,
   origin: Origin,
-): void {
-  [
-    checkCSPForUnsafeInline(cspHeaders),
-    checkCSPForScriptSrcAttr(cspHeaders),
-    checkCSPForEvals(cspHeaders, cspReportHeaders),
-    checkCSPForWorkerSrc(cspHeaders, origin),
-  ].forEach(([valid, reason]) => {
-    if (!valid) {
-      invalidateAndThrow(reason);
-    }
-  });
-}
-
-export function getAllowedWorkerCSPs(
-  cspHeaders: Array<string>,
 ): Array<Set<string>> {
-  return cspHeaders
-    .map(header => parseCSPString(header).get('worker-src'))
-    .filter((header): header is Set<string> => !!header);
+  const cspPolicies = parseCSPHeaders(cspHeaders);
+  const cspReportPolicies = parseCSPHeaders(cspReportHeaders ?? []);
+  const checks: Array<() => CSPCheckResult> = [
+    () => checkCSPForUnsafeInline(cspPolicies),
+    () => checkCSPForScriptSrcAttr(cspPolicies),
+    () => checkCSPForEvals(cspPolicies, cspReportPolicies),
+    () => checkCSPForWorkerSrc(cspPolicies, origin),
+  ];
+
+  for (const check of checks) {
+    const result = check();
+    if (!result.valid) {
+      invalidateAndThrow(result.reason);
+    }
+  }
+
+  setUpCSPEvalReportViolationListenerIfNeeded(cspPolicies);
+
+  return cspPolicies
+    .map(policy => policy.get('worker-src'))
+    .filter((values): values is Set<string> => values != null);
 }

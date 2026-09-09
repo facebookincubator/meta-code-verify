@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-export function doesWorkerUrlConformToCSP(
+export default function doesWorkerUrlConformToCSP(
   workerValues: Set<string>,
   url: string,
 ): boolean {
