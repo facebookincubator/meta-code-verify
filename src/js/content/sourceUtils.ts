@@ -101,8 +101,10 @@ export async function processSrc(
           origin: getCurrentOrigin(),
           version: version,
         });
-        if (!response || !response.valid) {
-          throw new Error('Invalid response from RAW_SRC message');
+        if (!response.valid) {
+          throw new Error(
+            response.reason ?? 'Invalid response from RAW_SRC message',
+          );
         }
       }),
     );

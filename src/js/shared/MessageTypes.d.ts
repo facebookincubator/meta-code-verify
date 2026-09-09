@@ -8,53 +8,83 @@
 import {MESSAGE_TYPE, Origin, State} from '../config';
 import {RawManifestOtherHashes} from '../content';
 
-export type MessagePayload =
-  | {
-      type: MESSAGE_TYPE.LOAD_COMPANY_MANIFEST;
+export type MessageProtocol = {
+  [MESSAGE_TYPE.LOAD_COMPANY_MANIFEST]: {
+    request: {
       origin: Origin;
       rootHash: string;
       otherHashes: RawManifestOtherHashes;
       leaves: Array<string>;
       version: string;
       workaround: string;
-    }
-  | {
-      type: MESSAGE_TYPE.RAW_SRC;
+    };
+    response: {valid: boolean; reason?: string};
+  };
+  [MESSAGE_TYPE.RAW_SRC]: {
+    request: {
       pkgRaw: string;
       origin: Origin;
       version: string;
-    }
-  | {
-      type: MESSAGE_TYPE.DEBUG;
+    };
+    response: {valid: boolean; reason?: string; hash?: string};
+  };
+  [MESSAGE_TYPE.DEBUG]: {
+    request: {
       log: string;
       src?: string;
-    }
-  | {
-      type: MESSAGE_TYPE.STATE_UPDATED;
+    };
+    response: undefined;
+  };
+  [MESSAGE_TYPE.STATE_UPDATED]: {
+    request: {
       tabId: number;
       state: State;
-    }
-  | {
-      type: MESSAGE_TYPE.UPDATE_STATE;
+    };
+    response: undefined;
+  };
+  [MESSAGE_TYPE.UPDATE_STATE]: {
+    request: {
       state: State;
       origin: Origin;
       details?: string;
-    }
-  | {
-      type: MESSAGE_TYPE.CONTENT_SCRIPT_START;
+    };
+    response: {success: true};
+  };
+  [MESSAGE_TYPE.CONTENT_SCRIPT_START]: {
+    request: {
       origin: Origin;
-    }
-  | {
-      type: MESSAGE_TYPE.UPDATED_CACHED_SCRIPT_URLS;
+    };
+    response: {
+      success: true;
+      cspHeaders?: Array<string>;
+      cspReportHeaders?: Array<string>;
+    };
+  };
+  [MESSAGE_TYPE.UPDATED_CACHED_SCRIPT_URLS]: {
+    request: {
       url: string;
     };
-
-export type MessageResponse = {
-  valid?: boolean;
-  success?: boolean;
-  debugList?: Array<string>;
-  reason?: string;
-  hash?: string;
-  cspHeaders?: Array<string>;
-  cspReportHeaders?: Array<string>;
+    response: {success: true};
+  };
 };
+
+export type ProtocolMessageType = keyof MessageProtocol;
+
+export type MessagePayload<
+  Type extends ProtocolMessageType = ProtocolMessageType,
+> = Type extends ProtocolMessageType
+  ? {type: Type} & MessageProtocol[Type]['request']
+  : never;
+
+export type MessageResponse<Payload extends MessagePayload> =
+  MessageProtocol[Payload['type']]['response'];
+
+// Keeping the responder on the same discriminated union member as its request
+// lets a check of `type` narrow both the payload and the allowed response.
+export type MessageWithResponder = {
+  [Type in ProtocolMessageType]: MessagePayload<Type> & {
+    readonly sendResponse: (
+      response: MessageProtocol[Type]['response'],
+    ) => void;
+  };
+}[ProtocolMessageType];

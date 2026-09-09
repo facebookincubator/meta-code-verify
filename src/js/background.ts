@@ -19,7 +19,7 @@ import setUpWebRequestsListener from './background/setUpWebRequestsListener';
 import {validateMetaCompanyManifest} from './background/validateMetaCompanyManifest';
 import {validateSender} from './background/validateSender';
 import {removeDynamicStrings} from './background/removeDynamicStrings';
-import {MessagePayload, MessageResponse} from './shared/MessageTypes';
+import {MessagePayload, MessageWithResponder} from './shared/MessageTypes';
 import {setOrUpdateSetInMap} from './shared/nestedDataHelpers';
 import {
   setUpHistoryCleaner,
@@ -76,11 +76,9 @@ function logReceivedMessage(
 }
 
 function handleMessages(
-  message: MessagePayload,
+  message: MessageWithResponder,
   sender: chrome.runtime.MessageSender,
-  sendResponse: (_: MessageResponse) => void,
 ): void | boolean {
-  logReceivedMessage(message, sender);
   const validSender = validateSender(sender);
 
   // There are niche reasons we might receive messages from an unexpected
@@ -121,9 +119,9 @@ function handleMessages(
               manifest.leaves.push(leaf);
             }
           });
-          sendResponse({valid: true});
+          message.sendResponse({valid: true});
         } else {
-          sendResponse(validationResult);
+          message.sendResponse(validationResult);
         }
       });
 
@@ -134,13 +132,13 @@ function handleMessages(
     case MESSAGE_TYPE.RAW_SRC: {
       const origin = MANIFEST_CACHE.get(message.origin);
       if (!origin) {
-        sendResponse({valid: false, reason: 'no matching origin'});
+        message.sendResponse({valid: false, reason: 'no matching origin'});
         return;
       }
       const manifestObj = origin.get(message.version);
       const manifest = manifestObj && manifestObj.leaves;
       if (!manifest) {
-        sendResponse({valid: false, reason: 'no matching manifest'});
+        message.sendResponse({valid: false, reason: 'no matching manifest'});
         return;
       }
 
@@ -148,7 +146,10 @@ function handleMessages(
         try {
           message.pkgRaw = removeDynamicStrings(message.pkgRaw);
         } catch {
-          sendResponse({valid: false, reason: 'failed parsing AST'});
+          message.sendResponse({
+            valid: false,
+            reason: 'failed parsing AST',
+          });
           return;
         }
       }
@@ -164,7 +165,7 @@ function handleMessages(
           .join('');
 
         if (manifestObj.leaves.includes(hash)) {
-          sendResponse({valid: true, hash: hash});
+          message.sendResponse({valid: true, hash: hash});
         } else {
           trackViolationForTab(
             validSender.tab.id,
@@ -173,7 +174,7 @@ function handleMessages(
             message.version,
             hash,
           );
-          sendResponse({
+          message.sendResponse({
             valid: false,
             hash: hash,
             reason:
@@ -193,14 +194,14 @@ function handleMessages(
 
     case MESSAGE_TYPE.UPDATE_STATE: {
       updateContentScriptState(validSender, message.state, message.origin);
-      sendResponse({success: true});
+      message.sendResponse({success: true});
       return;
     }
 
     case MESSAGE_TYPE.CONTENT_SCRIPT_START: {
       recordContentScriptStart(validSender, message.origin);
 
-      sendResponse({
+      message.sendResponse({
         success: true,
         cspHeaders: CSP_HEADERS.get(validSender.tab.id)?.get(
           validSender.frameId,
@@ -215,7 +216,7 @@ function handleMessages(
 
     case MESSAGE_TYPE.UPDATED_CACHED_SCRIPT_URLS: {
       setOrUpdateSetInMap(CACHED_SCRIPTS_URLS, validSender.tab.id, message.url);
-      sendResponse({success: true});
+      message.sendResponse({success: true});
       return true;
     }
 
@@ -227,7 +228,16 @@ function handleMessages(
   }
 }
 
-chrome.runtime.onMessage.addListener(handleMessages);
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  logReceivedMessage(message as MessagePayload, sender);
+
+  // Chrome provides the request and responder separately. Combine them once
+  // at this untyped boundary so handleMessages can narrow them together.
+  return handleMessages(
+    {...message, sendResponse} as MessageWithResponder,
+    sender,
+  );
+});
 
 setUpHistoryCleaner();
 setupCSPListener(CSP_HEADERS, CSP_REPORT_HEADERS);

@@ -190,7 +190,7 @@ async function handleManifestNode(
 
   const response = await sendMessageToBackground(messagePayload);
   // then start processing its JS/CSS
-  if (response && response.valid) {
+  if (response.valid) {
     if (manifestTimeoutID != null) {
       clearTimeout(manifestTimeoutID);
       manifestTimeoutID = null;
@@ -198,7 +198,7 @@ async function handleManifestNode(
     FOUND_MANIFEST_VERSIONS.add(version);
     processFoundElements();
   } else {
-    if (response && response.reason === 'UNKNOWN_ENDPOINT_ISSUE') {
+    if (response.reason === 'UNKNOWN_ENDPOINT_ISSUE') {
       updateCurrentState(STATES.TIMEOUT);
       return;
     }
@@ -448,7 +448,7 @@ export async function startFor(
       type: MESSAGE_TYPE.CONTENT_SCRIPT_START,
       origin,
     });
-    if (!resp || !resp.success) {
+    if (!resp.success) {
       invalidateAndThrow('Invalid CONTENT_SCRIPT_START response');
     }
 
