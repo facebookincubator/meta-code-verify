@@ -44,7 +44,7 @@ function isWorkerSrcValid(
       return false;
     }
     /**
-     * Filter out worker-src that aren't same origin because of the bellow bug
+     * Filter out worker-src that aren't same origin because of the bug below
      * This is safe to do since workers MUST be same-origin by definition
      * https://bugzilla.mozilla.org/show_bug.cgi?id=1847548&fbclid=IwAR3qIyYr5K92_Cw3UJmgtSbgBKwZ5bLppP6LNwN6lC-kQVEdxr_52zeQUPE
      */
