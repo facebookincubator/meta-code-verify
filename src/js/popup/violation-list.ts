@@ -120,9 +120,9 @@ class ViolationList extends HTMLElement {
             `[data-expand-target="${tabID}"]`,
           )!;
           subtable.classList.toggle('expanded');
-          expand.innerHTML = subtable.classList.contains('expanded')
-            ? `&#9660; Hide`
-            : `&#9654; Show (${expand.getAttribute('data-violation-count')})`;
+          expand.textContent = subtable.classList.contains('expanded')
+            ? `\u25BC Hide`
+            : `\u25B6 Show (${expand.getAttribute('data-violation-count')})`;
         });
       });
     });
