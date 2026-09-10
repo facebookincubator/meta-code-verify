@@ -8,7 +8,15 @@
 import '../globals';
 
 import type {Origin, State} from '../config';
-import {MESSAGE_TYPE, ORIGIN_TYPE, STATES} from '../config.js';
+import {ORIGIN_TYPE, STATES} from '../config.js';
+import sendMessageToContent, {
+  MESSAGE_TYPE as CONTENT_MESSAGE_TYPE,
+  type Message as ContentMessage,
+} from '../shared/sendMessageToContent';
+import {
+  MESSAGE_TYPE as POPUP_MESSAGE_TYPE,
+  type Message as PopupMessage,
+} from '../shared/sendMessageToPopup';
 
 import './violation-list';
 
@@ -85,7 +93,9 @@ function attachMenuListeners(origin: Origin): void {
   menuRows[2].addEventListener('click', () => updateDisplay('download'));
 
   menuRows[3].addEventListener('click', () => {
-    sendMessageToActiveTab('downloadReleaseSource');
+    sendMessageToActiveTab({
+      type: CONTENT_MESSAGE_TYPE.DOWNLOAD_RELEASE_SOURCE,
+    });
   });
 }
 
@@ -112,24 +122,28 @@ function setUpBackgroundMessageHandler(tabId: string | null): void {
     console.error('[Popup] No tab_id query param', document.location);
     return;
   }
-  chrome.runtime.onMessage.addListener(message => {
-    if (!('type' in message)) {
-      return;
-    }
-    if (
-      message.type === MESSAGE_TYPE.STATE_UPDATED &&
-      message.tabId.toString() === tabId
-    ) {
-      updateDisplay(message.state);
+  chrome.runtime.onMessage.addListener((message: PopupMessage) => {
+    const messageType = message.type;
+    switch (messageType) {
+      case POPUP_MESSAGE_TYPE.STATE_UPDATED: {
+        if (message.tabId.toString() === tabId) {
+          updateDisplay(message.state);
+        }
+        return;
+      }
+      default: {
+        const _exhaustiveCheck: never = messageType;
+        return _exhaustiveCheck;
+      }
     }
   });
 }
 
-function sendMessageToActiveTab(message: string): void {
+function sendMessageToActiveTab(message: ContentMessage): void {
   chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
     const tabId = tabs[0].id;
     if (tabId) {
-      chrome.tabs.sendMessage(tabId, {greeting: message}, () => {});
+      sendMessageToContent(tabId, message);
     }
   });
 }
@@ -282,7 +296,7 @@ const handleButtonAction = (
         url: ORIGIN_TO_LEARN_MORE_PAGES[currentOrigin][id],
       });
     } else if (action === 'download') {
-      sendMessageToActiveTab('downloadSource');
+      sendMessageToActiveTab({type: CONTENT_MESSAGE_TYPE.DOWNLOAD_SOURCE});
     } else if (action === 'violations_list') {
       updateDisplay('violation_list');
     }

@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {MESSAGE_TYPE, Origin, State, STATES} from '../config';
-import {sendMessageToBackground} from '../shared/sendMessageToBackground';
+import {Origin, State, STATES} from '../config';
+import sendMessageToBackground, {
+  MESSAGE_TYPE,
+} from '../shared/sendMessageToBackground';
 
 let currentOrigin: Origin | undefined;
 

@@ -8,7 +8,7 @@
 'use strict';
 
 import {jest} from '@jest/globals';
-import {MESSAGE_TYPE} from '../config';
+import {MESSAGE_TYPE} from '../shared/sendMessageToBackground';
 import {
   hasInvalidScriptsOrStyles,
   scanForScriptsAndStyles,

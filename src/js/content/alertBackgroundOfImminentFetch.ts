@@ -5,21 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {MESSAGE_TYPE} from '../config';
-import {sendMessageToBackground} from '../shared/sendMessageToBackground';
+import sendMessageToBackground, {
+  MESSAGE_TYPE,
+} from '../shared/sendMessageToBackground';
 
-export default function alertBackgroundOfImminentFetch(
+export default async function alertBackgroundOfImminentFetch(
   url: string,
 ): Promise<void> {
-  return new Promise(resolve => {
-    sendMessageToBackground(
-      {
-        type: MESSAGE_TYPE.UPDATED_CACHED_SCRIPT_URLS,
-        url,
-      },
-      () => {
-        resolve();
-      },
-    );
+  await sendMessageToBackground({
+    type: MESSAGE_TYPE.UPDATED_CACHED_SCRIPT_URLS,
+    url,
   });
 }

@@ -5,6 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import sendMessageToContent, {
+  MESSAGE_TYPE,
+} from '../shared/sendMessageToContent';
+
 const isMetaInitiatedResponse = (
   response: chrome.webRequest.OnResponseStartedDetails,
 ) => {
@@ -30,10 +34,10 @@ function checkResponseMIMEType(
       header.name.toLowerCase().includes('x-content-type-options'),
     )?.value !== 'nosniff'
   ) {
-    chrome.tabs.sendMessage(
+    sendMessageToContent(
       response.tabId,
       {
-        greeting: 'sniffableMimeTypeResource',
+        type: MESSAGE_TYPE.SNIFFABLE_MIME_TYPE_RESOURCE,
         src: response.url,
       },
       {frameId: response.frameId},
@@ -66,10 +70,10 @@ export default function setUpWebRequestsListener(
           chrome.tabs.query({url: `${origin}/*`}, tabs => {
             tabs.forEach(tab => {
               if (tab.id) {
-                chrome.tabs.sendMessage(
+                sendMessageToContent(
                   tab.id,
                   {
-                    greeting: 'checkIfScriptWasProcessed',
+                    type: MESSAGE_TYPE.CHECK_IF_SCRIPT_WAS_PROCESSED,
                     response,
                   },
                   // Send this to the topframe since child frames
@@ -90,10 +94,10 @@ export default function setUpWebRequestsListener(
         cachedScriptsUrls.get(response.tabId)?.has(response.url)
       ) {
         if (!response.fromCache) {
-          chrome.tabs.sendMessage(
+          sendMessageToContent(
             response.tabId,
             {
-              greeting: 'nocacheHeaderFound',
+              type: MESSAGE_TYPE.NOCACHE_HEADER_FOUND,
               uncachedUrl: response.url,
             },
             {frameId: response.frameId},
@@ -110,10 +114,10 @@ export default function setUpWebRequestsListener(
          * Content scripts can't detect scripts from Workers so we need
          * to send them back to content script for verification.
          * */
-        chrome.tabs.sendMessage(
+        sendMessageToContent(
           response.tabId,
           {
-            greeting: 'checkIfScriptWasProcessed',
+            type: MESSAGE_TYPE.CHECK_IF_SCRIPT_WAS_PROCESSED,
             response,
           },
           {frameId: response.frameId},

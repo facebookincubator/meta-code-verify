@@ -8,8 +8,9 @@
 import alertBackgroundOfImminentFetch from './alertBackgroundOfImminentFetch';
 
 import {TagDetails} from '../content';
-import {MESSAGE_TYPE} from '../config';
-import {sendMessageToBackground} from '../shared/sendMessageToBackground';
+import sendMessageToBackground, {
+  MESSAGE_TYPE,
+} from '../shared/sendMessageToBackground';
 import {getCurrentOrigin} from './updateCurrentState';
 
 const SOURCE_SCRIPTS_AND_STYLES = new Map<string, Response>();
@@ -93,26 +94,21 @@ export async function processSrc(
       packages = [tagDetails.tag.innerHTML];
     }
 
-    const packagePromises = packages.map(pkg => {
-      return new Promise((resolve, reject) => {
-        sendMessageToBackground(
-          {
-            type: MESSAGE_TYPE.RAW_SRC,
-            pkgRaw: pkg.trimStart(),
-            origin: getCurrentOrigin(),
-            version: version,
-          },
-          response => {
-            if (response.valid) {
-              resolve(null);
-            } else {
-              reject();
-            }
-          },
-        );
-      });
-    });
-    await Promise.all(packagePromises);
+    await Promise.all(
+      packages.map(async pkg => {
+        const response = await sendMessageToBackground({
+          type: MESSAGE_TYPE.RAW_SRC,
+          pkgRaw: pkg.trimStart(),
+          origin: getCurrentOrigin(),
+          version: version,
+        });
+        if (!response.valid) {
+          throw new Error(
+            response.reason ?? 'Invalid response from RAW_SRC message',
+          );
+        }
+      }),
+    );
     return {valid: true};
   } catch (scriptProcessingError) {
     return {
