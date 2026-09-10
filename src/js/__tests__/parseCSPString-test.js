@@ -7,27 +7,27 @@
 
 'use strict';
 
-import {parseCSPString} from '../content/parseCSPString';
+import {parseCSPHeaders} from '../content/parseCSPString';
 
-describe('parseCSPString', () => {
+describe('parseCSPHeaders', () => {
   it('Correctly parses multiple keys/directives', () => {
     expect(
-      parseCSPString(
+      parseCSPHeaders([
         `default-src 'self' blob:;` + `script-src 'self' 'wasm-unsafe-eval';`,
-      ),
-    ).toEqual(
+      ]),
+    ).toEqual([
       new Map([
         ['default-src', new Set(["'self'", 'blob:'])],
         ['script-src', new Set(["'self'", "'wasm-unsafe-eval'"])],
       ]),
-    );
+    ]);
   });
   it('Normalizes CSP keys/values', () => {
     expect(
-      parseCSPString(
+      parseCSPHeaders([
         `sCriPt-src *.facebook.com *.fbcdn.net blob: data: 'self' 'wasm-UNsafe-eval';`,
-      ),
-    ).toEqual(
+      ]),
+    ).toEqual([
       new Map([
         [
           'script-src',
@@ -41,42 +41,37 @@ describe('parseCSPString', () => {
           ]),
         ],
       ]),
-    );
+    ]);
   });
   it('Ignores subsequent directive keys', () => {
     expect(
-      parseCSPString(
+      parseCSPHeaders([
         `script-src 'none';` +
           `script-src *.facebook.com *.fbcdn.net blob: data: 'self' 'wasm-UNsafe-eval';` +
           `connect-src 'self';`,
-      ),
-    ).toEqual(
+      ]),
+    ).toEqual([
       new Map([
         ['script-src', new Set(["'none'"])],
         ['connect-src', new Set(["'self'"])],
       ]),
-    );
+    ]);
   });
-  it('Can still parse keys when invalid characters are present', () => {
+  it('Ignores directives containing non-ASCII characters', () => {
     expect(
-      parseCSPString(`default-src 'self';          script-src 'none';`),
-    ).toEqual(
-      new Map([
-        ['default-src', new Set(["'self'"])],
-        ['script-src', new Set(["'none'"])],
-      ]),
-    );
+      parseCSPHeaders([`default-src 'self';\u00a0script-src 'none';`]),
+    ).toEqual([new Map([['default-src', new Set(["'self'"])]])]);
   });
   it('Correctly parses other whitespace chars', () => {
     expect(
-      parseCSPString(
+      parseCSPHeaders([
         `default-src\t'self' blob:;` + `script-src 'self'\f'wasm-unsafe-eval';`,
-      ),
-    ).toEqual(
+      ]),
+    ).toEqual([
       new Map([
         ['default-src', new Set(["'self'", 'blob:'])],
         ['script-src', new Set(["'self'", "'wasm-unsafe-eval'"])],
       ]),
-    );
+    ]);
   });
 });

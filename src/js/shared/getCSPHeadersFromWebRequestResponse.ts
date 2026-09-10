@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-export function getCSPHeadersFromWebRequestResponse(
+export default function getCSPHeadersFromWebRequestResponse(
   response: chrome.webRequest.OnHeadersReceivedDetails,
   reportHeader = false,
 ): Array<chrome.webRequest.HttpHeader> {
@@ -21,13 +21,19 @@ export function getCSPHeadersFromWebRequestResponse(
         : 'content-security-policy'),
   );
 
-  // A single header value can be a comma seperated list of headers
+  // A single header value can be a comma-separated list of policies
   // https://www.w3.org/TR/CSP3/#parse-serialized-policy-list
   const individualHeaders: Array<chrome.webRequest.HttpHeader> = [];
   cspHeaders.forEach(header => {
-    if (header.value?.includes(', ')) {
-      header.value.split(', ').forEach(headerValue => {
-        individualHeaders.push({name: header.name, value: headerValue});
+    if (header.value?.includes(',')) {
+      header.value.split(',').forEach(headerValue => {
+        // CSP only permits ASCII whitespace around policy-list delimiters.
+        // trim() would also remove Unicode whitespace that CSP does not
+        // recognize.
+        individualHeaders.push({
+          ...header,
+          value: headerValue.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, ''),
+        });
       });
     } else {
       individualHeaders.push(header);

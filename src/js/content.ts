@@ -9,10 +9,7 @@ import './globals';
 
 import {STATES, Origin, ORIGIN_TYPE, MANIFEST_TIMEOUT} from './config';
 
-import {
-  checkDocumentCSPHeaders,
-  getAllowedWorkerCSPs,
-} from './content/checkDocumentCSPHeaders';
+import {checkDocumentCSPHeaders} from './content/checkDocumentCSPHeaders';
 import {
   getCurrentOrigin,
   setCurrentOrigin,
@@ -21,7 +18,7 @@ import {
 } from './content/updateCurrentState';
 import {parseFailedJSON} from './content/parseFailedJSON';
 import isPathnameExcluded from './content/isPathNameExcluded';
-import {doesWorkerUrlConformToCSP} from './content/doesWorkerUrlConformToCSP';
+import doesWorkerUrlConformToCSP from './content/doesWorkerUrlConformToCSP';
 import {checkWorkerEndpointCSP} from './content/checkWorkerEndpointCSP';
 import sendMessageToBackground, {
   MESSAGE_TYPE as BACKGROUND_MESSAGE_TYPE,
@@ -457,13 +454,11 @@ export async function startFor(
         'Expected CSP Headers in CONTENT_SCRIPT_START response',
       );
     }
-    checkDocumentCSPHeaders(
+    allowedWorkerCSPs = checkDocumentCSPHeaders(
       resp.cspHeaders,
       resp.cspReportHeaders,
       getCurrentOrigin(),
     );
-
-    allowedWorkerCSPs = getAllowedWorkerCSPs(resp.cspHeaders);
   })();
 
   if (isPathnameExcluded(originConfig.excludedPathnames)) {

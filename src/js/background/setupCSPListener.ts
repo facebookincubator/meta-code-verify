@@ -6,7 +6,7 @@
  */
 
 import {CSPHeaderMap} from '../background';
-import {getCSPHeadersFromWebRequestResponse} from '../shared/getCSPHeadersFromWebRequestResponse';
+import getCSPHeadersFromWebRequestResponse from '../shared/getCSPHeadersFromWebRequestResponse';
 import {setOrUpdateMapInMap} from '../shared/nestedDataHelpers';
 
 export default function setupCSPListener(
