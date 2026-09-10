@@ -8,6 +8,7 @@
 'use strict';
 
 import {jest} from '@jest/globals';
+import {STATES} from '../config';
 import {MESSAGE_TYPE} from '../shared/sendMessageToBackground';
 import {
   hasInvalidScriptsOrStyles,
@@ -103,17 +104,19 @@ describe('content', () => {
       const element = createInlineScript('queued script');
       FOUND_ELEMENTS.set('123', [element]);
 
-      await processFoundElementsForVersion('123');
+      const didFinishProcessing = await processFoundElementsForVersion('123');
 
+      expect(didFinishProcessing).toBe(false);
       expect(FOUND_ELEMENTS.get('123')).toEqual([element]);
       expect(window.chrome.runtime.sendMessage).not.toHaveBeenCalled();
     });
 
-    it('does nothing when a loaded manifest has no elements', async () => {
+    it('finishes processing when a loaded manifest has no elements', async () => {
       FOUND_MANIFEST_VERSIONS.add('123');
 
-      await processFoundElementsForVersion('123');
+      const didFinishProcessing = await processFoundElementsForVersion('123');
 
+      expect(didFinishProcessing).toBe(true);
       expect(window.chrome.runtime.sendMessage).not.toHaveBeenCalled();
     });
 
@@ -126,11 +129,12 @@ describe('content', () => {
       FOUND_MANIFEST_VERSIONS.add('123');
       FOUND_MANIFEST_VERSIONS.add('456');
 
-      await Promise.all([
+      const processingResults = await Promise.all([
         processFoundElementsForVersion('123'),
         processFoundElementsForVersion('456'),
       ]);
 
+      expect(processingResults).toEqual([true, true]);
       expect(FOUND_ELEMENTS.get('123')).toEqual([]);
       expect(FOUND_ELEMENTS.get('456')).toEqual([]);
       const rawSourceMessages = window.chrome.runtime.sendMessage.mock.calls
@@ -141,6 +145,13 @@ describe('content', () => {
         '123',
         '456',
       ]);
+      expect(
+        window.chrome.runtime.sendMessage.mock.calls.some(
+          ([message]) =>
+            message.type === MESSAGE_TYPE.UPDATE_STATE &&
+            message.state === STATES.VALID,
+        ),
+      ).toBe(false);
     });
   });
   describe('hasInvalidScriptsOrStyles', () => {

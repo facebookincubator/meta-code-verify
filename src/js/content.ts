@@ -32,7 +32,11 @@ import {pushToOrCreateArrayInMap} from './shared/nestedDataHelpers';
 import {asyncThrottle} from './shared/asyncThrottle';
 import {downloadSrc, processSrc} from './content/sourceUtils';
 import {hasVaryServiceWorkerHeader} from './content/hasVaryServiceWorkerHeader';
-import {isSameDomainAsTopWindow, isTopWindow} from './content/iFrameUtils';
+import {
+  isBlankChildFrame,
+  isSameDomainAsTopWindow,
+  isTopWindow,
+} from './content/iFrameUtils';
 import {getTagIdentifier} from './content/getTagIdentifier';
 import {
   BOTH,
@@ -203,17 +207,18 @@ async function handleManifestNode(
   }
 }
 
+function hasOwnManifest(): boolean {
+  return isTopWindow() || (!isSameDomainAsTopWindow() && !isBlankChildFrame());
+}
+
 export async function processFoundElementsForVersion(
   version: string,
-): Promise<void> {
+): Promise<boolean> {
   // See if we have the manifest yet; Top-level window and X-Origin frames have
   // their own manifest. Same-orgin frames rely on their parent window's
   // manifest, so a missing manifest there is normal/expected.
-  if (
-    !FOUND_MANIFEST_VERSIONS.has(version) &&
-    (isTopWindow() || !isSameDomainAsTopWindow())
-  ) {
-    return;
+  if (!FOUND_MANIFEST_VERSIONS.has(version) && hasOwnManifest()) {
+    return false;
   }
 
   const elementsForVersion = FOUND_ELEMENTS.get(version) ?? [];
@@ -227,17 +232,13 @@ export async function processFoundElementsForVersion(
       elementsForVersion.push(element);
     }
   });
-  let pendingElementCount = elements.length;
+  let allElementsAreValid = true;
   for (const element of elements) {
     const response = await processSrc(element, version);
     const tagIdentifier = getTagIdentifier(element);
 
-    pendingElementCount--;
-    if (response.valid) {
-      if (pendingElementCount == 0) {
-        updateCurrentState(STATES.VALID);
-      }
-    } else {
+    if (!response.valid) {
+      allElementsAreValid = false;
       updateCurrentState(STATES.INVALID, `Invalid Tag ${tagIdentifier}`);
     }
     sendMessageToBackground({
@@ -248,14 +249,31 @@ export async function processFoundElementsForVersion(
       src: tagIdentifier,
     });
   }
+
+  return allElementsAreValid;
 }
 
 export const processFoundElements = asyncThrottle(async (): Promise<void> => {
-  await Promise.all(
+  const noElementsArePending = (): boolean =>
+    Array.from(FOUND_ELEMENTS.values()).every(
+      elements => elements.length === 0,
+    );
+
+  // We're not waiting on a manifest, and we don't have any tags to check
+  if (!hasOwnManifest() && noElementsArePending()) {
+    updateCurrentState(STATES.VALID);
+    return;
+  }
+
+  const processingResults = await Promise.all(
     Array.from(FOUND_ELEMENTS.keys(), version =>
       processFoundElementsForVersion(version),
     ),
   );
+
+  if (processingResults.every(Boolean) && noElementsArePending()) {
+    updateCurrentState(STATES.VALID);
+  }
 }, 3000);
 
 function addFoundElement(version: string, element: TagDetails): void {
@@ -315,17 +333,9 @@ function handleLinkNode(link: HTMLLinkElement): void {
 }
 
 export function storeFoundElement(element: HTMLElement): void {
-  // Same-origin iframes use the manifest processed in the top-level frame.
-  if (!isTopWindow() && isSameDomainAsTopWindow()) {
-    if (manifestTimeoutID != null) {
-      clearTimeout(manifestTimeoutID);
-      manifestTimeoutID = null;
-    }
-  }
-
   // check if it's the manifest node
   if (
-    (isTopWindow() || !isSameDomainAsTopWindow()) &&
+    hasOwnManifest() &&
     (element.id === 'binary-transparency-manifest' ||
       element.getAttribute('name') === 'binary-transparency-manifest')
   ) {
@@ -484,12 +494,13 @@ export async function startFor(
     updateCurrentState(STATES.PROCESSING);
     scanForScriptsAndStyles();
     scanForCSSNeedingManualInspection();
-    if (manifestTimeoutID == null) {
+    if (hasOwnManifest() && manifestTimeoutID == null) {
       manifestTimeoutID = window.setTimeout(() => {
         // Manifest failed to load, flag a warning to the user.
         updateCurrentState(STATES.TIMEOUT);
       }, MANIFEST_TIMEOUT);
     }
+    processFoundElements();
   }
 }
 
