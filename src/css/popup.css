@@ -7,11 +7,6 @@
 
 @import 'violations.css';
 
-/* We only use objects to render out SVGs so disable pointer events */
-object {
-  pointer-events: none;
-}
-
 body {
   margin: 0;
   overflow: hidden;
