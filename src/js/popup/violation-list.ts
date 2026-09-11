@@ -37,11 +37,11 @@ class ViolationList extends HTMLElement {
                     data-tab-id="${tabID}"
                     data-hash="${v.hash}"
                     class="download_button">
-                    <object
-                      type="image/svg+xml"
+                    <img
+                      src="circle-download-cta.svg"
                       width="16px"
                       height="16px"
-                      data="circle-download-cta.svg"></object>
+                      alt="" />
                   </span>
                 </td>
               </tr>
