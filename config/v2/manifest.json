@@ -4,6 +4,14 @@
     "version": "4.2.0",
     "default_locale": "en",
     "description": "An extension to verify the code running in your browser matches what was published.",
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "{bc6ba8b6-2502-4610-98f7-f639a2c9b8a1}",
+            "data_collection_permissions": {
+                "required": ["none"]
+            }
+        }
+    },
     "page_action": {
         "default_title": "Code Verify",
         "default_icon": {
